@@ -7,7 +7,7 @@ BasedOnStyle: LLVM
 # Basic formatting
 IndentWidth: 4
 TabWidth: 4
-UseTab: Always
+UseTab: Never
 ColumnLimit: 100
 
 # Braces

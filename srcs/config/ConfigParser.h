@@ -7,8 +7,8 @@
 
 struct Directive
 {
-	std::string				 name;
-	std::vector<std::string> values;
+    std::string              name;
+    std::vector<std::string> values;
 };
 
 //  TODO: ??????
@@ -20,24 +20,24 @@ struct Directive
 
 struct ServerConfig
 {
-	std::vector<Directive>						   directives;
-	std::map<std::string, std::vector<Directive> > routes;
+    std::vector<Directive>                         directives;
+    std::map<std::string, std::vector<Directive> > routes;
 };
 
 class ConfigParser
 {
 public:
-	ConfigParser(const std::string& file);
-	ConfigParser(const ConfigParser& other);
-	ConfigParser& operator=(const ConfigParser& other);
-	~ConfigParser();
+    ConfigParser(const std::string& file);
+    ConfigParser(const ConfigParser& other);
+    ConfigParser& operator=(const ConfigParser& other);
+    ~ConfigParser();
 
-	std::vector<ServerConfig> parse();
+    std::vector<ServerConfig> parse();
 
 private:
-	ConfigLexer _lexer;
+    ConfigLexer _lexer;
 
-	ServerConfig									parseServerBlock();
-	std::pair<std::string, std::vector<Directive> > parseRouteBlock();
-	Directive										parseDirective();
+    ServerConfig                                    parseServerBlock();
+    std::pair<std::string, std::vector<Directive> > parseRouteBlock();
+    Directive                                       parseDirective();
 };
