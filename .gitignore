@@ -1,0 +1,10 @@
+# Compiled source #
+webserv
+__build__
+.cache
+compile_commands.json
+.vscode
+
+# object files and dependencies #
+**/*.o
+**/*.d
