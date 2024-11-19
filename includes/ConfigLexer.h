@@ -41,11 +41,14 @@ public:
 
     class UnexpectedTokenException : public std::exception
     {
-    public:
-        const char* what() const throw()
-        {
-            return "unexpected token";
-        }
+        private:
+            std::string _message;
+        public:
+            UnexpectedTokenException(const std::vector<Token>::const_iterator token);
+
+        public:
+            const char* what() const throw();
+            ~UnexpectedTokenException() throw();
     };
 
 private:

@@ -1,14 +1,17 @@
 NAME            =   webserv
 
+INCLUDES		= 	includes
+
 CXX             =   c++
-CXXFLAGS        =   -Wall -Wextra -std=c++98 -MMD -MP -I.
+CXXFLAGS        =   -Wall -Wextra -std=c++98 -MMD -MP -I$(INCLUDES)
+
+
+SRC_DIR			=	srcs
+SRC				= 	$(shell find $(SRC_DIR) -type f -name '*.cpp')
 
 BUILD_DIR       =   __build__
-SRC_DIR         =   srcs
 
-SRC             =   $(shell find $(SRC_DIR) -type f -name '*.cpp')
-OBJ             =   $(SRC:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
-DEP             =   $(OBJ:.o=.d)
+OBJ             =  	$(SRC:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 
 RM              =   rm -rf
 
@@ -21,13 +24,11 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 
--include $(DEP)
-
 clean:
-	$(RM) $(BUILD_DIR)
+	$(RM) $(OBJ)
 
 fclean: clean
-	$(RM) $(NAME)
+	$(RM) $(BUILD_DIR) $(NAME)
 
 re: fclean all
 

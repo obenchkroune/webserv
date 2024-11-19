@@ -1,4 +1,4 @@
-#include "./config/ConfigParser.h"
+#include "ConfigParser.h"
 #include <iostream>
 
 // TODO: remove this function
