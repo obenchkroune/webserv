@@ -1,4 +1,4 @@
-#include "ConfigParser.h"
+#include "Server.hpp"
 #include "Test.hpp"
 
 int main(int c, char**v, char**envp)
@@ -12,13 +12,11 @@ int main(int c, char**v, char**envp)
             std::cerr << "Usage: " << v[0] << " [path to config file]\n";
             return 1;
         }
-        ConfigParser                              parser(v[1]);
-        std::vector<ServerConfig>                 servers = parser.parse();
-        std::vector<ServerConfig>::const_iterator it      = servers.begin();
-        for (; it != servers.end(); it++)
-        {
-            printServerConfig(*it);
-        }
+        ConfigParser                                parser(v[1]);
+        std::vector<ServerConfig>                   configs = parser.parse();
+        std::vector<Server>                         servers(configs.begin(), configs.end());
+        
+
     }
     catch (const std::exception& e)
     {

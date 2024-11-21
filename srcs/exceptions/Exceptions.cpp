@@ -1,17 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
+/*   Exceptions.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/20 23:31:36 by msitni1337       ###   ########.fr       */
+/*   Created: 2024/11/21 22:07:03 by msitni            #+#    #+#             */
+/*   Updated: 2024/11/21 22:07:48 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#pragma once
-#include <iostream>
+#include "Exceptions.hpp"
 
-struct ServerConfig;
-void printServerConfig(const ServerConfig& config);
+const char* NotImplemented::what() const throw()
+{
+    return "NotImplemented";
+}
