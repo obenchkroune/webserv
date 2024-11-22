@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 16:22:21 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 16:55:28 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,10 +41,10 @@ static inline sockaddr_in get_listen_addr(const std::vector<Directive>& directiv
 
                     uint8_t  byte       = std::atoi(raw_byte.c_str());
                     uint8_t* ip_address = (uint8_t*)&address.sin_addr.s_addr;
-                    ip_address[3 - i]   = byte;
+                    ip_address[i]   = byte;
                 }
             }
-            address.sin_port   = std::atoi(port.c_str());
+            address.sin_port   = htons(std::atoi(port.c_str()));
             address.sin_family = AF_INET;
             return address;
         }
@@ -97,17 +97,18 @@ void Server::Start()
         throw ServerException("listen() failed.");
     _is_started = true;
     uint8_t* ip = (uint8_t*)&_listen_addr.sin_addr.s_addr;
-    std::cout << "Server started on listening succefully.\n";
-    std::cout << "Address: " << +ip[3] << '.' << +ip[2] << '.' << +ip[1] << '.' << +ip[0] << ':'
-              << _listen_addr.sin_port << '\n';
+    std::cout << "Server started on listening succefully.\n" << _listen_socket_fd << "\n";
+    std::cout << "Address: " << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.' << +ip[3] << ':'
+              << ntohs(_listen_addr.sin_port) << '\n';
+    int         peer_fd;
     sockaddr_in peer_address;
     socklen_t   peer_address_len = sizeof(peer_address);
-    if (accept(_listen_socket_fd, (sockaddr*)&peer_address, &peer_address_len) == -1)
+    if ((peer_fd = accept(_listen_socket_fd, (sockaddr*)&peer_address, &peer_address_len)) == -1)
         throw ServerException("accept() failed.");
     uint8_t* peer_ip = (uint8_t*)&peer_address.sin_addr.s_addr;
     std::cout << "Server accepted a peer succefully.\n";
-    std::cout << "Address: " << +peer_ip[3] << '.' << +peer_ip[2] << '.' << +peer_ip[1] << '.'
-              << +peer_ip[0] << ':' << peer_address.sin_port << '\n';
+    std::cout << "Address: " << +peer_ip[0] << '.' << +peer_ip[1] << '.' << +peer_ip[2] << '.'
+              << +peer_ip[3] << ':' << ntohs(peer_address.sin_port) << '\n';
 }
 void Server::Terminate()
 {
