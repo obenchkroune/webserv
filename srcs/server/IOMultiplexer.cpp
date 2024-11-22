@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 19:29:14 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 22:17:37 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,24 +28,68 @@ IOMultiplexer& IOMultiplexer::operator=(const IOMultiplexer& IOM)
         return *this;
     for (size_t i = 0; i < sizeof(_events) / sizeof(epoll_event); i++)
         _events[i] = IOM._events[i];
-    _epoll_fd   = IOM._epoll_fd;
-    _is_started = IOM._is_started;
+    _listeners_in  = IOM._listeners_in;
+    _listeners_out = IOM._listeners_out;
+    _epoll_fd      = IOM._epoll_fd;
+    _is_started    = IOM._is_started;
     return *this;
 }
 IOMultiplexer::~IOMultiplexer()
 {
     Terminate();
 }
-#include <iostream>
 void IOMultiplexer::AddEvent(epoll_event ev, int fd)
 {
+    std::map<int, AIOEventListener*>*          listner_map;
+    std::map<int, AIOEventListener*>::iterator it;
+    switch (ev.events)
+    {
+    case EPOLLIN:
+        it          = _listeners_in.find(fd);
+        listner_map = &_listeners_in;
+        break;
+    case EPOLLOUT:
+        it          = _listeners_out.find(fd);
+        listner_map = &_listeners_out;
+        break;
+
+    default:
+        throw ImpossibleToReach();
+        break;
+    }
+    if (it != listner_map->end())
+        throw IOMultiplexerException("AddEvent() : Event listener already added.");
+    AIOEventListener* listener = (AIOEventListener*)ev.data.ptr;
+    listner_map->insert(std::pair<int, AIOEventListener*>(fd, listener));
+    ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw IOMultiplexerException("epoll_ctl() failed.");
 }
 void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
 {
+    std::map<int, AIOEventListener*>*          listner_map;
+    std::map<int, AIOEventListener*>::iterator it;
+    switch (ev.events)
+    {
+    case EPOLLIN:
+        it          = _listeners_in.find(fd);
+        listner_map = &_listeners_in;
+        break;
+    case EPOLLOUT:
+        it          = _listeners_out.find(fd);
+        listner_map = &_listeners_out;
+        break;
+
+    default:
+        throw ImpossibleToReach();
+        break;
+    }
+    if (it == listner_map->end())
+        throw IOMultiplexerException("RemoveEvent() : Event listener is not added.");
+    ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, &ev) == -1)
         throw IOMultiplexerException("epoll_ctl() failed.");
+    listner_map->erase(fd);
 }
 void IOMultiplexer::StartEventLoop()
 {
@@ -57,9 +101,31 @@ void IOMultiplexer::StartEventLoop()
         int events_count = epoll_wait(_epoll_fd, _events, EPOLL_EVENTS_MAX, -1);
         if (events_count == -1)
             throw IOMultiplexerException("epoll_wait(): failed.");
-        std::cout << "Received " << events_count << " events.\n";
         for (int i = 0; i < events_count; i++)
-            ((AIOEvent*)_events[i].data.ptr)->ConsumeEvent(_events[i]);
+        {
+            std::map<int, AIOEventListener*>::iterator it;
+            switch (_events[i].events)
+            {
+            case EPOLLIN:
+                it = _listeners_in.find(_events[i].data.fd);
+                if (it == _listeners_in.end())
+                    throw IOMultiplexerException(
+                        "fd not found in [std::map<int, AIOEventListener*> _listeners_in] member.");
+                break;
+
+            case EPOLLOUT:
+                it = _listeners_out.find(_events[i].data.fd);
+                if (it == _listeners_out.end())
+                    throw IOMultiplexerException("fd not found in [std::map<int, "
+                                                 "AIOEventListener*> _listeners_out] member.");
+                break;
+
+            default:
+                throw ImpossibleToReach();
+                break;
+            }
+            it->second->ConsumeEvent(_events[i]);
+        }
     }
 }
 void IOMultiplexer::Terminate()

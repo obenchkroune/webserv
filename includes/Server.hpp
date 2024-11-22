@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 19:14:52 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 21:14:27 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #endif
 #include "ConfigParser.h"
 #include "Exceptions.hpp"
-#include "IOEvent.hpp"
+#include "IOEventListener.hpp"
 #include "IOMultiplexer.hpp"
 #include "ServerClient.hpp"
 #include "Utils.hpp"
@@ -28,7 +28,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-class Server : public AIOEvent
+class Server : public AIOEventListener
 {
 private:
     std::vector<ServerClient> _clients;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 19:34:21 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 22:20:38 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,10 @@ static inline sockaddr_in get_listen_addr(const std::vector<Directive>& directiv
     std::vector<Directive>::const_iterator it = directives.begin();
     for (; it != directives.end(); it++)
     {
-        if (it->name == "listen" && it->values.size())
+        if (it->name == "listen")
         {
+            if (it->values.size() == 0)
+                break;
             const std::string& raw = it->values[0];
             if (raw.find(":") == std::string::npos)
                 throw ServerException("Bad listen address string.");
@@ -61,7 +63,7 @@ Server::Server(const ServerConfig& config, IOMultiplexer* IOmltplx, bool start /
     if (start)
         Start();
 }
-Server::Server(const Server& server) : AIOEvent(server)
+Server::Server(const Server& server) : AIOEventListener(server)
 {
     *this = server;
 }
@@ -100,7 +102,6 @@ void Server::Start()
         throw ServerException("listen(): failed.");
     _listen_socket_ev.events   = EPOLLIN;
     _listen_socket_ev.data.ptr = this;
-    //_listen_socket_ev.data.fd  = _listen_socket_fd;
     _IOmltplx->AddEvent(_listen_socket_ev, _listen_socket_fd);
     _is_started = true;
     uint8_t* ip = (uint8_t*)&_listen_addr.sin_addr.s_addr;
@@ -118,10 +119,10 @@ void Server::Terminate()
     _is_started = false;
     std::cout << "Server terminated.\n";
 }
-
 void Server::ConsumeEvent(const epoll_event ev)
 {
     std::cout << "Server consumed a new event.\n" << ev.data.fd << '\n';
+    if (ev.data.fd == _listen_socket_fd)
     {
         std::cout << "Event is for socket.\n";
         sockaddr_in peer_address;
@@ -137,5 +138,8 @@ void Server::ConsumeEvent(const epoll_event ev)
         std::cout << "Server accepted a new peer succefully.\n";
         std::cout << "Address: " << +peer_ip[0] << '.' << +peer_ip[1] << '.' << +peer_ip[2] << '.'
                   << +peer_ip[3] << ':' << ntohs(peer_address.sin_port) << '\n';
+        return;
     }
+    std::cerr << "Event fd uknown ignoring..\n" << ev.data.fd << '\n';
+
 }

@@ -3,23 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   IOEvent.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:45:27 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 19:14:39 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 22:21:09 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "IOEvent.hpp"
+#include "IOEventListener.hpp"
 
-AIOEvent::AIOEvent() {}
-AIOEvent::AIOEvent(const AIOEvent& event)
+AIOEventListener::AIOEventListener() {}
+AIOEventListener::AIOEventListener(const AIOEventListener& event)
 {
     (void)event;
 }
-AIOEvent& AIOEvent::operator=(const AIOEvent& event)
+AIOEventListener& AIOEventListener::operator=(const AIOEventListener& event)
 {
     (void)event;
     return *this;
 }
-AIOEvent::~AIOEvent() {}
+AIOEventListener::~AIOEventListener() {}

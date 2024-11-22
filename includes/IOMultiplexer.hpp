@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:31:05 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 19:16:56 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 21:20:52 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include "Exceptions.hpp"
-#include "IOEvent.hpp"
+#include "IOEventListener.hpp"
+#include <map>
 #include <sys/epoll.h>
 #include <unistd.h>
 
@@ -21,9 +22,11 @@
 class IOMultiplexer
 {
 private:
-    epoll_event _events[EPOLL_EVENTS_MAX];
-    int         _epoll_fd;
-    bool        _is_started;
+    epoll_event                      _events[EPOLL_EVENTS_MAX];
+    std::map<int, AIOEventListener*> _listeners_in;
+    std::map<int, AIOEventListener*> _listeners_out;
+    int                              _epoll_fd;
+    bool                             _is_started;
 
 public:
     IOMultiplexer();
