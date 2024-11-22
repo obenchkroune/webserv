@@ -1,23 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Exceptions.cpp                                     :+:      :+:    :+:   */
+/*   Utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/21 22:07:03 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/22 10:08:35 by msitni           ###   ########.fr       */
+/*   Created: 2024/11/22 11:46:53 by msitni            #+#    #+#             */
+/*   Updated: 2024/11/22 11:53:45 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Exceptions.hpp"
+#include "Utils.hpp"
 
-const char* NotImplemented::what() const throw()
+size_t ft_strlcpy(char* dst, const char* src, size_t sz)
 {
-    return "NotImplemented";
-}
+    size_t i = 0;
 
-const char* ImpossibleToReach::what() const throw()
-{
-    return "ImpossibleToReach";
+    if (dst == NULL || src == NULL)
+        return 0;
+    if (!sz)
+        return (std::strlen(src));
+    while (src[i] && i < sz - 1)
+    {
+        dst[i] = src[i];
+        i++;
+    }
+    dst[i] = 0;
+    return (std::strlen(src));
 }

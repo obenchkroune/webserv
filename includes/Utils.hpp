@@ -1,23 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Exceptions.cpp                                     :+:      :+:    :+:   */
+/*   Utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/21 22:07:03 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/22 10:08:35 by msitni           ###   ########.fr       */
+/*   Created: 2024/11/22 11:47:32 by msitni            #+#    #+#             */
+/*   Updated: 2024/11/22 11:52:45 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Exceptions.hpp"
+#pragma once
+#include <cstddef>
+#include <cstring>
 
-const char* NotImplemented::what() const throw()
-{
-    return "NotImplemented";
-}
-
-const char* ImpossibleToReach::what() const throw()
-{
-    return "ImpossibleToReach";
-}
+size_t	ft_strlcpy(char *dst, const char *src, size_t sz);

@@ -1,9 +1,9 @@
 #include "Server.hpp"
 #include "Test.hpp"
 
-int main(int c, char**v, char**envp)
+int main(int c, char** v, char** envp)
 {
-    (void) envp;
+    (void)envp;
     try
     {
         if (c != 2)
@@ -12,11 +12,12 @@ int main(int c, char**v, char**envp)
             std::cerr << "Usage: " << v[0] << " [path to config file]\n";
             return 1;
         }
-        ConfigParser                                parser(v[1]);
-        std::vector<ServerConfig>                   configs = parser.parse();
-        std::vector<Server>                         servers(configs.begin(), configs.end());
-        
-
+        ConfigParser                  parser(v[1]);
+        std::vector<ServerConfig>     configs = parser.parse();
+        std::vector<Server>           servers(configs.begin(), configs.end());
+        std::vector<Server>::iterator it = servers.begin();
+        for (; it != servers.end(); it++)
+            it->Start();        
     }
     catch (const std::exception& e)
     {

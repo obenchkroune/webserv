@@ -6,18 +6,18 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 20:43:52 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/21 22:01:47 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/22 11:45:38 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Exceptions.hpp"
 
-const char* ServerExceptionAlreadyStarted::what() const throw()
+ServerException::ServerException(std::string reason) throw()
+    : _reason("ServerException::ServerException\n[Reason]: " + reason)
 {
-    return "ServerException::AlreadyStarted";
 }
-
-const char* ServerExceptionListenAddrNotFound::what() const throw()
+const char* ServerException::what() const throw()
 {
-    return "ServerException::ListenAddrNotFound";
+    return _reason.c_str();
 }
+ServerException::~ServerException() throw() {}
