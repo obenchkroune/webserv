@@ -3,26 +3,49 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 12:05:23 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/22 15:46:03 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-static inline sockaddr get_listen_addr(const std::vector<Directive>& directives)
+static inline sockaddr_in get_listen_addr(const std::vector<Directive>& directives)
 {
     std::vector<Directive>::const_iterator it = directives.begin();
     for (; it != directives.end(); it++)
     {
-        if (it->name == "listen")
+        if (it->name == "listen" && it->values.size())
         {
             const std::string& raw = it->values[0];
-            sockaddr           address;
-            address.sa_family = AF_INET | AF_INET6;
-            ft_strlcpy(address.sa_data, raw.c_str(), sizeof(address.sa_data));
+            if (raw.find(":") == std::string::npos)
+                throw ServerException("Bad listen address string.");
+            std::string ip   = raw.substr(0, raw.find(":"));
+            std::string port = raw.substr(raw.find(":") + 1);
+            sockaddr_in address;
+            {
+                for (size_t dot, pos = 0, i = 0; i < 4; i++, pos = dot + 1)
+                {
+                    if ((dot = raw.find(".", pos)) == std::string::npos)
+                    {
+                        if (i < 3)
+                            throw ServerException("Bad ip address string.");
+                        else
+                            dot = ip.length();
+                    }
+                    if (dot - pos > 3 || dot - pos <= 0)
+                        throw ServerException("Bad ip address string.");
+                    std::string raw_byte = ip.substr(pos, dot);
+
+                    uint8_t  byte       = std::atoi(raw_byte.c_str());
+                    uint8_t* ip_address = (uint8_t*)&address.sin_addr.s_addr;
+                    ip_address[3 - i]   = byte;
+                }
+            }
+            address.sin_port   = std::atoi(port.c_str());
+            address.sin_family = AF_INET;
             return address;
         }
     }
@@ -64,15 +87,18 @@ void Server::Start()
     if (_is_started)
         throw ServerException("Server is already started.");
     _listen_addr      = get_listen_addr(_config.directives);
-    _listen_socket_fd = socket(AF_INET | AF_INET6, SOCK_STREAM, 0);
+    _listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (_listen_socket_fd == -1)
         throw ServerException("socket() failed.");
-    if (bind(_listen_socket_fd, &_listen_addr, sizeof(_listen_addr)) == -1)
-        throw ServerException("bind() failed on address " + std::string(_listen_addr.sa_data));
+    if (bind(_listen_socket_fd, (sockaddr*)&_listen_addr, sizeof(_listen_addr)) == -1)
+        throw ServerException("bind() failed.");
     if (listen(_listen_socket_fd, __INT32_MAX__) == -1)
         throw ServerException("listen() failed.");
-    _is_started = true;
-    std::cout << "Server started on address " << _listen_addr.sa_data << " succefully.\n";
+    _is_started    = true;
+    uint8_t* bytes = (uint8_t*)&_listen_addr.sin_addr.s_addr;
+    std::cout << "Server started on listening succefully.\n";
+    std::cout << "Address." << +bytes[3] << '.' << +bytes[2] << '.' << +bytes[1] << '.' << +bytes[0]
+              << ':' << _listen_addr.sin_port << '\n';
 }
 void Server::Terminate()
 {
@@ -80,4 +106,5 @@ void Server::Terminate()
         return;
     close(_listen_socket_fd);
     _is_started = false;
+    std::cout << "Server terminated.\n";
 }

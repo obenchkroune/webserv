@@ -17,7 +17,10 @@ int main(int c, char** v, char** envp)
         std::vector<Server>           servers(configs.begin(), configs.end());
         std::vector<Server>::iterator it = servers.begin();
         for (; it != servers.end(); it++)
-            it->Start();        
+            it->Start();
+        std::cout << "Press enter to exit program.\n";
+        char tmp;
+        std::cin.get(tmp); 
     }
     catch (const std::exception& e)
     {

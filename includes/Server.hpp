@@ -3,31 +3,37 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 12:01:26 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/22 15:23:46 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
+#ifdef MAC_BUILD
 #include <bsd/string.h>
+#else
+#include <cstring>
+#endif
+#include "ConfigParser.h"
+#include "Exceptions.hpp"
+#include "ServerClient.hpp"
+#include "Utils.hpp"
+#include <cstdlib>
+#include <iostream>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <iostream>
-#include "Exceptions.hpp"
-#include "Utils.hpp"
-#include "ConfigParser.h"
-#include "ServerClient.hpp"
 
 class Server
 {
 private:
     std::vector<ServerClient> _clients;
-    ServerConfig        _config;
-    bool                _is_started;
-    sockaddr            _listen_addr;
-    int                 _listen_socket_fd;
+    ServerConfig              _config;
+    bool                      _is_started;
+    sockaddr_in               _listen_addr;
+    int                       _listen_socket_fd;
 
 public:
     Server(const ServerConfig& config, bool start = false);

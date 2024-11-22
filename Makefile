@@ -2,9 +2,14 @@ NAME            =   webserv
 
 INCLUDES		= 	includes
 
+
+
 CXX             =   c++
 CXXFLAGS        =   -Wall -Wextra -std=c++98 -MMD -MP -I$(INCLUDES)
 
+ifeq ($(shell uname -s),Darwin)
+	CXXFLAGS += -DMAC_BUILD
+endif
 
 SRC_DIR			=	srcs
 SRC				= 	$(shell find $(SRC_DIR) -type f -name '*.cpp')
