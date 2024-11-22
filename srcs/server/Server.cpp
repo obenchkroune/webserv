@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 15:46:03 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 16:22:21 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,6 +82,7 @@ bool Server::is_started()
 {
     return _is_started;
 }
+#include <cerrno>
 void Server::Start()
 {
     if (_is_started)
@@ -94,11 +95,19 @@ void Server::Start()
         throw ServerException("bind() failed.");
     if (listen(_listen_socket_fd, __INT32_MAX__) == -1)
         throw ServerException("listen() failed.");
-    _is_started    = true;
-    uint8_t* bytes = (uint8_t*)&_listen_addr.sin_addr.s_addr;
+    _is_started = true;
+    uint8_t* ip = (uint8_t*)&_listen_addr.sin_addr.s_addr;
     std::cout << "Server started on listening succefully.\n";
-    std::cout << "Address." << +bytes[3] << '.' << +bytes[2] << '.' << +bytes[1] << '.' << +bytes[0]
-              << ':' << _listen_addr.sin_port << '\n';
+    std::cout << "Address: " << +ip[3] << '.' << +ip[2] << '.' << +ip[1] << '.' << +ip[0] << ':'
+              << _listen_addr.sin_port << '\n';
+    sockaddr_in peer_address;
+    socklen_t   peer_address_len = sizeof(peer_address);
+    if (accept(_listen_socket_fd, (sockaddr*)&peer_address, &peer_address_len) == -1)
+        throw ServerException("accept() failed.");
+    uint8_t* peer_ip = (uint8_t*)&peer_address.sin_addr.s_addr;
+    std::cout << "Server accepted a peer succefully.\n";
+    std::cout << "Address: " << +peer_ip[3] << '.' << +peer_ip[2] << '.' << +peer_ip[1] << '.'
+              << +peer_ip[0] << ':' << peer_address.sin_port << '\n';
 }
 void Server::Terminate()
 {
