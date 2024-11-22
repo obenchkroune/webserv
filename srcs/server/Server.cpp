@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 22:20:38 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/23 00:46:25 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ Server& Server::operator=(const Server& server)
 {
     if (this == &server)
         return *this;
-    _clients          = server._clients;
+    _clients_fd       = server._clients_fd;
     _config           = server._config;
     _is_started       = server._is_started;
     _listen_addr      = server._listen_addr;
@@ -96,6 +96,9 @@ void Server::Start()
     _listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (_listen_socket_fd == -1)
         throw ServerException("socket(): failed.");
+    int active = 1;
+    if (setsockopt(_listen_socket_fd, SOL_SOCKET, SO_REUSEADDR, &active, sizeof(int)) == -1)
+        throw ServerException("setsockopt(): failed.");
     if (bind(_listen_socket_fd, (sockaddr*)&_listen_addr, sizeof(_listen_addr)) == -1)
         throw ServerException("bind(): failed.");
     if (listen(_listen_socket_fd, __INT32_MAX__) == -1)
@@ -121,25 +124,58 @@ void Server::Terminate()
 }
 void Server::ConsumeEvent(const epoll_event ev)
 {
-    std::cout << "Server consumed a new event.\n" << ev.data.fd << '\n';
+    std::cout << "[Server]: New event.\n";
     if (ev.data.fd == _listen_socket_fd)
     {
-        std::cout << "Event is for socket.\n";
+        std::cout << "Event is for listening socket.\n";
         sockaddr_in peer_address;
         socklen_t   peer_address_len = sizeof(peer_address);
         int peer_fd = accept(_listen_socket_fd, (sockaddr*)&peer_address, &peer_address_len);
         if (peer_fd == -1)
             throw ServerException("accept(): failed to accept new connection.");
-        /*
-            Logic to create new ServerClient
-            and assign that fd to it..
-        */
+        std::vector<int>::iterator it =
+            std::lower_bound(_clients_fd.begin(), _clients_fd.end(), peer_fd);
+        if (it == _clients_fd.end())
+        {
+            _clients_fd.push_back(peer_fd);
+            it = _clients_fd.end() - 1;
+        }
+        else
+            throw ServerException("fd already exists in clients.");
+        epoll_event p_ev;
+        p_ev.events   = EPOLLIN;
+        p_ev.data.ptr = this;
+        _IOmltplx->AddEvent(p_ev, peer_fd);
         uint8_t* peer_ip = (uint8_t*)&peer_address.sin_addr.s_addr;
-        std::cout << "Server accepted a new peer succefully.\n";
+        std::cout << "[Server] new peer accepted.\n";
         std::cout << "Address: " << +peer_ip[0] << '.' << +peer_ip[1] << '.' << +peer_ip[2] << '.'
                   << +peer_ip[3] << ':' << ntohs(peer_address.sin_port) << '\n';
         return;
     }
-    std::cerr << "Event fd uknown ignoring..\n" << ev.data.fd << '\n';
+    else
+    {
+        std::vector<int>::iterator it =
+            std::lower_bound(_clients_fd.begin(), _clients_fd.end(), ev.data.fd);
 
+        if (it == _clients_fd.end())
+            throw ServerException("Client not found.");
+        switch (ev.events)
+        {
+        case EPOLLIN: {
+            std::cout << "Event is EPOLLIN on fd: " << ev.data.fd << '\n';
+            char    buff[1024];
+            ssize_t bytes = recv(ev.data.fd, buff, 1023, 0);
+            if (bytes < 0)
+                throw ServerException("recv() failed.");
+            buff[bytes] = 0;
+            std::cout << "Content:\n[START OF CONTENT]\n" << buff << "[END OF CONTENT]\n";
+            return;
+        }
+
+        default:
+            throw ImpossibleToReach();
+            break;
+        }
+    }
+    std::cerr << "[Server]: Event fd uknown: " << ev.data.fd << " event ignored.\n";
 }
