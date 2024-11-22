@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 15:23:46 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/22 19:14:52 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 #endif
 #include "ConfigParser.h"
 #include "Exceptions.hpp"
+#include "IOEvent.hpp"
+#include "IOMultiplexer.hpp"
 #include "ServerClient.hpp"
 #include "Utils.hpp"
 #include <cstdlib>
@@ -26,7 +28,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-class Server
+class Server : public AIOEvent
 {
 private:
     std::vector<ServerClient> _clients;
@@ -34,9 +36,11 @@ private:
     bool                      _is_started;
     sockaddr_in               _listen_addr;
     int                       _listen_socket_fd;
+    epoll_event               _listen_socket_ev;
+    IOMultiplexer*            _IOmltplx;
 
 public:
-    Server(const ServerConfig& config, bool start = false);
+    Server(const ServerConfig& config, IOMultiplexer* IOmltplx, bool start = false);
     Server(const Server& server);
     Server& operator=(const Server& server);
     ~Server();
@@ -45,4 +49,7 @@ public:
     void Start();
     void Terminate();
     bool is_started();
+
+public:
+    virtual void ConsumeEvent(const epoll_event ev);
 };

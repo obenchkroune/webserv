@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Exceptions.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 20:42:12 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/22 11:43:29 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/22 18:16:58 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,4 +37,15 @@ public:
     ServerException(std::string reason) throw();
     const char* what() const throw();
     ~ServerException() throw();
+};
+
+class IOMultiplexerException : public std::exception
+{
+private:
+    std::string _reason;
+
+public:
+    IOMultiplexerException(std::string reason) throw();
+    const char* what() const throw();
+    ~IOMultiplexerException() throw();
 };
