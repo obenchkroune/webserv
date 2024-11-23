@@ -14,10 +14,10 @@ enum TokenType
 
 struct Token
 {
-    Token(TokenType t) : type(t){};
-    Token(TokenType t, const std::string& v) : type(t), value(v){};
-    Token(TokenType t, char c) : type(t), value(1, c){};
-    ~Token(){};
+    Token(TokenType t) : type(t) {};
+    Token(TokenType t, const std::string& v) : type(t), value(v) {};
+    Token(TokenType t, char c) : type(t), value(1, c) {};
+    ~Token() {};
 
     bool operator==(const Token& t)
     {
@@ -42,10 +42,7 @@ public:
     class UnexpectedTokenException : public std::exception
     {
     public:
-        const char* what() const throw()
-        {
-            return "unexpected token";
-        }
+        const char* what() const throw();
     };
 
 private:

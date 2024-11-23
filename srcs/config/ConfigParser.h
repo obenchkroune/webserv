@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ConfigLexer.h"
-#include <map>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -11,17 +11,38 @@ struct Directive
     std::vector<std::string> values;
 };
 
-//  TODO: ??????
-// struct RouteConfig
-// {
-// 	std::string			   url;
-// 	std::vector<Directive> directives;
-// };
+struct ServerConfig;
+
+struct LocationConfig
+{
+    LocationConfig(const ServerConfig& server);
+
+    std::string              path;
+    std::string              root;
+    std::vector<std::string> index;
+    std::size_t              max_body_size;
+    std::vector<std::string> allow_methods;
+    bool                     autoindex;
+    bool                     redirect;
+    uint16_t                 redirect_code;
+    std::string              redirect_path;
+    bool                     upload;
+    std::string              upload_path;
+};
 
 struct ServerConfig
 {
-    std::vector<Directive>                         directives;
-    std::map<std::string, std::vector<Directive> > routes;
+    ServerConfig();
+
+    std::string                 host;
+    uint16_t                    port;
+    std::vector<std::string>    server_names;
+    std::string                 root;
+    std::vector<std::string>    index;
+    std::size_t                 max_body_size;
+    std::vector<std::string>    allow_methods;
+    bool                        autoindex;
+    std::vector<LocationConfig> locations;
 };
 
 class ConfigParser
@@ -37,7 +58,9 @@ public:
 private:
     ConfigLexer _lexer;
 
-    ServerConfig                                    parseServerBlock();
-    std::pair<std::string, std::vector<Directive> > parseRouteBlock();
-    Directive                                       parseDirective();
+    ServerConfig   parseServerBlock();
+    LocationConfig parseLocationBlock(const ServerConfig& server);
+    Directive      parseDirective();
+    void           parseServerDirective(ServerConfig& server);
+    void           parseLocationDirective(LocationConfig& location);
 };

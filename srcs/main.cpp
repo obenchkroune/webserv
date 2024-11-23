@@ -4,50 +4,92 @@
 // TODO: remove this function
 void printServerConfig(const ServerConfig& config)
 {
-    std::cout << "Server Configuration:" << std::endl;
+    std::cout << "\n=== Server Configuration ===" << std::endl;
+    std::cout << "Host: " << config.host << std::endl;
+    std::cout << "Port: " << config.port << std::endl;
 
-    // Print main server directives
-    std::cout << "Global directives:" << std::endl;
-    std::vector<Directive>::const_iterator dir_it;
-    for (dir_it = config.directives.begin(); dir_it != config.directives.end(); ++dir_it)
+    std::cout << "Server Names: ";
+    for (std::vector<std::string>::const_iterator it = config.server_names.begin();
+         it != config.server_names.end(); ++it)
     {
-        std::cout << "  " << dir_it->name << ": ";
-        std::vector<std::string>::const_iterator val_it;
-        for (val_it = dir_it->values.begin(); val_it != dir_it->values.end(); ++val_it)
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Root: " << config.root << std::endl;
+    std::cout << "Index: ";
+    for (std::vector<std::string>::const_iterator it = config.index.begin();
+         it != config.index.end(); ++it)
+    {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Max Body Size: " << config.max_body_size << std::endl;
+
+    std::cout << "Allowed Methods: ";
+    for (std::vector<std::string>::const_iterator it = config.allow_methods.begin();
+         it != config.allow_methods.end(); ++it)
+    {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Autoindex: " << (config.autoindex ? "on" : "off") << std::endl;
+
+    std::cout << "\nLocations:" << std::endl;
+    for (std::vector<LocationConfig>::const_iterator loc = config.locations.begin();
+         loc != config.locations.end(); ++loc)
+    {
+        std::cout << "\n  Location " << loc->path << ":" << std::endl;
+        std::cout << "    Root: " << loc->root << std::endl;
+        std::cout << "    Index: ";
+        for (std::vector<std::string>::const_iterator it = loc->index.begin();
+             it != loc->index.end(); ++it)
         {
-            std::cout << *val_it << " ";
+            std::cout << *it << " ";
         }
         std::cout << std::endl;
-    }
+        std::cout << "    Max Body Size: " << loc->max_body_size << std::endl;
 
-    // Print routes and their directives
-    std::cout << "\nRoutes:" << std::endl;
-    std::map<std::string, std::vector<Directive> >::const_iterator route_it;
-    for (route_it = config.routes.begin(); route_it != config.routes.end(); ++route_it)
-    {
-        std::cout << "Location " << route_it->first << " {" << std::endl;
-        std::vector<Directive>::const_iterator route_dir_it;
-        for (route_dir_it = route_it->second.begin(); route_dir_it != route_it->second.end();
-             ++route_dir_it)
+        std::cout << "    Allowed Methods: ";
+        for (std::vector<std::string>::const_iterator it = loc->allow_methods.begin();
+             it != loc->allow_methods.end(); ++it)
         {
-            std::cout << "    " << route_dir_it->name << ": ";
-            std::vector<std::string>::const_iterator val_it;
-            for (val_it = route_dir_it->values.begin(); val_it != route_dir_it->values.end();
-                 ++val_it)
-            {
-                std::cout << *val_it << " ";
-            }
-            std::cout << std::endl;
+            std::cout << *it << " ";
         }
-        std::cout << "}" << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "    Autoindex: " << (loc->autoindex ? "on" : "off") << std::endl;
+
+        if (loc->redirect)
+        {
+            std::cout << "    Redirect: " << loc->redirect_code << " -> " << loc->redirect_path
+                      << std::endl;
+        }
+
+        if (loc->upload)
+        {
+            std::cout << "    Upload Path: " << loc->upload_path << std::endl;
+        }
     }
+    std::cout << "==========================\n" << std::endl;
 }
 
-int main(void)
+int main(int ac, char** av)
 {
+    if (ac > 2)
+    {
+        std::cout << "Usage: " << av[0] << " [config_file]" << std::endl;
+        return 1;
+    }
+
+    std::string config_path = "example.conf";
+    if (ac == 2)
+        config_path = av[1];
+
     try
     {
-        ConfigParser                              parser("example.conf");
+        ConfigParser                              parser(config_path);
         std::vector<ServerConfig>                 servers = parser.parse();
         std::vector<ServerConfig>::const_iterator it      = servers.begin();
         for (; it != servers.end(); it++)

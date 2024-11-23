@@ -64,25 +64,17 @@ const Token ConfigLexer::expect(Token token)
 {
     if (token == *_current)
         return this->getNext();
-    throw UnexpectedTokenException(_current);
+    throw UnexpectedTokenException();
 }
 
 const Token ConfigLexer::expect(TokenType type)
 {
     if (type == _current->type)
         return this->getNext();
-    throw UnexpectedTokenException(_current);
-}
-
-ConfigLexer::UnexpectedTokenException::UnexpectedTokenException(
-    const std::vector<Token>::const_iterator token)
-{
-    _message = "Unexpected token: " + token->value + " after: " + (token - 1)->value;
+    throw UnexpectedTokenException();
 }
 
 const char* ConfigLexer::UnexpectedTokenException::what() const throw()
 {
-    return _message.c_str();
+    return "Unexpected token.";
 }
-
-ConfigLexer::UnexpectedTokenException::~UnexpectedTokenException() throw() {}
