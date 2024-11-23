@@ -32,7 +32,8 @@ ServerConfig::ServerConfig()
     index.push_back("index.html");
 }
 
-ConfigParser::ConfigParser(const std::string& file) : _lexer(file)
+ConfigParser::ConfigParser(const std::string& file)
+  : _lexer(file)
 {
     //
 }
@@ -42,7 +43,8 @@ ConfigParser::~ConfigParser()
     //
 }
 
-std::vector<ServerConfig> ConfigParser::parse()
+std::vector<ServerConfig>
+ConfigParser::parse()
 {
     std::vector<ServerConfig> result;
 
@@ -55,7 +57,8 @@ std::vector<ServerConfig> ConfigParser::parse()
     return result;
 }
 
-Directive ConfigParser::parseDirective()
+Directive
+ConfigParser::parseDirective()
 {
     Directive directive;
     directive.name = _lexer.expect(T_WORD).value;
@@ -69,14 +72,15 @@ Directive ConfigParser::parseDirective()
     return directive;
 }
 
-void ConfigParser::parseServerDirective(ServerConfig& server)
+void
+ConfigParser::parseServerDirective(ServerConfig& server)
 {
     Directive directive = parseDirective();
 
     if (directive.name == "listen")
     {
         std::pair<std::string, uint16_t> listen =
-            Validate::listenDirective(directive);
+          Validate::listenDirective(directive);
 
         server.host = listen.first;
         server.port = listen.second;
@@ -100,7 +104,8 @@ void ConfigParser::parseServerDirective(ServerConfig& server)
         throw std::runtime_error("unknown directive: " + directive.name);
 }
 
-ServerConfig ConfigParser::parseServerBlock()
+ServerConfig
+ConfigParser::parseServerBlock()
 {
     _lexer.expect(Token(T_WORD, "server"));
     _lexer.expect(T_BLOCK_START);
@@ -121,7 +126,8 @@ ServerConfig ConfigParser::parseServerBlock()
     return server;
 }
 
-void ConfigParser::parseLocationDirective(LocationConfig& location)
+void
+ConfigParser::parseLocationDirective(LocationConfig& location)
 {
     Directive directive = parseDirective();
 
@@ -142,7 +148,7 @@ void ConfigParser::parseLocationDirective(LocationConfig& location)
     else if (directive.name == "return")
     {
         std::pair<std::string, uint16_t> redirect =
-            Validate::redirectDirective(directive);
+          Validate::redirectDirective(directive);
         location.redirect      = true;
         location.redirect_path = redirect.first;
         location.redirect_code = redirect.second;
@@ -156,7 +162,8 @@ void ConfigParser::parseLocationDirective(LocationConfig& location)
         throw std::runtime_error("unknown directive: " + directive.name);
 }
 
-LocationConfig ConfigParser::parseLocationBlock(const ServerConfig& server)
+LocationConfig
+ConfigParser::parseLocationBlock(const ServerConfig& server)
 {
     _lexer.expect(Token(T_WORD, "location"));
 

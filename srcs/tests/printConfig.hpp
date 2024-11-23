@@ -2,4 +2,5 @@
 
 #include "srcs/config/ConfigParser.hpp"
 
-void printServerConfig(const ServerConfig& config);
+void
+printServerConfig(const ServerConfig& config);

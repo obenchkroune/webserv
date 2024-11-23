@@ -14,9 +14,14 @@ enum TokenType
 
 struct Token
 {
-    Token(TokenType t) : type(t) {};
-    Token(TokenType t, const std::string& v) : type(t), value(v) {};
-    Token(TokenType t, char c) : type(t), value(1, c) {};
+    Token(TokenType t)
+      : type(t) {};
+    Token(TokenType t, const std::string& v)
+      : type(t)
+      , value(v) {};
+    Token(TokenType t, char c)
+      : type(t)
+      , value(1, c) {};
     ~Token() {};
 
     bool operator==(const Token& t)

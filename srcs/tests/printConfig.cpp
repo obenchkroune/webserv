@@ -1,7 +1,8 @@
 #include "printConfig.hpp"
 #include <iostream>
 
-void printServerConfig(const ServerConfig& config)
+void
+printServerConfig(const ServerConfig& config)
 {
     std::cout << "\n=== Server Configuration ===" << std::endl;
     std::cout << "Host: " << config.host << std::endl;
@@ -9,8 +10,9 @@ void printServerConfig(const ServerConfig& config)
 
     std::cout << "Server Names: ";
     for (std::vector<std::string>::const_iterator it =
-             config.server_names.begin();
-         it != config.server_names.end(); ++it)
+           config.server_names.begin();
+         it != config.server_names.end();
+         ++it)
     {
         std::cout << *it << " ";
     }
@@ -19,7 +21,8 @@ void printServerConfig(const ServerConfig& config)
     std::cout << "Root: " << config.root << std::endl;
     std::cout << "Index: ";
     for (std::vector<std::string>::const_iterator it = config.index.begin();
-         it != config.index.end(); ++it)
+         it != config.index.end();
+         ++it)
     {
         std::cout << *it << " ";
     }
@@ -28,8 +31,9 @@ void printServerConfig(const ServerConfig& config)
 
     std::cout << "Allowed Methods: ";
     for (std::vector<HttpMethod>::const_iterator it =
-             config.allow_methods.begin();
-         it != config.allow_methods.end(); ++it)
+           config.allow_methods.begin();
+         it != config.allow_methods.end();
+         ++it)
     {
         switch (*it)
         {
@@ -60,14 +64,16 @@ void printServerConfig(const ServerConfig& config)
 
     std::cout << "\nLocations:" << std::endl;
     for (std::vector<LocationConfig>::const_iterator loc =
-             config.locations.begin();
-         loc != config.locations.end(); ++loc)
+           config.locations.begin();
+         loc != config.locations.end();
+         ++loc)
     {
         std::cout << "\n  Location " << loc->path << ":" << std::endl;
         std::cout << "    Root: " << loc->root << std::endl;
         std::cout << "    Index: ";
         for (std::vector<std::string>::const_iterator it = loc->index.begin();
-             it != loc->index.end(); ++it)
+             it != loc->index.end();
+             ++it)
         {
             std::cout << *it << " ";
         }
@@ -76,8 +82,9 @@ void printServerConfig(const ServerConfig& config)
 
         std::cout << "    Allowed Methods: ";
         for (std::vector<HttpMethod>::const_iterator it =
-                 loc->allow_methods.begin();
-             it != loc->allow_methods.end(); ++it)
+               loc->allow_methods.begin();
+             it != loc->allow_methods.end();
+             ++it)
         {
             switch (*it)
             {

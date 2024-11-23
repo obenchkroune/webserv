@@ -1,8 +1,9 @@
-#include "./config/ConfigParser.hpp"
+#include "Config.hpp"
 #include "tests/printConfig.hpp"
 #include <iostream>
 
-int main(int ac, char** av)
+int
+main(int ac, char** av)
 {
     if (ac > 2)
     {
@@ -16,12 +17,14 @@ int main(int ac, char** av)
 
     try
     {
-        ConfigParser                              parser(config_path);
-        std::vector<ServerConfig>                 servers = parser.parse();
-        std::vector<ServerConfig>::const_iterator it      = servers.begin();
-        for (; it != servers.end(); it++)
+        Config::getInstance().loadConfig(config_path);
+
+        const std::vector<ServerConfig>& servers =
+          Config::getInstance().getServers();
+
+        for (std::size_t i = 0; i < servers.size(); i++)
         {
-            printServerConfig(*it);
+            printServerConfig(servers[i]);
         }
     }
     catch (const std::exception& e)

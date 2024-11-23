@@ -1,7 +1,7 @@
 NAME            =   webserv
 
 CXX             =   c++
-CXXFLAGS        =   -Wall -Wextra -std=c++98 -pedantic-errors -MMD -MP -I.
+CXXFLAGS        =   -Wall -Wextra -std=c++98 -pedantic-errors -MMD -MP -I. -Iincludes
 
 BUILD_DIR       =   __build__
 SRC_DIR         =   srcs
