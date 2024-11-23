@@ -5,6 +5,16 @@
 #include <string>
 #include <vector>
 
+enum HttpMethod
+{
+    HTTP_GET,
+    HTTP_HEAD,
+    HTTP_POST,
+    HTTP_PUT,
+    HTTP_DELETE,
+    HTTP_PATCH
+};
+
 struct Directive
 {
     std::string              name;
@@ -21,7 +31,7 @@ struct LocationConfig
     std::string              root;
     std::vector<std::string> index;
     std::size_t              max_body_size;
-    std::vector<std::string> allow_methods;
+    std::vector<HttpMethod>  allow_methods;
     bool                     autoindex;
     bool                     redirect;
     uint16_t                 redirect_code;
@@ -40,7 +50,7 @@ struct ServerConfig
     std::string                 root;
     std::vector<std::string>    index;
     std::size_t                 max_body_size;
-    std::vector<std::string>    allow_methods;
+    std::vector<HttpMethod>     allow_methods;
     bool                        autoindex;
     std::vector<LocationConfig> locations;
 };

@@ -9,7 +9,8 @@ void printServerConfig(const ServerConfig& config)
     std::cout << "Port: " << config.port << std::endl;
 
     std::cout << "Server Names: ";
-    for (std::vector<std::string>::const_iterator it = config.server_names.begin();
+    for (std::vector<std::string>::const_iterator it =
+             config.server_names.begin();
          it != config.server_names.end(); ++it)
     {
         std::cout << *it << " ";
@@ -27,17 +28,40 @@ void printServerConfig(const ServerConfig& config)
     std::cout << "Max Body Size: " << config.max_body_size << std::endl;
 
     std::cout << "Allowed Methods: ";
-    for (std::vector<std::string>::const_iterator it = config.allow_methods.begin();
+    for (std::vector<HttpMethod>::const_iterator it =
+             config.allow_methods.begin();
          it != config.allow_methods.end(); ++it)
     {
-        std::cout << *it << " ";
+        switch (*it)
+        {
+        case HTTP_GET:
+            std::cout << "GET ";
+            break;
+        case HTTP_HEAD:
+            std::cout << "HEAD ";
+            break;
+        case HTTP_POST:
+            std::cout << "POST ";
+            break;
+        case HTTP_PUT:
+            std::cout << "PUT ";
+            break;
+        case HTTP_DELETE:
+            std::cout << "DELETE ";
+            break;
+        case HTTP_PATCH:
+            std::cout << "PATCH ";
+            break;
+        }
     }
     std::cout << std::endl;
 
-    std::cout << "Autoindex: " << (config.autoindex ? "on" : "off") << std::endl;
+    std::cout << "Autoindex: " << (config.autoindex ? "on" : "off")
+              << std::endl;
 
     std::cout << "\nLocations:" << std::endl;
-    for (std::vector<LocationConfig>::const_iterator loc = config.locations.begin();
+    for (std::vector<LocationConfig>::const_iterator loc =
+             config.locations.begin();
          loc != config.locations.end(); ++loc)
     {
         std::cout << "\n  Location " << loc->path << ":" << std::endl;
@@ -52,19 +76,41 @@ void printServerConfig(const ServerConfig& config)
         std::cout << "    Max Body Size: " << loc->max_body_size << std::endl;
 
         std::cout << "    Allowed Methods: ";
-        for (std::vector<std::string>::const_iterator it = loc->allow_methods.begin();
+        for (std::vector<HttpMethod>::const_iterator it =
+                 loc->allow_methods.begin();
              it != loc->allow_methods.end(); ++it)
         {
-            std::cout << *it << " ";
+            switch (*it)
+            {
+            case HTTP_GET:
+                std::cout << "GET ";
+                break;
+            case HTTP_HEAD:
+                std::cout << "HEAD ";
+                break;
+            case HTTP_POST:
+                std::cout << "POST ";
+                break;
+            case HTTP_PUT:
+                std::cout << "PUT ";
+                break;
+            case HTTP_DELETE:
+                std::cout << "DELETE ";
+                break;
+            case HTTP_PATCH:
+                std::cout << "PATCH ";
+                break;
+            }
         }
         std::cout << std::endl;
 
-        std::cout << "    Autoindex: " << (loc->autoindex ? "on" : "off") << std::endl;
+        std::cout << "    Autoindex: " << (loc->autoindex ? "on" : "off")
+                  << std::endl;
 
         if (loc->redirect)
         {
-            std::cout << "    Redirect: " << loc->redirect_code << " -> " << loc->redirect_path
-                      << std::endl;
+            std::cout << "    Redirect: " << loc->redirect_code << " -> "
+                      << loc->redirect_path << std::endl;
         }
 
         if (loc->upload)

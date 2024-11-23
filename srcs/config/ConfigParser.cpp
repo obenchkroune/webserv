@@ -27,8 +27,8 @@ ServerConfig::ServerConfig()
     root          = "/var/www/html";
     max_body_size = 1024 * 10;
     autoindex     = false;
-    allow_methods.push_back("GET");
-    allow_methods.push_back("POST");
+    allow_methods.push_back(HTTP_GET);
+    allow_methods.push_back(HTTP_POST);
     index.push_back("index.html");
 }
 
@@ -93,7 +93,7 @@ void ConfigParser::parseServerDirective(ServerConfig& server)
     else if (directive.name == "client_max_body_size")
         server.max_body_size = Validate::maxSizeDirective(directive);
     else if (directive.name == "allow_methods")
-        server.allow_methods.swap(directive.values);
+        server.allow_methods = Validate::allowMethodsDirective(directive);
     else if (directive.name == "autoindex")
         server.autoindex = Validate::autoindexDirective(directive);
     else
@@ -136,7 +136,7 @@ void ConfigParser::parseLocationDirective(LocationConfig& location)
     else if (directive.name == "client_max_body_size")
         location.max_body_size = Validate::maxSizeDirective(directive);
     else if (directive.name == "allow_methods")
-        location.allow_methods.swap(directive.values);
+        location.allow_methods = Validate::allowMethodsDirective(directive);
     else if (directive.name == "autoindex")
         location.autoindex = Validate::autoindexDirective(directive);
     else if (directive.name == "return")
