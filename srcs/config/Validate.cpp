@@ -7,13 +7,31 @@
 namespace Validate
 {
 
-uint16_t maxSizeDirective(const Directive& directive)
+std::size_t maxSizeDirective(const Directive& directive)
 {
-    uint16_t res;
+    std::size_t        res;
+    char               size_multiplier = 'B';
+    std::istringstream iss(directive.values[0]);
 
-    if (directive.values.size() != 1 ||
-        !(std::istringstream(directive.values[0]) >> res))
+    if (directive.values.size() != 1 || !(iss >> res))
         throw std::runtime_error("invalid client_max_body_size directive");
+    size_multiplier = iss.get();
+    switch (size_multiplier)
+    {
+    case 'B':
+        break;
+    case 'K':
+        res *= 1024;
+        break;
+    case 'M':
+        res *= 1024 * 1024;
+        break;
+    case 'G':
+        res *= 1024 * 1024 * 1024;
+        break;
+    default:
+        throw std::runtime_error("invalid client_max_body_size directive");
+    }
     return res;
 }
 

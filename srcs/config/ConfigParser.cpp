@@ -81,9 +81,8 @@ void ConfigParser::parseServerDirective(ServerConfig& server)
         server.host = listen.first;
         server.port = listen.second;
     }
-    else if (directive.name == "error_page")
+    else if (directive.name == "error_page") // TODO: handle error page
     {
-        // TODO: handle error page
     }
     else if (directive.name == "server_name")
         server.server_names.swap(directive.values);
