@@ -1,4 +1,4 @@
-#include "ConfigLexer.h"
+#include "ConfigLexer.hpp"
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -48,41 +48,38 @@ ConfigLexer::~ConfigLexer()
     //
 }
 
-const Token ConfigLexer::peek() const
+const Token
+ConfigLexer::peek() const
 {
     return *_current;
 }
 
-const Token ConfigLexer::getNext()
+const Token
+ConfigLexer::getNext()
 {
     if (_current->type != T_EOF && _current != _tokens.end())
         return *_current++;
     return *_current;
 }
 
-const Token ConfigLexer::expect(Token token)
+const Token
+ConfigLexer::expect(Token token)
 {
     if (token == *_current)
         return this->getNext();
-    throw UnexpectedTokenException(_current);
+    throw UnexpectedTokenException();
 }
 
-const Token ConfigLexer::expect(TokenType type)
+const Token
+ConfigLexer::expect(TokenType type)
 {
     if (type == _current->type)
         return this->getNext();
-    throw UnexpectedTokenException(_current);
+    throw UnexpectedTokenException();
 }
 
-ConfigLexer::UnexpectedTokenException::UnexpectedTokenException(
-    const std::vector<Token>::const_iterator token)
+const char*
+ConfigLexer::UnexpectedTokenException::what() const throw()
 {
-    _message = "Unexpected token: " + token->value + " after: " + (token - 1)->value;
+    return "Unexpected token.";
 }
-
-const char* ConfigLexer::UnexpectedTokenException::what() const throw()
-{
-    return _message.c_str();
-}
-
-ConfigLexer::UnexpectedTokenException::~UnexpectedTokenException() throw() {}

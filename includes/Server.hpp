@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 23:56:50 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/23 23:17:41 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 #else
 #include <cstring>
 #endif
-#include "ConfigParser.h"
+#include "ConfigParser.hpp"
 #include "Exceptions.hpp"
 #include "IOEventListener.hpp"
 #include "IOMultiplexer.hpp"

@@ -14,10 +14,15 @@ enum TokenType
 
 struct Token
 {
-    Token(TokenType t) : type(t){};
-    Token(TokenType t, const std::string& v) : type(t), value(v){};
-    Token(TokenType t, char c) : type(t), value(1, c){};
-    ~Token(){};
+    Token(TokenType t)
+      : type(t) {};
+    Token(TokenType t, const std::string& v)
+      : type(t)
+      , value(v) {};
+    Token(TokenType t, char c)
+      : type(t)
+      , value(1, c) {};
+    ~Token() {};
 
     bool operator==(const Token& t)
     {
@@ -41,14 +46,8 @@ public:
 
     class UnexpectedTokenException : public std::exception
     {
-        private:
-            std::string _message;
-        public:
-            UnexpectedTokenException(const std::vector<Token>::const_iterator token);
-
-        public:
-            const char* what() const throw();
-            ~UnexpectedTokenException() throw();
+    public:
+        const char* what() const throw();
     };
 
 private:
