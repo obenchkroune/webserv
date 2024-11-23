@@ -1,4 +1,4 @@
-#include "ConfigLexer.h"
+#include "ConfigLexer.hpp"
 #include <fstream>
 #include <iostream>
 #include <limits>

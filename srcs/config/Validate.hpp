@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./ConfigParser.h"
+#include "./ConfigParser.hpp"
 #include <stdint.h>
 
 namespace Validate

@@ -1,5 +1,5 @@
-#include "./Validate.h"
-#include "Utils.h"
+#include "./Validate.hpp"
+#include "Utils.hpp"
 #include <sstream>
 #include <stdexcept>
 #include <sys/stat.h>

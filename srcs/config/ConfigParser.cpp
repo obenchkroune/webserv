@@ -1,5 +1,5 @@
-#include "ConfigParser.h"
-#include "./Validate.h"
+#include "ConfigParser.hpp"
+#include "./Validate.hpp"
 #include <cstdlib>
 #include <stdexcept>
 

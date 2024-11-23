@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ConfigLexer.h"
+#include "ConfigLexer.hpp"
 #include <stdint.h>
 #include <string>
 #include <vector>
