@@ -5,7 +5,7 @@ INCLUDES		= 	includes
 
 
 CXX             =   c++
-CXXFLAGS        =   -Wall -Wextra -std=c++98 -MMD -MP -I$(INCLUDES)
+CXXFLAGS        =   -Wall -Wextra -std=c++98 -MMD -MP -I$(INCLUDES) -g3
 
 ifeq ($(shell uname -s),Darwin)
 	CXXFLAGS += -DMAC_BUILD

@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/24 02:05:00 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/24 11:29:34 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-sockaddr_in Server::get_listen_addr(ServerConfig& _config)
+sockaddr_in
+Server::get_listen_addr(ServerConfig& _config)
 {
     sockaddr_in  address;
     std::string& ip = _config.host;
@@ -40,22 +41,27 @@ sockaddr_in Server::get_listen_addr(ServerConfig& _config)
     return address;
 }
 
-Server::Server(const ServerConfig& config, IOMultiplexer* IOmltplx, bool start /*= false*/)
-    : _config(config), _is_started(false), _IOmltplx(IOmltplx)
+Server::Server(const ServerConfig& config,
+               IOMultiplexer*      IOmltplx,
+               bool                start /*= false*/)
+  : _config(config)
+  , _is_started(false)
+  , _IOmltplx(IOmltplx)
 {
     if (_IOmltplx == NULL)
         throw ServerException("I/O Multiplexer object is set to NULL\n", *this);
-    _listen_addr               = Server::get_listen_addr(_config);
-    _listen_socket_ev.events   = EPOLLIN;
-    _listen_socket_ev.data.ptr = this;
+    _listen_addr             = get_listen_addr(_config);
+    _listen_socket_ev.events = EPOLLIN;
     if (start)
         Start();
 }
-Server::Server(const Server& server) : AIOEventListener(server)
+Server::Server(const Server& server)
+  : AIOEventListener(server)
 {
     *this = server;
 }
-Server& Server::operator=(const Server& server)
+Server&
+Server::operator=(const Server& server)
 {
     if (this == &server)
         return *this;
@@ -72,15 +78,18 @@ Server::~Server()
 {
     Terminate();
 }
-bool Server::is_started() const
+bool
+Server::is_started() const
 {
     return _is_started;
 }
-const ServerConfig& Server::GetConfig() const
+const ServerConfig&
+Server::GetConfig() const
 {
     return _config;
 }
-void Server::Start()
+void
+Server::Start()
 {
     if (_is_started)
         throw ServerException("Server is already started.", *this);
@@ -89,19 +98,25 @@ void Server::Start()
     if (_listen_socket_fd == -1)
         throw ServerException("socket(): failed.", *this);
     int active = 1;
-    if (setsockopt(_listen_socket_fd, SOL_SOCKET, SO_REUSEADDR, &active, sizeof(int)) == -1)
+    if (setsockopt(
+          _listen_socket_fd, SOL_SOCKET, SO_REUSEADDR, &active, sizeof(int)) ==
+        -1)
         Terminate(), throw ServerException("setsockopt(): failed.", *this);
-    if (bind(_listen_socket_fd, (sockaddr*)&_listen_addr, sizeof(_listen_addr)) == -1)
+    if (bind(_listen_socket_fd,
+             (sockaddr*)&_listen_addr,
+             sizeof(_listen_addr)) == -1)
         Terminate(), throw ServerException("bind(): failed.", *this);
     if (listen(_listen_socket_fd, __INT32_MAX__) == -1)
         Terminate(), throw ServerException("listen(): failed.", *this);
+    _listen_socket_ev.data.ptr = this;
     _IOmltplx->AddEvent(_listen_socket_ev, _listen_socket_fd);
     uint8_t* ip = (uint8_t*)&_listen_addr.sin_addr.s_addr;
     std::cout << "Server started on listening succefully.\n";
-    std::cout << "Address: " << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.' << +ip[3] << ':'
-              << ntohs(_listen_addr.sin_port) << '\n';
+    std::cout << "Address: " << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.'
+              << +ip[3] << ':' << ntohs(_listen_addr.sin_port) << '\n';
 }
-void Server::Terminate()
+void
+Server::Terminate()
 {
     if (_is_started == false)
         return;
@@ -111,24 +126,26 @@ void Server::Terminate()
         close(_listen_socket_fd);
     std::cout << "Server terminated.\n";
 }
-void Server::ConsumeEvent(const epoll_event ev)
+void
+Server::ConsumeEvent(const epoll_event ev)
 {
-    std::cout << "[Server]: New event.\n";
+    std::cout << "[Server: " << _config.host << ':' << _config.port
+              << "]: New event." << std::endl;
     if (ev.data.fd == _listen_socket_fd)
     {
-        std::cout << "Event is for listening socket.\n";
+        std::cout << "Listening socket event." << std::endl;
         sockaddr_in peer_address;
         socklen_t   peer_address_len = sizeof(peer_address);
-        int peer_fd = accept(_listen_socket_fd, (sockaddr*)&peer_address, &peer_address_len);
+        int         peer_fd          = accept(_listen_socket_fd,
+                             (sockaddr*)&peer_address,
+                             &peer_address_len);
         if (peer_fd == -1)
-            throw ServerException("accept(): failed to accept new connection.", *this);
+            throw ServerException("accept(): failed to accept new connection.",
+                                  *this);
         std::vector<int>::iterator it =
-            std::lower_bound(_clients_fd.begin(), _clients_fd.end(), peer_fd);
+          std::find(_clients_fd.begin(), _clients_fd.end(), peer_fd);
         if (it == _clients_fd.end())
-        {
             _clients_fd.push_back(peer_fd);
-            it = _clients_fd.end() - 1;
-        }
         else
             throw ServerException("fd already exists in clients.", *this);
         epoll_event p_ev;
@@ -136,29 +153,38 @@ void Server::ConsumeEvent(const epoll_event ev)
         p_ev.data.ptr = this;
         _IOmltplx->AddEvent(p_ev, peer_fd);
         uint8_t* peer_ip = (uint8_t*)&peer_address.sin_addr.s_addr;
-        std::cout << "[Server] new peer accepted.\n";
-        std::cout << "Address: " << +peer_ip[0] << '.' << +peer_ip[1] << '.' << +peer_ip[2] << '.'
-                  << +peer_ip[3] << ':' << ntohs(peer_address.sin_port) << '\n';
+        std::cout << "new peer accepted on fd " << peer_fd << ".\n";
+        std::cout << "Address: " << +peer_ip[0] << '.' << +peer_ip[1] << '.'
+                  << +peer_ip[2] << '.' << +peer_ip[3] << ':'
+                  << ntohs(peer_address.sin_port) << std::endl;
         return;
     }
     else
     {
         std::vector<int>::iterator it =
-            std::lower_bound(_clients_fd.begin(), _clients_fd.end(), ev.data.fd);
-
+          std::find(_clients_fd.begin(), _clients_fd.end(), ev.data.fd);
+        std::cout << "Peer event on fd " << ev.data.fd << std::endl;
         if (it == _clients_fd.end())
             throw ServerException("Client not found.", *this);
         switch (ev.events)
         {
         case EPOLLIN: {
-            std::cout << "Event is EPOLLIN on fd: " << ev.data.fd << '\n';
+            std::cout << "Event type is EPOLLIN.\n";
             char    buff[1024];
             ssize_t bytes = recv(ev.data.fd, buff, 1023, 0);
             if (bytes < 0)
                 throw ServerException("recv() failed.", *this);
+            if (bytes == 0)
+                RemoveClient(ev);
             buff[bytes] = 0;
-            std::cout << "Content:\n[START OF CONTENT]\n" << buff << "[END OF CONTENT]\n";
+            std::cout << "Content:\n[START OF CONTENT]\n"
+                      << buff << "[END OF CONTENT]\n";
             return;
+        }
+
+        case EPOLLOUT: {
+            throw NotImplemented();
+            break;
         }
 
         default:
@@ -166,5 +192,17 @@ void Server::ConsumeEvent(const epoll_event ev)
             break;
         }
     }
-    std::cerr << "[Server]: Event fd uknown: " << ev.data.fd << " event ignored.\n";
+    std::cerr << "[Server: " << _config.host << ':' << _config.port
+              << "]: Warning: event has an uknown fd: " << ev.data.fd << " event is ignored."
+              << std::endl;
+}
+void
+Server::RemoveClient(epoll_event ev)
+{
+    _clients_fd.erase(
+      std::find(_clients_fd.begin(), _clients_fd.end(), ev.data.fd));
+    _IOmltplx->RemoveEvent(ev, ev.data.fd);
+    if (ev.data.fd >= 0)
+        close(ev.data.fd);
+    std::cout << "Client fd: " << ev.data.fd << " disconnected." << std::endl;
 }
