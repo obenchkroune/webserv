@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/23 23:17:41 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/24 02:05:26 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,8 +49,12 @@ public:
 public:
     void Start();
     void Terminate();
-    bool is_started();
+    bool is_started() const;
+    const ServerConfig& GetConfig() const;
 
 public:
     virtual void ConsumeEvent(const epoll_event ev);
+
+private:
+    sockaddr_in get_listen_addr(ServerConfig& _config);
 };

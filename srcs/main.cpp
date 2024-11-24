@@ -4,14 +4,14 @@
 int main(int c, char** v, char** envp)
 {
     (void)envp;
+    if (c != 2)
+    {
+        std::cerr << "Error: No configuration file provided.\n";
+        std::cerr << "Usage: " << v[0] << " [path to config file]\n";
+        return 1;
+    }
     try
     {
-        if (c != 2)
-        {
-            std::cerr << "Error: No configuration file provided.\n";
-            std::cerr << "Usage: " << v[0] << " [path to config file]\n";
-            return 1;
-        }
         ConfigParser                        parser(v[1]);
         std::vector<ServerConfig>           configs = parser.parse();
         IOMultiplexer                       IOmltplxr;
@@ -28,18 +28,22 @@ int main(int c, char** v, char** envp)
             }
             catch (const std::exception& e)
             {
-                std::cerr << "Warning: " << e.what() << '\n';
+                std::cerr << "Server Error:\nException caught:\n" << e.what() << '\n';
             }
         }
-        IOmltplxr.StartEventLoop();
-        std::cout << "Press enter to exit program.\n";
-        char tmp;
-        std::cin.get(tmp);
+        try
+        {
+            IOmltplxr.StartEventLoop();
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "I/O Error:\nException caught:\n" << e.what() << '\n';
+        }
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        std::cerr << "Fatal Error:\nException caught:\n" << e.what() << '\n';
     }
+
     return 0;
 }

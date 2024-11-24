@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 22:17:37 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/24 00:10:38 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,7 @@ void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
         break;
     }
     if (it == listner_map->end())
-        throw IOMultiplexerException("RemoveEvent() : Event listener is not added.");
+        return;
     ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, &ev) == -1)
         throw IOMultiplexerException("epoll_ctl() failed.");
@@ -95,6 +95,8 @@ void IOMultiplexer::StartEventLoop()
 {
     if (_is_started)
         throw IOMultiplexerException("Events loop already started.");
+    if (!_listeners_in.size() && !_listeners_out.size())
+        return;
     _is_started = true;
     while (_is_started)
     {
@@ -132,6 +134,7 @@ void IOMultiplexer::Terminate()
 {
     if (_is_started == false)
         return;
-    close(_epoll_fd);
     _is_started = false;
+    if (_epoll_fd >= 0)
+        close(_epoll_fd);
 }

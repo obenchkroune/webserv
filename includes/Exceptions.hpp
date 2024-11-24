@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 20:42:12 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/22 18:16:58 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/24 01:04:11 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,13 +28,16 @@ public:
     const char* what() const throw();
 };
 
+class Server;
+
 class ServerException : public std::exception
 {
 private:
-    std::string _reason;
+    std::string   _reason;
+    const Server& _server;
 
 public:
-    ServerException(std::string reason) throw();
+    ServerException(std::string reason, const Server& server) throw();
     const char* what() const throw();
     ~ServerException() throw();
 };

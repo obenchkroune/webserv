@@ -18,6 +18,8 @@ BUILD_DIR       =   __build__
 
 OBJ             =  	$(SRC:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 
+DEP				=	$(OBJ:.o=.d)
+
 RM              =   rm -rf
 
 all: $(NAME)
@@ -37,5 +39,6 @@ fclean: clean
 
 re: fclean all
 
+-include : $(DEP)
 .PHONY: all clean fclean re
 .SECONDARY: $(OBJ)
