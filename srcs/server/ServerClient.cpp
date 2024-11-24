@@ -3,21 +3,25 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/22 23:45:49 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/24 13:33:24 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerClient.hpp"
 
-ServerClient::ServerClient(const int fd) : _fd(fd) {}
+ServerClient::ServerClient(const int fd)
+  : _fd(fd)
+{
+}
 ServerClient::ServerClient(const ServerClient& client)
 {
     *this = client;
 }
-ServerClient& ServerClient::operator=(const ServerClient& client)
+ServerClient&
+ServerClient::operator=(const ServerClient& client)
 {
     if (this == &client)
         return *this;
@@ -25,11 +29,18 @@ ServerClient& ServerClient::operator=(const ServerClient& client)
     return *this;
 }
 ServerClient::~ServerClient() {}
-int ServerClient::Getfd() const
+int
+ServerClient::Getfd() const
 {
     return _fd;
 }
-void ServerClient::Setfd(const int fd)
+void
+ServerClient::Setfd(const int fd)
 {
     _fd = fd;
+}
+void
+ServerClient::ConsumeEvent(const epoll_event ev)
+{
+    (void)ev;
 }

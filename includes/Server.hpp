@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/24 11:18:24 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/24 11:57:40 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,24 +32,26 @@
 class Server : public AIOEventListener
 {
 private:
-    std::vector<int> _clients_fd;
-    ServerConfig     _config;
-    bool             _is_started;
-    sockaddr_in      _listen_addr;
-    int              _listen_socket_fd;
-    epoll_event      _listen_socket_ev;
-    IOMultiplexer*   _IOmltplx;
+    std::map<int, ServerClient> _clients;
+    ServerConfig                _config;
+    bool                        _is_started;
+    sockaddr_in                 _listen_addr;
+    int                         _listen_socket_fd;
+    epoll_event                 _listen_socket_ev;
+    IOMultiplexer*              _IOmltplx;
 
 public:
-    Server(const ServerConfig& config, IOMultiplexer* IOmltplx, bool start = false);
+    Server(const ServerConfig& config,
+           IOMultiplexer*      IOmltplx,
+           bool                start = false);
     Server(const Server& server);
     Server& operator=(const Server& server);
     ~Server();
 
 public:
-    void Start();
-    void Terminate();
-    bool is_started() const;
+    void                Start();
+    void                Terminate();
+    bool                is_started() const;
     const ServerConfig& GetConfig() const;
 
 public:
@@ -57,5 +59,5 @@ public:
 
 private:
     sockaddr_in get_listen_addr(ServerConfig& _config);
-    void RemoveClient(epoll_event ev);
+    void        RemoveClient(epoll_event ev);
 };

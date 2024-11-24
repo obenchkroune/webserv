@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/24 11:29:34 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/24 13:31:43 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,14 @@ Server::get_listen_addr(ServerConfig& _config)
             if ((dot = ip.find(".", pos)) == std::string::npos)
             {
                 if (i < 3)
-                    throw ServerException("Bad ip address string.", *this);
+                    Terminate(),
+                      throw ServerException("Bad ip address string.", *this);
                 else
                     dot = ip.length();
             }
             if (dot - pos > 3 || dot - pos <= 0)
-                throw ServerException("Bad ip address string.", *this);
+                Terminate(),
+                  throw ServerException("Bad ip address string.", *this);
             std::string raw_byte = ip.substr(pos, dot);
 
             uint8_t  byte       = std::atoi(raw_byte.c_str());
@@ -65,7 +67,7 @@ Server::operator=(const Server& server)
 {
     if (this == &server)
         return *this;
-    _clients_fd       = server._clients_fd;
+    _clients          = server._clients;
     _config           = server._config;
     _is_started       = server._is_started;
     _listen_addr      = server._listen_addr;
@@ -116,17 +118,6 @@ Server::Start()
               << +ip[3] << ':' << ntohs(_listen_addr.sin_port) << '\n';
 }
 void
-Server::Terminate()
-{
-    if (_is_started == false)
-        return;
-    _is_started = false;
-    _IOmltplx->RemoveEvent(_listen_socket_ev, _listen_socket_fd);
-    if (_listen_socket_fd >= 0)
-        close(_listen_socket_fd);
-    std::cout << "Server terminated.\n";
-}
-void
 Server::ConsumeEvent(const epoll_event ev)
 {
     std::cout << "[Server: " << _config.host << ':' << _config.port
@@ -140,14 +131,14 @@ Server::ConsumeEvent(const epoll_event ev)
                              (sockaddr*)&peer_address,
                              &peer_address_len);
         if (peer_fd == -1)
-            throw ServerException("accept(): failed to accept new connection.",
-                                  *this);
-        std::vector<int>::iterator it =
-          std::find(_clients_fd.begin(), _clients_fd.end(), peer_fd);
-        if (it == _clients_fd.end())
-            _clients_fd.push_back(peer_fd);
+            Terminate(), throw ServerException(
+                           "accept(): failed to accept new connection.", *this);
+        std::map<int, ServerClient>::iterator it = _clients.find(peer_fd);
+        if (it == _clients.end())
+            _clients.insert(std::pair<int, ServerClient>(peer_fd, peer_fd));
         else
-            throw ServerException("fd already exists in clients.", *this);
+            Terminate(),
+              throw ServerException("fd already exists in clients.", *this);
         epoll_event p_ev;
         p_ev.events   = EPOLLIN;
         p_ev.data.ptr = this;
@@ -161,11 +152,10 @@ Server::ConsumeEvent(const epoll_event ev)
     }
     else
     {
-        std::vector<int>::iterator it =
-          std::find(_clients_fd.begin(), _clients_fd.end(), ev.data.fd);
+        std::map<int, ServerClient>::iterator it = _clients.find(ev.data.fd);
+        if (it == _clients.end())
+            Terminate(), throw ServerException("Client not found.", *this);
         std::cout << "Peer event on fd " << ev.data.fd << std::endl;
-        if (it == _clients_fd.end())
-            throw ServerException("Client not found.", *this);
         switch (ev.events)
         {
         case EPOLLIN: {
@@ -173,7 +163,7 @@ Server::ConsumeEvent(const epoll_event ev)
             char    buff[1024];
             ssize_t bytes = recv(ev.data.fd, buff, 1023, 0);
             if (bytes < 0)
-                throw ServerException("recv() failed.", *this);
+                Terminate(), throw ServerException("recv() failed.", *this);
             if (bytes == 0)
                 RemoveClient(ev);
             buff[bytes] = 0;
@@ -183,26 +173,44 @@ Server::ConsumeEvent(const epoll_event ev)
         }
 
         case EPOLLOUT: {
-            throw NotImplemented();
+            Terminate(), throw NotImplemented();
             break;
         }
 
         default:
-            throw ImpossibleToReach();
+            Terminate(), throw ImpossibleToReach();
             break;
         }
     }
     std::cerr << "[Server: " << _config.host << ':' << _config.port
-              << "]: Warning: event has an uknown fd: " << ev.data.fd << " event is ignored."
-              << std::endl;
+              << "]: Warning: event has an uknown fd: " << ev.data.fd
+              << " event is ignored." << std::endl;
 }
 void
 Server::RemoveClient(epoll_event ev)
 {
-    _clients_fd.erase(
-      std::find(_clients_fd.begin(), _clients_fd.end(), ev.data.fd));
+    std::map<int, ServerClient>::iterator it = _clients.find(ev.data.fd);
+    if (it == _clients.end())
+        Terminate(),
+          throw ServerException("Can't remove Client, peer not found.", *this);
+    _clients.erase(it);
     _IOmltplx->RemoveEvent(ev, ev.data.fd);
     if (ev.data.fd >= 0)
         close(ev.data.fd);
     std::cout << "Client fd: " << ev.data.fd << " disconnected." << std::endl;
+}
+void
+Server::Terminate()
+{
+    if (_is_started == false)
+        return;
+    _is_started = false;
+    _IOmltplx->RemoveEvent(_listen_socket_ev, _listen_socket_fd);
+    if (_listen_socket_fd >= 0)
+        close(_listen_socket_fd);
+    /*
+    Loop through connected clients and disconnect them + remove them from
+    the _clients map
+    */
+    std::cout << "Server terminated.\n";
 }
