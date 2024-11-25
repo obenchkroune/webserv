@@ -1,6 +1,24 @@
 #include "Config.hpp"
+#include <sstream>
+
+InvalidConfigException::InvalidConfigException(const std::string &token)
+    : _message("invalid Configuration: invalid syntax near " + token)
+{
+}
+
+InvalidConfigException::InvalidConfigException(std::size_t line)
+{
+    std::stringstream iss;
+
+    iss << "invalid Configuration: unexpected token at line " << line;
+    _message = iss.str();
+}
+
+InvalidConfigException::~InvalidConfigException() throw()
+{
+}
 
 const char *InvalidConfigException::what() const throw()
 {
-    return "Invalid Configuration";
+    return _message.c_str();
 }

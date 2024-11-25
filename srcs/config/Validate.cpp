@@ -19,7 +19,7 @@ std::size_t maxSizeDirective(const Directive &directive)
     std::istringstream iss(directive.values[0]);
 
     if (directive.values.size() != 1 || !(iss >> res))
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
     size_multiplier = iss.get();
     switch (size_multiplier)
     {
@@ -35,38 +35,22 @@ std::size_t maxSizeDirective(const Directive &directive)
         res *= 1024 * 1024 * 1024;
         break;
     default:
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
     }
     return res;
 }
 
-static std::string getHostnameIpStr(const std::string &hostname)
+static inline bool isValidIpAddr(const std::string &ip)
 {
-    struct addrinfo hints, *res;
-    int             status;
-    char            ip_address[INET_ADDRSTRLEN] = {0};
+    struct sockaddr_in sa;
 
-    bzero(&hints, sizeof(hints));
-    hints.ai_family   = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    status = getaddrinfo(hostname.c_str(), NULL, &hints, &res);
-    if (status != 0)
-        throw InvalidConfigException();
-
-    struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
-    void               *addr = &(ipv4->sin_addr);
-
-    inet_ntop(res->ai_family, addr, ip_address, sizeof(ip_address));
-
-    freeaddrinfo(res);
-    return std::string(ip_address);
+    return inet_pton(AF_INET, ip.c_str(), &(sa.sin_addr)) == 1;
 }
 
 std::pair<std::string, uint16_t> listenDirective(const Directive &directive)
 {
     if (directive.values.size() != 1)
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
 
     std::string host;
     uint16_t    port;
@@ -85,10 +69,11 @@ std::pair<std::string, uint16_t> listenDirective(const Directive &directive)
         iss >> port;
 
         if (iss.fail() || !iss.eof())
-            throw InvalidConfigException();
+            throw InvalidConfigException(directive.name);
     }
 
-    host = getHostnameIpStr(host);
+    if (!isValidIpAddr(host))
+        throw InvalidConfigException(host);
 
     return std::make_pair(host, port);
 }
@@ -96,7 +81,7 @@ std::pair<std::string, uint16_t> listenDirective(const Directive &directive)
 std::string rootDirective(const Directive &directive)
 {
     if (directive.values.size() != 1)
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
     // struct stat buffer;
     // if (stat(directive.values[0].c_str(), &buffer) != 0)
     //     throw InvalidConfigException();
@@ -106,14 +91,14 @@ std::string rootDirective(const Directive &directive)
 std::vector<std::string> indexDirective(const Directive &directive)
 {
     if (directive.values.empty())
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
     return directive.values;
 }
 
 bool autoindexDirective(const Directive &directive)
 {
     if (directive.values.size() != 1)
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
     return directive.values[0] == "on";
 }
 
@@ -125,14 +110,14 @@ static inline bool isValidRedirectCode(uint16_t code)
 std::pair<std::string, uint16_t> redirectDirective(const Directive &directive)
 {
     if (directive.values.size() != 2)
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
 
     uint16_t           code;
     std::istringstream iss(directive.values[0]);
     iss >> code;
 
     if (iss.fail() || !isValidRedirectCode(code))
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
 
     return std::make_pair(directive.values[1], code);
 }
@@ -156,7 +141,7 @@ std::vector<HttpMethod> allowMethodsDirective(const Directive &directive)
         else if (*it == "PATCH")
             res.push_back(HTTP_PATCH);
         else
-            throw InvalidConfigException();
+            throw InvalidConfigException(directive.name);
     }
 
     return res;
@@ -172,16 +157,16 @@ std::pair<uint16_t, std::string> errorPageDirective(const Directive &directive)
     std::pair<uint16_t, std::string> error_page;
 
     if (directive.values.size() != 2)
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
 
     std::istringstream iss(directive.values[0]);
     iss >> error_page.first;
     error_page.second = directive.values[1];
     if (iss.fail() || !iss.eof())
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
 
     if (!isValidErrorCode(error_page.first))
-        throw InvalidConfigException();
+        throw InvalidConfigException(directive.name);
     return error_page;
 }
 
