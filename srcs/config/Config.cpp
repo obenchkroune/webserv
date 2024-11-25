@@ -1,25 +1,27 @@
 #include "Config.hpp"
+#include "ConfigParser.hpp"
 
-Config::Config() {}
+Config::Config()
+{
+}
 
-Config::~Config() {}
+Config::~Config()
+{
+}
 
-Config&
-Config::getInstance()
+Config &Config::getInstance()
 {
     static Config instance;
     return instance;
 }
 
-void
-Config::loadConfig(const std::string& configFile)
+void Config::loadConfig(const std::string &configFile)
 {
     ConfigParser parser(configFile);
     _servers = parser.parse();
 }
 
-const ServerConfig&
-Config::getServer(const std::string& host, uint16_t port) const
+const ServerConfig &Config::getServer(const std::string &host, uint16_t port) const
 {
     std::vector<ServerConfig>::const_iterator it = _servers.begin();
     for (; it != _servers.end(); it++)
@@ -30,8 +32,7 @@ Config::getServer(const std::string& host, uint16_t port) const
     throw ServerNotFound();
 }
 
-const std::vector<ServerConfig>&
-Config::getServers() const
+const std::vector<ServerConfig> &Config::getServers() const
 {
     return _servers;
 }

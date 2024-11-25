@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerException.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 20:43:52 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/24 02:10:03 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/11/25 11:57:15 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "Server.hpp"
 
 ServerException::ServerException(std::string reason, const Server& server) throw()
-    : _reason("ServerException::ServerException\n[Reason]: " + reason), _server(server)
+    : _reason("[Reason]: " + reason), _server(server)
 {
     const ServerConfig& conf = _server.GetConfig();
     if (conf.server_names.size())

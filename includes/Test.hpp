@@ -11,8 +11,8 @@
 /* ************************************************************************** */
 
 #pragma once
+#include "Config.hpp"
 #include <iostream>
-#include "ConfigParser.hpp"
 
 struct ServerConfig;
-void printServerConfig(const ServerConfig& config);
+void printServerConfig(const ServerConfig &config);

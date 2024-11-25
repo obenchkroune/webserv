@@ -12,4 +12,4 @@
 
 #pragma once
 #define NOT_FOUND 404
-#define PERM_RED 301
+#define PERM_RED  301

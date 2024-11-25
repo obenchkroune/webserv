@@ -14,17 +14,12 @@ enum TokenType
 
 struct Token
 {
-    Token(TokenType t)
-      : type(t) {};
-    Token(TokenType t, const std::string& v)
-      : type(t)
-      , value(v) {};
-    Token(TokenType t, char c)
-      : type(t)
-      , value(1, c) {};
+    Token(TokenType t) : type(t) {};
+    Token(TokenType t, const std::string &v) : type(t), value(v) {};
+    Token(TokenType t, char c) : type(t), value(1, c) {};
     ~Token() {};
 
-    bool operator==(const Token& t)
+    bool operator==(const Token &t)
     {
         return t.value == this->value && t.type == this->type;
     }
@@ -36,7 +31,7 @@ struct Token
 class ConfigLexer
 {
 public:
-    ConfigLexer(const std::string& file);
+    ConfigLexer(const std::string &file);
     ~ConfigLexer();
 
     const Token peek() const;
@@ -47,12 +42,12 @@ public:
     class UnexpectedTokenException : public std::exception
     {
     public:
-        const char* what() const throw();
+        const char *what() const throw();
     };
 
 private:
-    ConfigLexer(const ConfigLexer& other);
-    ConfigLexer& operator=(const ConfigLexer& other);
+    ConfigLexer(const ConfigLexer &other);
+    ConfigLexer &operator=(const ConfigLexer &other);
 
     std::vector<Token>                 _tokens;
     std::vector<Token>::const_iterator _current;

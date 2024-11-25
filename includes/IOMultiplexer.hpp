@@ -22,16 +22,16 @@
 class IOMultiplexer
 {
 private:
-    epoll_event                      _events[EPOLL_EVENTS_MAX];
-    std::map<int, AIOEventListener*> _listeners_in;
-    std::map<int, AIOEventListener*> _listeners_out;
-    int                              _epoll_fd;
-    bool                             _is_started;
+    epoll_event                       _events[EPOLL_EVENTS_MAX];
+    std::map<int, AIOEventListener *> _listeners_in;
+    std::map<int, AIOEventListener *> _listeners_out;
+    int                               _epoll_fd;
+    bool                              _is_started;
 
 public:
     IOMultiplexer();
-    IOMultiplexer(const IOMultiplexer& IOM);
-    IOMultiplexer& operator=(const IOMultiplexer& IOM);
+    IOMultiplexer(const IOMultiplexer &IOM);
+    IOMultiplexer &operator=(const IOMultiplexer &IOM);
     ~IOMultiplexer();
 
 public:

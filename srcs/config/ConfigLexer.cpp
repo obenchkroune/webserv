@@ -3,7 +3,7 @@
 #include <iostream>
 #include <limits>
 
-ConfigLexer::ConfigLexer(const std::string& file)
+ConfigLexer::ConfigLexer(const std::string &file)
 {
     std::ifstream ifs(file.c_str());
     if (!ifs.is_open())
@@ -48,38 +48,33 @@ ConfigLexer::~ConfigLexer()
     //
 }
 
-const Token
-ConfigLexer::peek() const
+const Token ConfigLexer::peek() const
 {
     return *_current;
 }
 
-const Token
-ConfigLexer::getNext()
+const Token ConfigLexer::getNext()
 {
     if (_current->type != T_EOF && _current != _tokens.end())
         return *_current++;
     return *_current;
 }
 
-const Token
-ConfigLexer::expect(Token token)
+const Token ConfigLexer::expect(Token token)
 {
     if (token == *_current)
         return this->getNext();
     throw UnexpectedTokenException();
 }
 
-const Token
-ConfigLexer::expect(TokenType type)
+const Token ConfigLexer::expect(TokenType type)
 {
     if (type == _current->type)
         return this->getNext();
     throw UnexpectedTokenException();
 }
 
-const char*
-ConfigLexer::UnexpectedTokenException::what() const throw()
+const char *ConfigLexer::UnexpectedTokenException::what() const throw()
 {
     return "Unexpected token.";
 }

@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "ConfigParser.hpp"
 #include "Test.hpp"
 
 int main(int c, char** v, char** envp)
