@@ -21,7 +21,6 @@ int main(int ac, char **av)
         std::vector<ServerConfig>::iterator conf_it = configs.begin();
         for (; conf_it != configs.end(); conf_it++)
         {
-            printServerConfig(*conf_it);
             servers.push_back(Server(*conf_it, &IOmltplxr));
         }
         std::vector<Server>::iterator it = servers.begin();
