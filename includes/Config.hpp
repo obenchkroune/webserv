@@ -9,7 +9,12 @@
 class InvalidConfigException : public std::exception
 {
 public:
+    InvalidConfigException(const std::string &message);
+    ~InvalidConfigException() throw();
     const char *what() const throw();
+
+private:
+    std::string _message;
 };
 
 struct ServerConfig;
