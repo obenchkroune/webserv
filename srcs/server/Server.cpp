@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 14:45:37 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 18:26:47 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,7 +119,7 @@ void Server::acceptNewPeer()
         Terminate(), throw ServerException("accept(): failed to accept new connection.", *this);
     std::map<int, ServerClient>::iterator it = _clients.find(peer_fd);
     if (it == _clients.end())
-        _clients.insert(std::pair<int, ServerClient>(peer_fd, peer_fd));
+        _clients.insert(std::pair<int, ServerClient>(peer_fd, ServerClient(peer_fd, this)));
     else
         Terminate(), throw ServerException("fd already exists in clients.", *this);
     epoll_event p_ev;
@@ -152,13 +152,75 @@ void Server::handlePeerEvent(const epoll_event &ev)
         break;
     }
     case EPOLLOUT: {
-        Terminate(), throw NotImplemented();
+        std::map<int, std::queue<Request> >::iterator req_it = _requests.find(ev.data.fd);
+        if (req_it == _requests.end())
+            Terminate(), throw ServerException("Client request queue not found.", *this);
+        /*
+        The following code should go through IOmultplxr too.
+        */
+        /*======================================================*/
+        {
+            if (req_it->second.size() == 0)
+                Terminate(), throw ServerException("Request queue for client is empty.", *this);
+            Request req = req_it->second.front();
+            req_it->second.pop();
+            /*
+            here should check the uri path
+            to assign appropriate location.
+            */
+            std::string file_name = _config.locations.front().root;
+            file_name += req.getUri();
+            int file_fd = open(file_name.c_str(), O_RDONLY);
+            if (file_fd < 0)
+                Terminate(), throw ServerException("open() failed for file: " + file_name, *this);
+            std::string content;
+            char        buff[1024];
+            while (1)
+            {
+                int bytes = read(file_fd, buff, 1023);
+                if (bytes < 0)
+                    Terminate(), throw ServerException("open() failed for file: " + file_name, *this);
+                if (bytes == 0)
+                    break;
+                buff[bytes] = 0;
+                content += buff;
+            }
+            send(ev.data.fd, content.c_str(), content.size(), 0);
+        }
+        /*======================================================*/
         break;
     }
     default:
         Terminate(), throw ImpossibleToReach();
         break;
     }
+}
+void Server::AddRequest(const ServerClient &client, const Request &request)
+{
+    assert(request.getMethod() == HTTP_GET);
+    /* Need To be removed from all occurence
+    the serching for the client below is now here just for debugging purposes
+    it must be unneccesary to check if the client exist every time
+    or should we?? huh
+    */
+    int                                   client_fd = client.Getfd();
+    std::map<int, ServerClient>::iterator it        = _clients.find(client_fd);
+    if (it == _clients.end())
+        Terminate(), throw ServerException("Can't add request, Client not found.", *this);
+    epoll_event ev;
+    ev.data.ptr = this;
+    ev.events   = EPOLLOUT;
+    _IOmltplx->AddEvent(ev, client_fd);
+    std::map<int, std::queue<Request> >::iterator req_it = _requests.find(client_fd);
+    if (req_it == _requests.end())
+    {
+        std::queue<Request> queue;
+        queue.push(request);
+        _requests.insert(std::pair<int, std::queue<Request> >(client_fd, queue));
+        return;
+    }
+    req_it->second.push(request);
+    std::cout << "Request from client fd: " << client_fd << " added successfuly." << std::endl;
 }
 void Server::RemoveClient(epoll_event ev)
 {
