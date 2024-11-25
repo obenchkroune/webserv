@@ -16,18 +16,20 @@ private:
 class Request
 {
 public:
-    Request();
     Request(const std::string &request);
     Request(const Request &other);
     Request &operator=(const Request &other);
     ~Request();
 
+    void Parse();
+
     // getters
-    HttpMethod        getMethod() const;
-    std::string       getUri() const;
-    std::string       getVersion() const;
-    const HttpHeader *getHeader(const std::string &key) const;
-    std::string       getBody() const;
+    HttpMethod                     getMethod() const;
+    std::string                    getUri() const;
+    std::string                    getVersion() const;
+    const HttpHeader              *getHeader(const std::string &key) const;
+    const std::vector<HttpHeader> &getHeaders() const;
+    std::string                    getBody() const;
 
     // setters
     void setMethod(std::string method);
@@ -41,6 +43,7 @@ public:
     void print() const;
 
 private:
+    std::string             _request;
     HttpMethod              _method;
     std::string             _uri;
     std::string             _http_version;

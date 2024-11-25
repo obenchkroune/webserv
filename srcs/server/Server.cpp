@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 11:46:25 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 14:45:37 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,7 +136,7 @@ void Server::handlePeerEvent(const epoll_event &ev)
     std::map<int, ServerClient>::iterator it = _clients.find(ev.data.fd);
     if (it == _clients.end())
         Terminate(), throw ServerException("Client not found.", *this);
-    std::cout << "Peer event on fd " << ev.data.fd << std::endl;
+    std::cout << "Handling the peer event on fd " << ev.data.fd << std::endl;
     switch (ev.events)
     {
     case EPOLLIN: {
@@ -146,9 +146,9 @@ void Server::handlePeerEvent(const epoll_event &ev)
         if (bytes < 0)
             Terminate(), throw ServerException("recv() failed.", *this);
         if (bytes == 0)
-            RemoveClient(ev);
+            return RemoveClient(ev);
         buff[bytes] = 0;
-        std::cout << "Content:\n[START OF CONTENT]\n" << buff << "[END OF CONTENT]\n";
+        it->second.PushContent(buff);
         break;
     }
     case EPOLLOUT: {

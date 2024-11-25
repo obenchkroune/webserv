@@ -4,13 +4,34 @@
 #include <iostream>
 #include <sstream>
 
-Request::Request()
+Request::Request(const std::string &request) : _request(request)
 {
 }
 
-Request::Request(const std::string &request)
+Request::Request(const Request &other)
 {
-    std::istringstream iss(request);
+    *this = other;
+}
+
+Request &Request::operator=(const Request &other)
+{
+    if (this == &other)
+        return *this;
+    _body         = other._body;
+    _headers      = other._headers;
+    _http_version = other._http_version;
+    _method       = other._method;
+    _uri          = other._uri;
+    return *this;
+}
+
+Request::~Request()
+{
+}
+
+void Request::Parse()
+{
+    std::istringstream iss(_request);
 
     std::string              line       = Request::getline(iss);
     std::vector<std::string> start_line = Utils::ft_split(line, ' ');
@@ -50,27 +71,6 @@ Request::Request(const std::string &request)
     setBody(body);
 }
 
-Request::Request(const Request &other)
-{
-    *this = other;
-}
-
-Request &Request::operator=(const Request &other)
-{
-    if (this == &other)
-        return *this;
-    _body         = other._body;
-    _headers      = other._headers;
-    _http_version = other._http_version;
-    _method       = other._method;
-    _uri          = other._uri;
-    return *this;
-}
-
-Request::~Request()
-{
-}
-
 HttpMethod Request::getMethod() const
 {
     return _method;
@@ -95,6 +95,11 @@ const HttpHeader *Request::getHeader(const std::string &key) const
             return it.base();
     }
     return NULL;
+}
+
+const std::vector<HttpHeader> &Request::getHeaders() const
+{
+    return _headers;
 }
 
 std::string Request::getBody() const
