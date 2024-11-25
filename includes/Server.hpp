@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 18:26:22 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 20:03:59 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,13 +23,14 @@
 #include "ServerClient.hpp"
 #include <cassert>
 #include <cstdlib>
+#include <fcntl.h>
 #include <iostream>
 #include <netinet/in.h>
 #include <queue>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 class Server : public AIOEventListener
 {
@@ -68,5 +69,5 @@ private:
     sockaddr_in get_listen_addr(ServerConfig &_config);
     void        acceptNewPeer();
     void        handlePeerEvent(const epoll_event &ev);
-    void        RemoveClient(epoll_event ev);
+    void        RemoveClient(epoll_event ev, int events);
 };
