@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/24 11:16:43 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 18:59:00 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,11 @@ IOMultiplexer::IOMultiplexer() : _is_started(false)
     if (_epoll_fd == -1)
         throw IOMultiplexerException("epoll(): failed.");
 }
-IOMultiplexer::IOMultiplexer(const IOMultiplexer& IOM)
+IOMultiplexer::IOMultiplexer(const IOMultiplexer &IOM)
 {
     *this = IOM;
 }
-IOMultiplexer& IOMultiplexer::operator=(const IOMultiplexer& IOM)
+IOMultiplexer &IOMultiplexer::operator=(const IOMultiplexer &IOM)
 {
     if (this == &IOM)
         return *this;
@@ -40,8 +40,8 @@ IOMultiplexer::~IOMultiplexer()
 }
 void IOMultiplexer::AddEvent(epoll_event ev, int fd)
 {
-    std::map<int, AIOEventListener*>*          listner_map;
-    std::map<int, AIOEventListener*>::iterator it;
+    std::map<int, AIOEventListener *>          *listner_map;
+    std::map<int, AIOEventListener *>::iterator it;
     switch (ev.events)
     {
     case EPOLLIN:
@@ -59,16 +59,16 @@ void IOMultiplexer::AddEvent(epoll_event ev, int fd)
     }
     if (it != listner_map->end())
         throw IOMultiplexerException("AddEvent() : Event listener already added.");
-    AIOEventListener* listener = (AIOEventListener*)ev.data.ptr;
-    listner_map->insert(std::pair<int, AIOEventListener*>(fd, listener));
+    AIOEventListener *listener = (AIOEventListener *)ev.data.ptr;
+    listner_map->insert(std::pair<int, AIOEventListener *>(fd, listener));
     ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw IOMultiplexerException("epoll_ctl() failed.");
 }
 void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
 {
-    std::map<int, AIOEventListener*>*          listner_map;
-    std::map<int, AIOEventListener*>::iterator it;
+    std::map<int, AIOEventListener *>          *listner_map;
+    std::map<int, AIOEventListener *>::iterator it;
     switch (ev.events)
     {
     case EPOLLIN:
@@ -105,7 +105,7 @@ void IOMultiplexer::StartEventLoop()
             throw IOMultiplexerException("epoll_wait(): failed.");
         for (int i = 0; i < events_count; i++)
         {
-            std::map<int, AIOEventListener*>::iterator it;
+            std::map<int, AIOEventListener *>::iterator it;
             switch (_events[i].events)
             {
             case EPOLLIN:

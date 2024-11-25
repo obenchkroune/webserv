@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 18:26:47 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 18:51:19 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -203,10 +203,13 @@ void Server::AddRequest(const ServerClient &client, const Request &request)
     it must be unneccesary to check if the client exist every time
     or should we?? huh
     */
-    int                                   client_fd = client.Getfd();
-    std::map<int, ServerClient>::iterator it        = _clients.find(client_fd);
-    if (it == _clients.end())
-        Terminate(), throw ServerException("Can't add request, Client not found.", *this);
+    int client_fd = client.Getfd();
+    if (_clients.size())
+    {
+        std::map<int, ServerClient>::iterator it = _clients.find(client_fd);
+        if (it == _clients.end())
+            Terminate(), throw ServerException("Can't add request, Client not found.", *this);
+    }
     epoll_event ev;
     ev.data.ptr = this;
     ev.events   = EPOLLOUT;

@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/25 17:49:45 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 18:51:11 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,9 @@ ServerClient &ServerClient::operator=(const ServerClient &client)
 {
     if (this == &client)
         return *this;
-    _fd = client._fd;
+    _fd      = client._fd;
+    _content = client._content;
+    _server  = client._server;
     return *this;
 }
 ServerClient::~ServerClient()
