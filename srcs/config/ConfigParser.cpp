@@ -40,12 +40,19 @@ std::vector<ServerConfig> ConfigParser::parse()
 {
     std::vector<ServerConfig> result;
 
-    while (_lexer.peek().type != T_EOF)
+    try
     {
-        result.push_back(parseServerBlock());
-    }
+        while (_lexer.peek().type != T_EOF)
+        {
+            result.push_back(parseServerBlock());
+        }
 
-    _lexer.expect(T_EOF);
+        _lexer.expect(T_EOF);
+    }
+    catch (const std::exception &e)
+    {
+        throw InvalidConfigException(_lexer.rpeek().line_number);
+    }
     return result;
 }
 

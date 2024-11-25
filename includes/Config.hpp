@@ -9,7 +9,8 @@
 class InvalidConfigException : public std::exception
 {
 public:
-    InvalidConfigException(const std::string &message);
+    InvalidConfigException(const std::string &token);
+    InvalidConfigException(std::size_t line);
     ~InvalidConfigException() throw();
     const char *what() const throw();
 
