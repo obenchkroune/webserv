@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 20:07:38 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 20:30:33 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,7 +103,6 @@ void Server::Start()
 }
 void Server::ConsumeEvent(const epoll_event ev)
 {
-    std::cout << "[Server: " << _config.host << ':' << _config.port << "]: New event." << std::endl;
     if (ev.data.fd == _listen_socket_fd)
         acceptNewPeer();
     else
@@ -139,7 +138,6 @@ void Server::handlePeerEvent(const epoll_event &ev)
     std::cout << "Handling the peer event on fd " << ev.data.fd << std::endl;
     if (ev.events & EPOLLIN)
     {
-        std::cout << "Event type is EPOLLIN.\n";
         char    buff[1024];
         ssize_t bytes = recv(ev.data.fd, buff, 1023, 0);
         if (bytes < 0)
@@ -201,6 +199,7 @@ void Server::handlePeerEvent(const epoll_event &ev)
                     content += buff;
                 }
                 send(ev.data.fd, content.c_str(), content.size(), 0);
+                std::cout << "Response sent to client fd: " << ev.data.fd << std::endl;
             }
             else
             {
