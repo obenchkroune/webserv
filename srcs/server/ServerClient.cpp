@@ -6,14 +6,17 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/25 15:43:04 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 18:51:11 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerClient.hpp"
+#include "Server.hpp"
 
-ServerClient::ServerClient(const int fd) : _fd(fd)
+ServerClient::ServerClient(const int fd, Server *server) : _fd(fd), _server(server)
 {
+    if (server == NULL)
+        throw ServerClientException("Can't have a null server ptr.");
 }
 ServerClient::ServerClient(const ServerClient &client)
 {
@@ -23,7 +26,9 @@ ServerClient &ServerClient::operator=(const ServerClient &client)
 {
     if (this == &client)
         return *this;
-    _fd = client._fd;
+    _fd      = client._fd;
+    _content = client._content;
+    _server  = client._server;
     return *this;
 }
 ServerClient::~ServerClient()
@@ -50,21 +55,8 @@ void ServerClient::PushContent(std::string buff)
             std::cerr << "Request ignored." << std::endl;
             return;
         }
-        std::cout << "HTTP Method       : [" << req.getMethod() << ']' << std::endl;
-        std::cout << "HTTP URI          : [" << req.getUri() << ']' << std::endl;
-        std::cout << "HTTP Version      : [" << req.getVersion() << ']' << std::endl;
-        const std::vector<HttpHeader>          &headers = req.getHeaders();
-        std::vector<HttpHeader>::const_iterator it      = headers.begin();
-        std::cout << "Request Headers   :" << std::endl;
-        for (; it != headers.end(); it++)
-        {
-            std::cout << "  " << it->name << ": " << it->value << std::endl;
-            std::vector<std::string>                 params    = it->parameters;
-            std::vector<std::string>::const_iterator params_it = it->parameters.begin();
-            for (; params_it != params.end(); params_it++)
-                std::cout << "  param: " << *params_it << std::endl;
-        }
-        std::cout << "Request Body  : [" << req.getBody() << ']' << std::endl;
+        req.print();
+        _server->AddRequest(*this, req);
     }
 }
 int ServerClient::Getfd() const

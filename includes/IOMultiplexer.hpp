@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:31:05 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 21:20:52 by msitni           ###   ########.fr       */
+/*   Updated: 2024/11/25 19:38:28 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,7 @@ class IOMultiplexer
 {
 private:
     epoll_event                       _events[EPOLL_EVENTS_MAX];
-    std::map<int, AIOEventListener *> _listeners_in;
-    std::map<int, AIOEventListener *> _listeners_out;
+    std::map<int, AIOEventListener *> _listeners;
     int                               _epoll_fd;
     bool                              _is_started;
 
