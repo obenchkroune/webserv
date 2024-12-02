@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 19:46:45 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/02 20:15:10 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,9 @@ IOMultiplexer::~IOMultiplexer()
 {
     Terminate();
 }
+#include <cerrno>
+#include <iostream>
+#include <string.h>
 void IOMultiplexer::AddEvent(epoll_event ev, int fd)
 {
     std::map<int, AIOEventListener *>::iterator it = _listeners.find(fd);
@@ -46,7 +49,10 @@ void IOMultiplexer::AddEvent(epoll_event ev, int fd)
     _listeners.insert(std::pair<int, AIOEventListener *>(fd, listener));
     ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
-        throw IOMultiplexerException("epoll_ctl() failed.");
+    {
+        std::cerr << strerror(errno) << std::endl;
+        throw IOMultiplexerException("epoll_ctl() failed. 1");
+    }
 }
 void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
 {
@@ -55,7 +61,7 @@ void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
         throw IOMultiplexerException("RemoveEvent() : Event listener not found.");
     ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, &ev) == -1)
-        throw IOMultiplexerException("epoll_ctl() failed.");
+        throw IOMultiplexerException("epoll_ctl() failed. 2");
     _listeners.erase(fd);
 }
 void IOMultiplexer::StartEventLoop()
@@ -74,8 +80,7 @@ void IOMultiplexer::StartEventLoop()
         {
             std::map<int, AIOEventListener *>::iterator it = _listeners.find(_events[i].data.fd);
             if (it == _listeners.end())
-                throw IOMultiplexerException(
-                    "fd not found in [std::map<int, AIOEventListener*> _listeners] member.");
+                throw IOMultiplexerException("fd not found in [std::map<int, AIOEventListener*> _listeners] member.");
             it->second->ConsumeEvent(_events[i]);
         }
     }
@@ -85,6 +90,5 @@ void IOMultiplexer::Terminate()
     if (_is_started == false)
         return;
     _is_started = false;
-    if (_epoll_fd >= 0)
-        close(_epoll_fd);
+    close(_epoll_fd);
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 20:03:59 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/02 19:15:31 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 #include "Exceptions.hpp"
 #include "IOEventListener.hpp"
 #include "IOMultiplexer.hpp"
+#include "Response.hpp"
 #include "ServerClient.hpp"
 #include <cassert>
 #include <cstdlib>
@@ -35,14 +36,14 @@
 class Server : public AIOEventListener
 {
 private:
-    std::map<int, ServerClient>        _clients;
-    std::map<int, std::queue<Request> > _requests;
-    ServerConfig                       _config;
-    bool                               _is_started;
-    sockaddr_in                        _listen_addr;
-    int                                _listen_socket_fd;
-    epoll_event                        _listen_socket_ev;
-    IOMultiplexer                     *_IOmltplx;
+    std::map<int, ServerClient>  _clients;
+    std::map<int, std::string> _responses;
+    ServerConfig               _config;
+    bool                       _is_started;
+    sockaddr_in                _listen_addr;
+    int                        _listen_socket_fd;
+    epoll_event                _listen_socket_ev;
+    IOMultiplexer             *_IOmltplx;
 
 public:
     Server(const ServerConfig &config, IOMultiplexer *IOmltplx, bool start = false);
@@ -53,7 +54,7 @@ public:
 public:
     void Start();
     void Terminate();
-    void AddRequest(const ServerClient &client, const Request &request);
+    void QueueResponse(int socket_fd, const std::string &response);
 
     /* Const */
 public:
@@ -69,5 +70,5 @@ private:
     sockaddr_in get_listen_addr(ServerConfig &_config);
     void        acceptNewPeer();
     void        handlePeerEvent(const epoll_event &ev);
-    void        RemoveClient(epoll_event ev, int events);
+    void        RemoveClient(const epoll_event ev);
 };
