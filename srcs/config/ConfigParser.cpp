@@ -20,7 +20,7 @@ ServerConfig::ServerConfig()
 {
     port          = 0;
     root          = "/var/www/html";
-    max_body_size = 1024 * 10;
+    max_body_size = 1024 * 1024;
     autoindex     = false;
     allow_methods.push_back(HTTP_ANY);
     index.push_back("index.html");

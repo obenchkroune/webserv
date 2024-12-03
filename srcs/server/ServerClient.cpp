@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/03 18:57:36 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 22:36:59 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,6 @@ ServerClient::~ServerClient()
 }
 void ServerClient::ReceiveRequest(const std::string buff)
 {
-    std::cout << "Client fd: " << _socket_fd << " adding a chunk of the request:\n";
     _request_raw += buff;
     if (_request_raw.find("\r\n\r\n") != std::string::npos)
     {
@@ -120,6 +119,14 @@ void ServerClient::ProcessRequest(const Request &request)
     }
     struct stat path_stat;
     stat(file_name.c_str(), &path_stat);
+    size_t max_sz_limit = _server->GetConfig().max_body_size;
+    if (file_location->max_body_size != _server->GetConfig().max_body_size)
+        max_sz_limit = file_location->max_body_size;
+    if ((size_t)path_stat.st_size > max_sz_limit)
+    {
+        std::cerr << "file too large: " << file_name << std::endl;
+        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE), response);
+    }
     if (S_ISDIR(path_stat.st_mode))
     {
         std::vector<std::string>::const_iterator index_it = file_location->index.begin();

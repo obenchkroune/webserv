@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 19:35:07 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 22:39:31 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
+#include <iostream>
 
 class ResponseException
 {

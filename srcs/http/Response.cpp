@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 19:46:53 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 22:42:34 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,6 +97,10 @@ void Response::FinishResponse()
     if (content_length)
     {
         _content.insert(_content.begin(), _headers.begin(), _headers.end());
+
+        std::cout << "[Response headers]     ============" << std::endl;
+        std::cout << _headers << std::endl;
+        std::cout << "[End Response headers] ============" << std::endl;
         _headers.erase();
     }
 }

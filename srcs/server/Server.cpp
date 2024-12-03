@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 19:31:33 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 22:35:43 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -178,7 +178,6 @@ void Server::handlePeerEvent(const epoll_event &ev)
             delete response;
             res_it->second.pop();
         }
-        std::cout << bytes_sent << " bytes sent to client fd: " << ev.data.fd << std::endl;
     }
 }
 void Server::QueueResponse(int socket_fd, Response *response)
