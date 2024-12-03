@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/03 11:53:14 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/03 18:57:36 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,9 +70,9 @@ void ServerClient::ReceiveRequest(const std::string buff)
         }
     }
 }
-void ServerClient::SendErrorResponse(const HttpStatus &status, Response &response)
+void ServerClient::SendErrorResponse(const HttpStatus &status, Response *response)
 {
-    response.SetStatusHeaders(status.name);
+    response->SetStatusHeaders(status.name);
     const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
     std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(status.code);
     if (it != error_pages.end())
@@ -83,28 +83,29 @@ void ServerClient::SendErrorResponse(const HttpStatus &status, Response &respons
         int         error_fd  = open(file_name.c_str(), O_RDONLY);
         if (error_fd >= 0)
         {
-            response.ReadFile(error_fd);
+            response->ReadFile(error_fd);
         }
         else
         {
             std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
         }
     }
-    response.EndResponse();
-    _server->QueueResponse(_socket_fd, response.GetResponseString());
+    response->FinishResponse();
+    _server->QueueResponse(_socket_fd, response);
 }
 void ServerClient::ProcessRequest(const Request &request)
 {
     if (request.getMethod() != HTTP_GET)
         throw NotImplemented();
-    Response                                    response(request);
+    Response                                   *response = new Response(request);
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
     std::string file_name = file_location->root + '/' + request.getUri().substr(file_location->path.length());
     if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
     {
         std::cerr << "Client fd: " << _socket_fd << " thinks himself a hacker." << std::endl;
-        std::cerr << "Access for file: " << file_name << " is outside the location root, request is forbidden." << std::endl;
+        std::cerr << "Access for file: " << file_name << " is outside the location root, request is forbidden."
+                  << std::endl;
         return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
     }
     if (access(file_name.c_str(), F_OK) != 0) // EXISTENCE ACCESS
@@ -145,7 +146,7 @@ void ServerClient::ProcessRequest(const Request &request)
             }
         }
     }
-    response.SetStatusHeaders(HTTP_STATUS_OK);
+    response->SetStatusHeaders(HTTP_STATUS_OK);
     std::string fname = basename(file_name.c_str());
     std::string extension;
     if (fname.find_last_of(".") != std::string::npos)
@@ -157,13 +158,13 @@ void ServerClient::ProcessRequest(const Request &request)
         header.value = "text/html";
     else
         header.value = "application/octet-stream";
-    response.AppendHeader(header);
+    response->AppendHeader(header);
     int file_fd = open(file_name.c_str(), O_RDONLY);
     if (file_fd < 0)
         throw ServerClientException("open() failed for file: " + file_name);
-    response.ReadFile(file_fd);
-    response.EndResponse();
-    _server->QueueResponse(_socket_fd, response.GetResponseString());
+    response->ReadFile(file_fd);
+    response->FinishResponse();
+    _server->QueueResponse(_socket_fd, response);
 }
 int ServerClient::Getfd() const
 {

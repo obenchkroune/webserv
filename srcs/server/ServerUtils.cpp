@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 12:24:38 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/03 16:51:36 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,23 +22,23 @@ bool validateFileLocation(const std::string &location_root, const std::string &f
     if (fname.find("/..") == std::string::npos)
         return true;
     int curr_directory_relative_to_root = 0;
-    int directory_chars                 = 0;
-    int dots                            = 0;
+    int directory_name_len              = 0;
+    int dots_count                      = 0;
     for (size_t i = location_root.length() + 1; i < fname.length(); i++)
     {
         if (i + 1 >= fname.length() || fname[i] == '/')
         {
-            if (dots == 2 && directory_chars == 0)
+            if (dots_count == 2 && directory_name_len == 0)
                 curr_directory_relative_to_root--;
-            else if (directory_chars > 0)
+            else if (directory_name_len > 0)
                 curr_directory_relative_to_root++;
-            dots            = 0;
-            directory_chars = 0;
+            dots_count         = 0;
+            directory_name_len = 0;
         }
         else if (fname[i] == '.')
-            dots++;
+            dots_count++;
         else
-            directory_chars++;
+            directory_name_len++;
         if (curr_directory_relative_to_root < 0)
             return false;
     }

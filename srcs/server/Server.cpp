@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/02 20:44:39 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 19:31:33 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,32 +148,53 @@ void Server::handlePeerEvent(const epoll_event &ev)
     }
     if (ev.events & EPOLLOUT)
     {
-        std::map<int, std::string>::iterator res_it = _responses.find(ev.data.fd);
-        if (res_it == _responses.end() || res_it->second.length() == 0)
+        std::map<int, Responses_queue>::iterator res_it = _responses_.find(ev.data.fd);
+        if (res_it == _responses_.end() || res_it->second.size() == 0)
             return;
-        std::string &response      = res_it->second;
-        size_t       bytes_to_send = response.length();
+    fetch_next_response:
+        Response *response = res_it->second.front();
+        if (response->ResponseCount() == 0)
+        {
+            delete response;
+            res_it->second.pop();
+            if (res_it->second.size())
+                goto fetch_next_response;
+            else
+                return;
+        }
+        const uint8_t *buff          = response->GetResponseBuff();
+        size_t         bytes_to_send = response->ResponseCount();
         if (bytes_to_send > SEND_CHUNK)
             bytes_to_send = SEND_CHUNK;
-        int bytes_sent = send(ev.data.fd, response.c_str(), bytes_to_send, MSG_DONTWAIT);
+        int bytes_sent = send(ev.data.fd, buff, bytes_to_send, MSG_DONTWAIT);
         if (bytes_sent < 0)
             Terminate(), throw ServerException("send() failed.", *this);
-        if (bytes_sent != (int) bytes_to_send)
+        if (bytes_sent != (int)bytes_to_send)
             std::cerr << "Tried to send " << bytes_to_send << " but send() only sent " << bytes_sent
                       << "\nRemainder data will be sent on next call." << std::endl;
-        response.erase(0, bytes_sent);
+        response->ResponseSent(bytes_sent);
+        if (response->ResponseCount() == 0)
+        {
+            delete response;
+            res_it->second.pop();
+        }
         std::cout << bytes_sent << " bytes sent to client fd: " << ev.data.fd << std::endl;
     }
 }
-void Server::QueueResponse(int socket_fd, const std::string &response)
+void Server::QueueResponse(int socket_fd, Response *response)
 {
-    _responses[socket_fd] += response;
+    _responses_[socket_fd].push(response);
     std::cout << "Response queued for client socket fd: " << socket_fd << std::endl;
 }
 void Server::RemoveClient(const epoll_event ev)
 {
     _clients.erase(ev.data.fd);
-    _responses.erase(ev.data.fd);
+    std::map<int, Responses_queue>::iterator it = _responses_.find(ev.data.fd);
+    if (it != _responses_.end())
+    {
+        for (; it->second.size(); it->second.pop())
+            delete it->second.front();
+    }
     _IOmltplx->RemoveEvent(ev, ev.data.fd);
     close(ev.data.fd);
     std::cout << "Client fd: " << ev.data.fd << " disconnected." << std::endl;
