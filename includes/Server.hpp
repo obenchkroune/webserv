@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/02 19:15:31 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 00:17:11 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #include "IOMultiplexer.hpp"
 #include "Response.hpp"
 #include "ServerClient.hpp"
+#include "ServerUtils.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <fcntl.h>
@@ -36,14 +37,14 @@
 class Server : public AIOEventListener
 {
 private:
-    std::map<int, ServerClient>  _clients;
-    std::map<int, std::string> _responses;
-    ServerConfig               _config;
-    bool                       _is_started;
-    sockaddr_in                _listen_addr;
-    int                        _listen_socket_fd;
-    epoll_event                _listen_socket_ev;
-    IOMultiplexer             *_IOmltplx;
+    std::map<int, ServerClient> _clients;
+    std::map<int, std::string>  _responses;
+    ServerConfig                _config;
+    bool                        _is_started;
+    sockaddr_in                 _listen_addr;
+    int                         _listen_socket_fd;
+    epoll_event                 _listen_socket_ev;
+    IOMultiplexer              *_IOmltplx;
 
 public:
     Server(const ServerConfig &config, IOMultiplexer *IOmltplx, bool start = false);

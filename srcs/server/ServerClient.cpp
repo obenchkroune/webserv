@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/02 22:56:53 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 04:14:58 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,13 +29,14 @@ ServerClient &ServerClient::operator=(const ServerClient &client)
 {
     if (this == &client)
         return *this;
-    _socket_fd     = client._socket_fd;
-    _request_raw   = client._request_raw;
-    _server        = client._server;
+    _socket_fd   = client._socket_fd;
+    _request_raw = client._request_raw;
+    _server      = client._server;
     return *this;
 }
 ServerClient::~ServerClient()
-{}
+{
+}
 void ServerClient::ReceiveRequest(const std::string buff)
 {
     std::cout << "Client fd: " << _socket_fd << " adding a chunk of the request:\n";
@@ -63,7 +64,7 @@ void ServerClient::ReceiveRequest(const std::string buff)
         {
             ProcessRequest(req);
         }
-        catch (const std::exception& e)
+        catch (const std::exception &e)
         {
             std::cerr << "Request not handled due to: " << e.what() << std::endl;
         }
@@ -73,29 +74,81 @@ void ServerClient::ProcessRequest(const Request &request)
 {
     if (request.getMethod() != HTTP_GET)
         throw NotImplemented();
-    /*
-    here should check the uri path
-    to assign appropriate location.
-    */
-    std::string file_name = _server->GetConfig().locations.front().root;
-    file_name += request.getUri();
-    if (access(file_name.c_str(), R_OK))
+    Response                                    response(request);
+    std::vector<LocationConfig>::const_iterator file_location =
+        ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
+
+    std::string file_name = file_location->root + '/' + request.getUri().substr(file_location->path.length());
+    if (access(file_name.c_str(), F_OK) != 0) // EXISTENCE ACCESS
     {
-        std::cerr << "[Error] File not found " << file_name << std::endl;
-        throw NotImplemented();
-        // Todo return 404 response..
+        std::cerr << "F_OK failed for file: " << file_name << std::endl;
+        response.SetStatusHeaders(HTTP_STATUS_NOT_FOUND);
+        const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
+        std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(STATUS_NOT_FOUND);
+        if (it != error_pages.end())
+        {
+            file_location = ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
+            file_name     = file_location->root + '/' + it->second.substr(file_location->path.length());
+            int error_fd  = open(file_name.c_str(), O_RDONLY);
+            if (error_fd >= 0)
+            {
+                response.ReadFile(error_fd);
+            }
+            else
+            {
+                std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
+            }
+        }
+        response.EndResponse();
+        _server->QueueResponse(_socket_fd, response.GetResponseString());
+        return;
+    }
+    if (access(file_name.c_str(), R_OK) != 0) // READ ACCESS
+    {
+        std::cerr << "R_OK failed for file: " << file_name << std::endl;
+        response.SetStatusHeaders(HTTP_STATUS_FORBIDDEN);
+        const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
+        std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(STATUS_FORBIDDEN);
+        if (it != error_pages.end())
+        {
+            file_location = ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
+            file_name     = file_location->root + '/' + it->second.substr(file_location->path.length());
+            int error_fd  = open(file_name.c_str(), O_RDONLY);
+            if (error_fd >= 0)
+            {
+                response.ReadFile(error_fd);
+            }
+            else
+            {
+                std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
+            }
+        }
+        response.EndResponse();
+        _server->QueueResponse(_socket_fd, response.GetResponseString());
         return;
     }
     struct stat path_stat;
     stat(file_name.c_str(), &path_stat);
-    if (S_ISREG(path_stat.st_mode) == 0)
+    if (S_ISDIR(path_stat.st_mode))
     {
-        std::cerr << "[Error] Directory listing is not yet implemented" << std::endl;
-        std::cerr << "Try specifying a file path like /index.html" << std::endl;
-        throw NotImplemented();
-        return;
+        std::vector<std::string>::const_iterator index_it = file_location->index.begin();
+        for (; index_it != file_location->index.end(); index_it++)
+        {
+            std::string index_file_name = file_name + '/' + *index_it;
+            if (access(index_file_name.c_str(), R_OK) == 0)
+            {
+                file_name = index_file_name;
+                break;
+            }
+        }
+        if (index_it == file_location->index.end())
+        {
+            std::cerr << "[Error] Directory listing is not yet implemented" << std::endl;
+            std::cerr << "Try specifying a file path like /index.html" << std::endl;
+            throw NotImplemented();
+            return;
+        }
     }
-    Response response(request);
     response.SetStatusHeaders(HTTP_STATUS_OK);
     std::string fname = basename(file_name.c_str());
     std::string extension;
@@ -112,18 +165,7 @@ void ServerClient::ProcessRequest(const Request &request)
     int file_fd = open(file_name.c_str(), O_RDONLY);
     if (file_fd < 0)
         throw ServerClientException("open() failed for file: " + file_name);
-    for (;;)
-    {
-        char buff[READ_CHUNK];
-        int  bytes = read(file_fd, buff, READ_CHUNK - 1);
-        if (bytes < 0)
-            throw ServerClientException("read() failed for given fd.");
-        buff[bytes] = 0;
-        if (bytes == 0)
-            break;
-        response.AppendContent(buff);
-    }
-    close(file_fd);
+    response.ReadFile(file_fd);
     response.EndResponse();
     _server->QueueResponse(_socket_fd, response.GetResponseString());
 }

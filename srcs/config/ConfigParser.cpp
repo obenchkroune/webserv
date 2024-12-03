@@ -160,6 +160,10 @@ LocationConfig ConfigParser::parseLocationBlock(const ServerConfig &server)
 
     location.path = _lexer.expect(T_WORD).value;
 
+/*
+    TODO: add path validation..
+*/
+
     _lexer.expect(T_BLOCK_START);
 
     while (_lexer.peek().type != T_BLOCK_END)
