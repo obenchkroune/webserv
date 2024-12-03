@@ -25,7 +25,7 @@ struct HttpHeader
 };
 
 #define HTTP_VERSION_TOKEN "HTTP/1.1"
-#define CRLF "\r\n"
+#define CRLF               "\r\n"
 
 // 100 -> 102
 #define HTTP_STATUS_CONTINUE            "100 Continue"
@@ -131,11 +131,9 @@ enum http_status_code
     STATUS_HTTP_VERSION_NOT_SUPPORTED,
 };
 
-/*
 struct HttpStatus
 {
     http_status_code code;
-    std::string      name;
-    HttpStatus(const http_status_code &_code, const std::string _name) : code(_code), name(_name) {};
+    const char      *name;
+    HttpStatus(const http_status_code &_code, const char *_name) : code(_code), name(_name) {};
 };
-*/

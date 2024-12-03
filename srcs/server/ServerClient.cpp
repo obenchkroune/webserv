@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/03 04:14:58 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 11:53:14 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,29 @@ void ServerClient::ReceiveRequest(const std::string buff)
         }
     }
 }
+void ServerClient::SendErrorResponse(const HttpStatus &status, Response &response)
+{
+    response.SetStatusHeaders(status.name);
+    const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
+    std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(status.code);
+    if (it != error_pages.end())
+    {
+        std::vector<LocationConfig>::const_iterator file_location =
+            ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
+        std::string file_name = file_location->root + '/' + it->second.substr(file_location->path.length());
+        int         error_fd  = open(file_name.c_str(), O_RDONLY);
+        if (error_fd >= 0)
+        {
+            response.ReadFile(error_fd);
+        }
+        else
+        {
+            std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
+        }
+    }
+    response.EndResponse();
+    _server->QueueResponse(_socket_fd, response.GetResponseString());
+}
 void ServerClient::ProcessRequest(const Request &request)
 {
     if (request.getMethod() != HTTP_GET)
@@ -77,55 +100,22 @@ void ServerClient::ProcessRequest(const Request &request)
     Response                                    response(request);
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
-
     std::string file_name = file_location->root + '/' + request.getUri().substr(file_location->path.length());
+    if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
+    {
+        std::cerr << "Client fd: " << _socket_fd << " thinks himself a hacker." << std::endl;
+        std::cerr << "Access for file: " << file_name << " is outside the location root, request is forbidden." << std::endl;
+        return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
+    }
     if (access(file_name.c_str(), F_OK) != 0) // EXISTENCE ACCESS
     {
         std::cerr << "F_OK failed for file: " << file_name << std::endl;
-        response.SetStatusHeaders(HTTP_STATUS_NOT_FOUND);
-        const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
-        std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(STATUS_NOT_FOUND);
-        if (it != error_pages.end())
-        {
-            file_location = ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
-            file_name     = file_location->root + '/' + it->second.substr(file_location->path.length());
-            int error_fd  = open(file_name.c_str(), O_RDONLY);
-            if (error_fd >= 0)
-            {
-                response.ReadFile(error_fd);
-            }
-            else
-            {
-                std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
-            }
-        }
-        response.EndResponse();
-        _server->QueueResponse(_socket_fd, response.GetResponseString());
-        return;
+        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
     }
     if (access(file_name.c_str(), R_OK) != 0) // READ ACCESS
     {
         std::cerr << "R_OK failed for file: " << file_name << std::endl;
-        response.SetStatusHeaders(HTTP_STATUS_FORBIDDEN);
-        const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
-        std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(STATUS_FORBIDDEN);
-        if (it != error_pages.end())
-        {
-            file_location = ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
-            file_name     = file_location->root + '/' + it->second.substr(file_location->path.length());
-            int error_fd  = open(file_name.c_str(), O_RDONLY);
-            if (error_fd >= 0)
-            {
-                response.ReadFile(error_fd);
-            }
-            else
-            {
-                std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
-            }
-        }
-        response.EndResponse();
-        _server->QueueResponse(_socket_fd, response.GetResponseString());
-        return;
+        return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
     }
     struct stat path_stat;
     stat(file_name.c_str(), &path_stat);
@@ -143,10 +133,16 @@ void ServerClient::ProcessRequest(const Request &request)
         }
         if (index_it == file_location->index.end())
         {
-            std::cerr << "[Error] Directory listing is not yet implemented" << std::endl;
-            std::cerr << "Try specifying a file path like /index.html" << std::endl;
-            throw NotImplemented();
-            return;
+            if (file_location->autoindex)
+            {
+                std::cerr << "[Error] Directory listing is not yet implemented" << std::endl;
+                std::cerr << "Try specifying a file path like /index.html" << std::endl;
+                throw NotImplemented();
+            }
+            else
+            {
+                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
+            }
         }
     }
     response.SetStatusHeaders(HTTP_STATUS_OK);
