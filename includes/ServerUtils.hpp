@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:16:12 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 03:11:21 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 11:49:12 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,5 +16,6 @@
 
 namespace ServerUtils
 {
+bool validateFileLocation(const std::string &location_root, const std::string &fname);
 std::vector<LocationConfig>::const_iterator GetFileLocation(const ServerConfig &config, const std::string &fname);
-}
+} // namespace ServerUtils
