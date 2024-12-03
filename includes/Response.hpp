@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/02 22:25:16 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/02 23:49:01 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 #include <string>
 #include <ctime>
 #include <ranges>
+#include <sstream>
+#include <unistd.h>
 
 class ResponseException
 {
@@ -49,6 +51,6 @@ public:
 public:
     void SetStatusHeaders(const char *status_string);
     void AppendHeader(const HttpHeader &header);
-    void AppendContent(const char *buff);
+    void ReadFile(const int fd);
     void EndResponse();
 };

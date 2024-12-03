@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/02 22:49:51 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 00:05:01 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,18 +56,28 @@ void Response::AppendHeader(const HttpHeader &header)
 {
     _response_string += header.name + ": " + header.value + CRLF;
 }
-void Response::AppendContent(const char *buff)
+void Response::ReadFile(const int fd)
 {
-    _content_body += buff;
+    for (;;)
+    {
+        char buff[READ_CHUNK];
+        int  bytes = read(fd, buff, READ_CHUNK - 1);
+        if (bytes < 0)
+            throw ResponseException("read() failed for given fd.");
+        buff[bytes] = 0;
+        if (bytes == 0)
+            break;
+        _content_body += buff;
+    }
+    close(fd);
 }
-#include <sstream>
 void Response::EndResponse()
 {
     std::ostringstream content_length;
     content_length << _content_body.length() + 4;
     HttpHeader header;
-    header.name  = "Content-Length";
-    header.value += content_length.str(); 
+    header.name = "Content-Length";
+    header.value += content_length.str();
     AppendHeader(header);
     header.name  = "Connection";
     header.value = "keep-alive";

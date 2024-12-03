@@ -79,7 +79,6 @@ struct HttpHeader
 #define HTTP_STATUS_GATEWAY_TIMEOUT            "504 Gateway Timeout"
 #define HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED "505 HTTP Version Not Supported"
 
-/*
 enum http_status_code
 {
     // 100 - 102
@@ -132,11 +131,11 @@ enum http_status_code
     STATUS_HTTP_VERSION_NOT_SUPPORTED,
 };
 
+/*
 struct HttpStatus
 {
     http_status_code code;
     std::string      name;
     HttpStatus(const http_status_code &_code, const std::string _name) : code(_code), name(_name) {};
 };
-
 */
