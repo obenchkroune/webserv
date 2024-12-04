@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 19:01:05 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 23:52:11 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,6 @@ public:
 
 public:
     void Start();
-    void Terminate();
     void QueueResponse(int socket_fd, Response *response);
 
     /* Const */
@@ -68,6 +67,7 @@ public:
     /* Interface */
 public:
     virtual void ConsumeEvent(const epoll_event ev);
+    void Terminate();
 
     /* Private Methods */
 private:

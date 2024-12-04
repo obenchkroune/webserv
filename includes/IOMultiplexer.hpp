@@ -3,16 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:31:05 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 19:38:28 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/04 01:42:24 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include "Exceptions.hpp"
 #include "IOEventListener.hpp"
+#include <csignal>
+#include <iostream>
 #include <map>
 #include <sys/epoll.h>
 #include <unistd.h>

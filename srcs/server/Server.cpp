@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 22:35:43 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/04 02:21:00 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,9 +97,10 @@ void Server::Start()
     _listen_socket_ev.data.ptr = this;
     _IOmltplx->AddEvent(_listen_socket_ev, _listen_socket_fd);
     uint8_t *ip = (uint8_t *)&_listen_addr.sin_addr.s_addr;
-    std::cout << "Server started on listening succefully.\n";
-    std::cout << "Address: " << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.' << +ip[3] << ':'
-              << ntohs(_listen_addr.sin_port) << '\n';
+    std::cout << "Server [" << (_config.server_names.size() ? _config.server_names.front() : "NO_NAME")
+              << "] started listening on ";
+    std::cout << "address: " << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.' << +ip[3] << ':'
+              << ntohs(_listen_addr.sin_port) << std::endl;
 }
 void Server::ConsumeEvent(const epoll_event ev)
 {
@@ -204,11 +205,15 @@ void Server::Terminate()
         return;
     _is_started = false;
     _IOmltplx->RemoveEvent(_listen_socket_ev, _listen_socket_fd);
-    if (_listen_socket_fd >= 0)
-        close(_listen_socket_fd);
-    /*
-    Loop through connected clients and disconnect them + remove them from
-    the _clients map
-    */
-    std::cout << "Server terminated.\n";
+    close(_listen_socket_fd);
+    std::map<int, ServerClient>::iterator it = _clients.begin();
+    for (; it != _clients.end(); it = _clients.begin())
+    {
+        epoll_event ev;
+        ev.events  = EPOLLIN | EPOLLOUT;
+        ev.data.fd = it->first;
+        RemoveClient(ev);
+    }
+    std::cout << "Server [" << (_config.server_names.size() ? _config.server_names.front() : "NO_NAME")
+              << "] terminated." << std::endl;
 }
