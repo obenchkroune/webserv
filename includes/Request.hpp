@@ -6,9 +6,9 @@
 class RequestException : public std::exception
 {
 public:
-    RequestException(const std::string &message);
+    RequestException(const std::string& message);
     ~RequestException() throw();
-    const char *what() const throw();
+    const char* what() const throw();
 
 private:
     std::string _message;
@@ -17,9 +17,9 @@ private:
 class Request
 {
 public:
-    Request(const std::string &request);
-    Request(const Request &other);
-    Request &operator=(const Request &other);
+    Request(const std::string& request);
+    Request(const Request& other);
+    Request& operator=(const Request& other);
     ~Request();
 
     void Parse();
@@ -28,18 +28,18 @@ public:
     HttpMethod                     getMethod() const;
     std::string                    getUri() const;
     std::string                    getVersion() const;
-    const HttpHeader              *getHeader(const std::string &key) const;
-    const std::vector<HttpHeader> &getHeaders() const;
+    const HttpHeader*              getHeader(const std::string& key) const;
+    const std::vector<HttpHeader>& getHeaders() const;
     std::string                    getBody() const;
 
     // setters
     void setMethod(std::string method);
-    void setUri(const std::string &uri);
-    void setVersion(const std::string &version);
-    void setHeader(const HttpHeader &header);
-    void setBody(const std::string &body);
+    void setUri(const std::string& uri);
+    void setVersion(const std::string& version);
+    void setHeader(const HttpHeader& header);
+    void setBody(const std::string& body);
 
-    std::string getline(std::istream &iss) const;
+    std::string getline(std::istream& iss) const;
 
 private:
     std::string             _request;
@@ -48,6 +48,12 @@ private:
     std::string             _http_version;
     std::string             _body;
     std::vector<HttpHeader> _headers;
+
+    void ValidateHeaders();
+
+    void ParseRequestLine(std::istringstream& iss);
+    void ParseHeaders(std::istringstream& iss);
+    void ParseBody(std::istringstream& iss);
 };
 
-std::ostream &operator<<(std::ostream &os, const Request &request);
+std::ostream& operator<<(std::ostream& os, const Request& request);

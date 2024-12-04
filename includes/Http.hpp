@@ -19,9 +19,8 @@ enum HttpMethod
 
 struct HttpHeader
 {
-    std::string              name;
-    std::string              value;
-    std::vector<std::string> parameters;
+    std::string name;
+    std::string value;
 };
 
 #define HTTP_VERSION_TOKEN "HTTP/1.1"
@@ -134,6 +133,6 @@ enum http_status_code
 struct HttpStatus
 {
     http_status_code code;
-    const char      *name;
-    HttpStatus(const http_status_code &_code, const char *_name) : code(_code), name(_name) {};
+    const char*      name;
+    HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name) {};
 };
