@@ -1,4 +1,6 @@
 BasedOnStyle: Microsoft
+Language: Cpp
+Standard: Cpp03
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignConsecutiveMacros: true
