@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/04 13:58:20 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 00:06:08 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "IOEventListener.hpp"
 #include "IOMultiplexer.hpp"
 #include "Response.hpp"
+#include <algorithm>
 #include <iostream>
 #include <string>
 

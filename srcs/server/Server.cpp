@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 02:21:00 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 00:04:10 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,11 +89,11 @@ void Server::Start()
         throw ServerException("socket(): failed.", *this);
     int active = 1;
     if (setsockopt(_listen_socket_fd, SOL_SOCKET, SO_REUSEADDR, &active, sizeof(int)) == -1)
-        Terminate(), throw ServerException("setsockopt(): failed.", *this);
+        close(_listen_socket_fd), throw ServerException("setsockopt(): failed.", *this);
     if (bind(_listen_socket_fd, (sockaddr *)&_listen_addr, sizeof(_listen_addr)) == -1)
-        Terminate(), throw ServerException("bind(): failed.", *this);
+        close(_listen_socket_fd), throw ServerException("bind(): failed.", *this);
     if (listen(_listen_socket_fd, __INT32_MAX__) == -1)
-        Terminate(), throw ServerException("listen(): failed.", *this);
+        close(_listen_socket_fd), throw ServerException("listen(): failed.", *this);
     _listen_socket_ev.data.ptr = this;
     _IOmltplx->AddEvent(_listen_socket_ev, _listen_socket_fd);
     uint8_t *ip = (uint8_t *)&_listen_addr.sin_addr.s_addr;

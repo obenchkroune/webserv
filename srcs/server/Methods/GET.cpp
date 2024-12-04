@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 14:12:51 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/04 20:57:16 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,9 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
+    if (std::find(file_location->allow_methods.begin(), file_location->allow_methods.end(), request.getMethod()) ==
+        file_location->allow_methods.end())
+        return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED, HTTP_STATUS_METHOD_NOT_ALLOWED), response);
     std::string file_name = file_location->root + '/' + request.getUri().substr(file_location->path.length());
     if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
     {
