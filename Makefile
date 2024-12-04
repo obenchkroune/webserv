@@ -32,10 +32,10 @@ $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 
 clean:
-	$(RM) $(OBJ)
+	$(RM) $(BUILD_DIR)
 
 fclean: clean
-	$(RM) $(BUILD_DIR) $(NAME)
+	$(RM) $(NAME)
 
 re: fclean all
 
