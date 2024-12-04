@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 22:16:05 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/04 13:36:39 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,6 @@ namespace ServerUtils
 {
 bool validateFileLocation(const std::string &location_root, const std::string &fname)
 {
-    assert(fname[location_root.length()] == '/');
     if (fname.find("/..") == std::string::npos)
         return true;
     int curr_directory_relative_to_root = 0;
