@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOEventListener.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:37:18 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/22 21:00:33 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/03 23:51:46 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,4 +24,5 @@ public:
 
 public:
     virtual void ConsumeEvent(const epoll_event ev) = 0;
+    virtual void Terminate()                        = 0;
 };

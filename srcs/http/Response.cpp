@@ -6,13 +6,13 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 00:05:01 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/03 22:42:34 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(const Request &request) : _request(request)
+Response::Response(const Request &request) : _content_sent(0), _request(request)
 {
 }
 Response::Response(const Response &response) : _request(response._request)
@@ -23,22 +23,34 @@ Response &Response::operator=(const Response &response)
 {
     if (this == &response)
         return *this;
-    _response_string = response._response_string;
+    _headers      = response._headers;
+    _content_sent = response._content_sent;
+    _content      = response._content;
     return *this;
 }
 Response::~Response()
 {
 }
-const std::string &Response::GetResponseString() const
+const uint8_t *Response::GetResponseBuff() const
 {
-    return _response_string;
+    return (uint8_t *)&_content[_content_sent];
+}
+void Response::ResponseSent(const size_t n)
+{
+    _content_sent += n;
+}
+size_t Response::ResponseCount() const
+{
+    if (_content_sent >= _content.size())
+        return 0;
+    return _content.size() - _content_sent;
 }
 void Response::SetStatusHeaders(const char *status_string)
 {
-    _response_string = HTTP_VERSION_TOKEN " ";
-    _response_string += status_string;
-    _response_string += CRLF;
-    _response_string += "Server: " PROGNAME "/" PROGVERSION CRLF;
+    _headers = HTTP_VERSION_TOKEN " ";
+    _headers += status_string;
+    _headers += CRLF;
+    _headers += "Server: " PROGNAME "/" PROGVERSION CRLF;
 
     time_t t_now   = time(0);
     tm    *now     = gmtime(&t_now);
@@ -48,42 +60,47 @@ void Response::SetStatusHeaders(const char *status_string)
     if (bytes == 0)
         throw ResponseException("strftime() failed.");
     time_buff[bytes] = 0;
-    _response_string += "Date: ";
-    _response_string += time_buff;
-    _response_string += CRLF;
+    _headers += "Date: ";
+    _headers += time_buff;
+    _headers += CRLF;
 }
 void Response::AppendHeader(const HttpHeader &header)
 {
-    _response_string += header.name + ": " + header.value + CRLF;
+    _headers += header.name + ": " + header.value + CRLF;
 }
 void Response::ReadFile(const int fd)
 {
     for (;;)
     {
-        char buff[READ_CHUNK];
-        int  bytes = read(fd, buff, READ_CHUNK - 1);
+        uint8_t buff[READ_CHUNK];
+        int     bytes = read(fd, buff, READ_CHUNK);
         if (bytes < 0)
             throw ResponseException("read() failed for given fd.");
-        buff[bytes] = 0;
         if (bytes == 0)
             break;
-        _content_body += buff;
+        _content.insert(_content.end(), buff, (buff + bytes));
     }
     close(fd);
 }
-void Response::EndResponse()
+void Response::FinishResponse()
 {
     std::ostringstream content_length;
-    content_length << _content_body.length() + 4;
+    content_length << _content.size();
     HttpHeader header;
-    header.name = "Content-Length";
-    header.value += content_length.str();
+    header.name  = "Content-Length";
+    header.value = content_length.str();
     AppendHeader(header);
     header.name  = "Connection";
     header.value = "keep-alive";
     AppendHeader(header);
-    _response_string += CRLF;
-    _response_string += _content_body;
-    _response_string += CRLF CRLF;
-    _content_body.clear();
+    _headers += CRLF;
+    if (content_length)
+    {
+        _content.insert(_content.begin(), _headers.begin(), _headers.end());
+
+        std::cout << "[Response headers]     ============" << std::endl;
+        std::cout << _headers << std::endl;
+        std::cout << "[End Response headers] ============" << std::endl;
+        _headers.erase();
+    }
 }
