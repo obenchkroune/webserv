@@ -57,7 +57,7 @@ void ServerClient::ReceiveRequest(const std::string buff)
             std::cerr << "Request ignored." << std::endl;
             return;
         }
-        req.print();
+        std::cout << req << std::endl;
         _request_raw.clear();
         try
         {

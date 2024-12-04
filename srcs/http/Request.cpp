@@ -157,51 +157,50 @@ std::string Request::getline(std::istream &iss) const
     return line;
 }
 
-// TODO: remove
-std::string get_request_method(HttpMethod method)
+std::ostream &operator<<(std::ostream &os, const Request &request)
 {
-    switch (method)
+    os << "Method: ";
+    switch (request.getMethod())
     {
     case HTTP_GET:
-        return "GET";
+        std::cout << "GET";
+        break;
     case HTTP_POST:
-        return "POST";
+        std::cout << "POST";
+        break;
     case HTTP_DELETE:
-        return "DELETE";
+        std::cout << "DELETE";
+        break;
     case HTTP_PUT:
-        return "PUT";
+        std::cout << "PUT";
+        break;
     case HTTP_ANY:
-        return "ANY";
+        std::cout << "ANY";
+        break;
     default:
-        return "UNKNOWN";
+        std::cout << "UNKNOWN";
     }
-}
-
-#include <iomanip>
-void Request::print() const
-{
-    std::cout << "================================= Request =================================\n";
-    std::cout << "Method: " << get_request_method(_method) << std::endl;
-    std::cout << "URI: " << _uri << std::endl;
-    std::cout << "HTTP version: " << _http_version << std::endl;
-    std::cout << "Headers:\n";
+    os << std::endl;
+    os << "URI: " << request.getUri() << std::endl;
+    os << "HTTP version: " << request.getVersion() << std::endl;
+    os << "Headers:\n";
 
     size_t max_length = 0;
 
     std::vector<HttpHeader>::const_iterator it;
-    for (it = _headers.begin(); it != _headers.end(); ++it)
+    for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
         max_length = std::max(max_length, it->name.length());
     }
 
-    for (it = _headers.begin(); it != _headers.end(); ++it)
+    for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
-        std::cout << std::setw(max_length) << std::left << it->name << ": " << it->value << std::endl;
+        os << std::setw(max_length) << std::left << it->name << ": " << it->value << std::endl;
     }
-    std::cout << "Body: ";
-    if (_body.empty())
-        std::cout << "<empty>\n";
+    os << "Body: ";
+    if (request.getBody().empty())
+        os << "<empty>\n";
     else
-        std::cout << _body << '\n';
-    std::cout << "===========================================================================" << std::endl;
+        os << request.getBody() << '\n';
+    return os;
 }

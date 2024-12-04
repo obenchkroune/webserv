@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Config.hpp"
+#include <iomanip>
 
 class RequestException : public std::exception
 {
@@ -39,8 +40,6 @@ public:
     void setBody(const std::string &body);
 
     std::string getline(std::istream &iss) const;
-    // TODO: remove this
-    void print() const;
 
 private:
     std::string             _request;
@@ -50,3 +49,5 @@ private:
     std::string             _body;
     std::vector<HttpHeader> _headers;
 };
+
+std::ostream &operator<<(std::ostream &os, const Request &request);

@@ -99,7 +99,7 @@ void Server::Start()
     uint8_t *ip = (uint8_t *)&_listen_addr.sin_addr.s_addr;
     std::cout << "Server [" << (_config.server_names.size() ? _config.server_names.front() : "NO_NAME")
               << "] started listening on ";
-    std::cout << "address: " << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.' << +ip[3] << ':'
+    std::cout << "address: http://" << +ip[0] << '.' << +ip[1] << '.' << +ip[2] << '.' << +ip[3] << ':'
               << ntohs(_listen_addr.sin_port) << std::endl;
 }
 void Server::ConsumeEvent(const epoll_event ev)
