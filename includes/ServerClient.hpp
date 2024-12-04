@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/03 17:33:11 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/04 13:58:20 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,5 +40,9 @@ public:
 
 private:
     void ProcessRequest(const Request &request);
-    void SendErrorResponse(const HttpStatus &status, Response * response);
+    void SendErrorResponse(const HttpStatus &status, Response *response);
+
+private:
+    void ProcessGET(const Request &request, Response *response, bool send_data = true);
+    void ProcessHEAD(const Request &request, Response *response);
 };

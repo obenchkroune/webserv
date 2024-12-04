@@ -111,6 +111,8 @@ void Request::setMethod(std::string method)
 {
     if (method == "GET")
         _method = HTTP_GET;
+    else if (method == "HEAD")
+        _method = HTTP_HEAD;
     else if (method == "POST")
         _method = HTTP_POST;
     else if (method == "DELETE")

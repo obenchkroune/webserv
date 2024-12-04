@@ -6,7 +6,7 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 22:42:34 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/04 13:56:37 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,15 @@ void Response::AppendHeader(const HttpHeader &header)
 }
 void Response::ReadFile(const int fd)
 {
+    struct stat st;
+    fstat(fd, &st);
+    std::ostringstream content_length;
+    content_length << st.st_size;
+    HttpHeader header;
+    header.name  = "Content-Length";
+    header.value = content_length.str();
+    AppendHeader(header);
+
     for (;;)
     {
         uint8_t buff[READ_CHUNK];
@@ -84,23 +93,14 @@ void Response::ReadFile(const int fd)
 }
 void Response::FinishResponse()
 {
-    std::ostringstream content_length;
-    content_length << _content.size();
     HttpHeader header;
-    header.name  = "Content-Length";
-    header.value = content_length.str();
-    AppendHeader(header);
     header.name  = "Connection";
     header.value = "keep-alive";
     AppendHeader(header);
     _headers += CRLF;
-    if (content_length)
-    {
-        _content.insert(_content.begin(), _headers.begin(), _headers.end());
-
-        std::cout << "[Response headers]     ============" << std::endl;
-        std::cout << _headers << std::endl;
-        std::cout << "[End Response headers] ============" << std::endl;
-        _headers.erase();
-    }
+    _content.insert(_content.begin(), _headers.begin(), _headers.end());
+    std::cout << "[Response headers]     ============" << std::endl;
+    std::cout << _headers << std::endl;
+    std::cout << "[End Response headers] ============" << std::endl;
+    _headers.erase();
 }
