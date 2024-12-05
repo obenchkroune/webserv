@@ -75,6 +75,11 @@ std::string Request::getBody() const
     return _body;
 }
 
+const std::map<std::string, std::string>& Request::getQueryParams() const
+{
+    return _query_params;
+}
+
 void Request::setMethod(std::string method)
 {
     if (method == "GET")
@@ -147,6 +152,30 @@ void Request::ParseRequestLine(std::istringstream& iss)
     this->setMethod(start_line[0]);
     this->setUri(start_line[1]);
     this->setVersion(start_line[2]);
+    this->parseQueryParams();
+}
+
+void Request::parseQueryParams()
+{
+    size_t pos = _uri.find('?');
+    if (pos == std::string::npos)
+        return;
+    std::string query = _uri.substr(pos + 1);
+    _uri              = _uri.substr(0, pos);
+
+    std::vector<std::string> params = Utils::ft_split(query, '&');
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        if (params[i].empty())
+            continue;
+        if (params[i].find('=') == std::string::npos)
+            throw RequestException("Invalid query parameter.");
+        std::vector<std::string> param = Utils::ft_split(params[i], '=');
+        if (param.size() == 2)
+            _query_params[param[0]] = param[1];
+        else
+            _query_params[param[0]] = "";
+    }
 }
 
 void Request::ParseHeaders(std::istringstream& iss)
@@ -211,6 +240,12 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
     }
     os << std::endl;
     os << "URI: " << request.getUri() << std::endl;
+    os << "Query params: " << std::endl;
+    for (size_t i = 0; i < request.getQueryParams().size(); i++)
+    {
+        os << "- " << request.getQueryParams().begin()->first << " = "
+           << request.getQueryParams().begin()->second << std::endl;
+    }
     os << "HTTP version: " << request.getVersion() << std::endl;
     os << "Headers:\n";
 

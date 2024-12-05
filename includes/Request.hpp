@@ -25,12 +25,13 @@ public:
     void Parse();
 
     // getters
-    HttpMethod                     getMethod() const;
-    std::string                    getUri() const;
-    std::string                    getVersion() const;
-    const HttpHeader*              getHeader(const std::string& key) const;
-    const std::vector<HttpHeader>& getHeaders() const;
-    std::string                    getBody() const;
+    HttpMethod                                getMethod() const;
+    std::string                               getUri() const;
+    std::string                               getVersion() const;
+    const HttpHeader*                         getHeader(const std::string& key) const;
+    const std::vector<HttpHeader>&            getHeaders() const;
+    std::string                               getBody() const;
+    const std::map<std::string, std::string>& getQueryParams() const;
 
     // setters
     void setMethod(std::string method);
@@ -42,16 +43,18 @@ public:
     std::string getline(std::istream& iss) const;
 
 private:
-    std::string             _request;
-    HttpMethod              _method;
-    std::string             _uri;
-    std::string             _http_version;
-    std::string             _body;
-    std::vector<HttpHeader> _headers;
+    std::string                        _request;
+    std::map<std::string, std::string> _query_params;
+    HttpMethod                         _method;
+    std::string                        _uri;
+    std::string                        _http_version;
+    std::string                        _body;
+    std::vector<HttpHeader>            _headers;
 
     void ValidateHeaders();
 
     void ParseRequestLine(std::istringstream& iss);
+    void parseQueryParams();
     void ParseHeaders(std::istringstream& iss);
     void ParseBody(std::istringstream& iss);
 };
