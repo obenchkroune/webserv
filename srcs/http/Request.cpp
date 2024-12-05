@@ -178,6 +178,69 @@ void Request::parseQueryParams()
     }
 }
 
+void Request::parseHeaderValues(HttpHeader& header)
+{
+
+    bool canHaveMetadata = (header.name == "Accept" || header.name == "Accept-Charset" ||
+                            header.name == "Accept-Encoding" || header.name == "Accept-Language" ||
+                            header.name == "TE");
+
+    if (!canHaveMetadata)
+    {
+        header.values.push_back(Utils::ft_strtrim(header.raw_value));
+        return;
+    }
+
+    std::vector<std::string>                values;
+    std::multimap<float, std::string>       sorted_values;
+    std::multimap<std::string, std::string> metadata;
+
+    std::vector<std::string> parts = Utils::ft_split(header.raw_value, ',');
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        std::string value = parts[i];
+        value             = Utils::ft_strtrim(value);
+        size_t pos        = value.find(';');
+        if (pos == std::string::npos)
+        {
+            sorted_values.insert(std::make_pair(1.0, value));
+            continue;
+        }
+
+        float                    quality = 1.0;
+        std::vector<std::string> params  = Utils::ft_split(value, ';');
+        for (size_t j = 0; j < params.size(); j++)
+        {
+            std::string param = Utils::ft_strtrim(params[j]);
+            if (param.substr(0, 2) == "q=")
+            {
+                if (!(std::istringstream(param.substr(2)) >> quality) || quality < 0.0 ||
+                    quality > 1.0)
+                    throw RequestException("Invalid quality factor.");
+                continue;
+            }
+            if (param.find('=') != std::string::npos)
+            {
+                std::vector<std::string> kv = Utils::ft_split(param, '=');
+                metadata.insert(std::make_pair(kv[0], kv[1]));
+            }
+            else
+            {
+                metadata.insert(std::make_pair(param, ""));
+            }
+        }
+        sorted_values.insert(std::make_pair(quality, params[0]));
+    }
+
+    std::multimap<float, std::string>::reverse_iterator it;
+    for (it = sorted_values.rbegin(); it != sorted_values.rend(); it++)
+    {
+        values.push_back(it->second);
+    }
+    header.values   = values;
+    header.metadata = metadata;
+}
+
 void Request::ParseHeaders(std::istringstream& iss)
 {
     std::string line;
@@ -186,9 +249,11 @@ void Request::ParseHeaders(std::istringstream& iss)
         size_t pos = line.find(':');
         if (pos == std::string::npos)
             throw RequestException("Invalid header.");
-        std::string key    = line.substr(0, pos);
-        std::string value  = line.substr(pos + 1);
-        HttpHeader  header = {key, value};
+        HttpHeader header;
+        header.name      = Utils::ft_strtrim(line.substr(0, pos));
+        header.raw_value = line.substr(pos + 1);
+
+        this->parseHeaderValues(header);
         this->setHeader(header);
     }
     this->ValidateHeaders();
@@ -259,7 +324,11 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
 
     for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
-        os << std::setw(max_length) << std::left << it->name << ": " << it->value << std::endl;
+        os << std::setw(max_length) << std::left << it->name << ": " << std::endl;
+        for (size_t i = 0; i < it->values.size(); i++)
+        {
+            os << "  - " << it->values[i] << std::endl;
+        }
     }
     os << "Body: ";
     if (request.getBody().empty())

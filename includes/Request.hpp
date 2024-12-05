@@ -55,6 +55,7 @@ private:
 
     void ParseRequestLine(std::istringstream& iss);
     void parseQueryParams();
+    void parseHeaderValues(HttpHeader& header);
     void ParseHeaders(std::istringstream& iss);
     void ParseBody(std::istringstream& iss);
 };
