@@ -3,19 +3,20 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 13:56:37 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 11:46:29 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(const Request &request) : _content_sent(0), _request(request)
+Response::Response(const Request &request, const ServerConfig &virtual_server)
+    : _content_sent(0), _request(request), _virtual_server(virtual_server)
 {
 }
-Response::Response(const Response &response) : _request(response._request)
+Response::Response(const Response &response) : _request(response._request), _virtual_server(response._virtual_server)
 {
     *this = response;
 }
@@ -30,6 +31,10 @@ Response &Response::operator=(const Response &response)
 }
 Response::~Response()
 {
+}
+const ServerConfig &Response::GetVirtualServer() const
+{
+    return _virtual_server;
 }
 const uint8_t *Response::GetResponseBuff() const
 {

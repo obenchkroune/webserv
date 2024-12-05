@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 13:55:29 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 11:45:03 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,12 @@
 #include "Request.hpp"
 #include <ctime>
 #include <exception>
+#include <iostream>
 #include <ranges>
 #include <sstream>
 #include <string>
-#include <unistd.h>
-#include <iostream>
 #include <sys/stat.h>
+#include <unistd.h>
 
 class ResponseException
 {
@@ -39,9 +39,10 @@ private:
     std::vector<uint8_t> _content;
     size_t               _content_sent;
     const Request        _request;
+    const ServerConfig  &_virtual_server;
 
 public:
-    Response(const Request &request);
+    Response(const Request &request, const ServerConfig &virtual_server);
     ~Response();
 
 private:
@@ -49,9 +50,10 @@ private:
     Response &operator=(const Response &response);
 
 public:
-    const uint8_t *GetResponseBuff() const;
-    void           ResponseSent(const size_t n);
-    size_t         ResponseCount() const;
+    const ServerConfig &GetVirtualServer() const;
+    const uint8_t      *GetResponseBuff() const;
+    void                ResponseSent(const size_t n);
+    size_t              ResponseCount() const;
 
 public:
     void SetStatusHeaders(const char *status_string);

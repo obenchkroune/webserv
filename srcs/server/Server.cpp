@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 03:00:20 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 12:04:34 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ Server::Server(const Server &server) : AIOEventListener(server)
 }
 Server &Server::operator=(const Server &server)
 {
+    (void)server;
     return *this;
 }
 Server::~Server()
@@ -70,6 +71,9 @@ void Server::Start()
         throw ServerException("Server is already started.");
     _is_started                                  = true;
     std::vector<ServerConfig>::const_iterator it = _config.begin();
+
+    // TODO Need To remove this shit below because we can listen on different ports on the same Fing address ip..
+    // <<----------------------
     for (; it != _config.end(); it++)
     {
         if (it->host.empty() || it->host == "0.0.0.0")
@@ -77,7 +81,7 @@ void Server::Start()
             sockaddr_in address;
             address.sin_family      = AF_INET;
             address.sin_addr.s_addr = INADDR_ANY;
-            address.sin_port        = it->port;
+            address.sin_port        = htons(it->port);
             try
             {
                 listen_on_addr(address);
@@ -93,6 +97,7 @@ void Server::Start()
             }
         }
     }
+    // ---------------------->>
     it = _config.begin();
     for (; it != _config.end(); it++)
     {
@@ -155,6 +160,7 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
 }
 void Server::HandlePeerEPOLLOUT(const epoll_event &ev, ServerClient &client)
 {
+    (void)client;
     std::map<int, Responses_queue>::iterator res_it = _responses_.find(ev.data.fd);
     if (res_it == _responses_.end() || res_it->second.size() == 0)
         return;

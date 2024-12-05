@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GET.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 20:57:16 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 11:47:49 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 void ServerClient::ProcessGET(const Request &request, Response *response, bool send_data /* = true*/)
 {
     std::vector<LocationConfig>::const_iterator file_location =
-        ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
+        ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
     if (std::find(file_location->allow_methods.begin(), file_location->allow_methods.end(), request.getMethod()) ==
         file_location->allow_methods.end())
         return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED, HTTP_STATUS_METHOD_NOT_ALLOWED), response);
@@ -40,8 +40,8 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
     }
     struct stat path_stat;
     stat(file_name.c_str(), &path_stat);
-    size_t max_sz_limit = _server->GetConfig().max_body_size;
-    if (file_location->max_body_size != _server->GetConfig().max_body_size)
+    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
+    if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
         max_sz_limit = file_location->max_body_size;
     if ((size_t)path_stat.st_size > max_sz_limit)
     {

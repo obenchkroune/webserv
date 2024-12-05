@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/05 02:23:43 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 12:04:19 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,12 +70,12 @@ void ServerClient::ReceiveRequest(const std::string buff)
 void ServerClient::SendErrorResponse(const HttpStatus &status, Response *response)
 {
     response->SetStatusHeaders(status.name);
-    const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
+    const std::map<uint16_t, std::string>          &error_pages = response->GetVirtualServer().error_pages;
     std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(status.code);
     if (it != error_pages.end())
     {
         std::vector<LocationConfig>::const_iterator file_location =
-            ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
+            ServerUtils::GetFileLocation(response->GetVirtualServer(), it->second);
         std::string file_name = file_location->root + '/' + it->second.substr(file_location->path.length());
         int         error_fd  = open(file_name.c_str(), O_RDONLY);
         if (error_fd >= 0)
@@ -92,7 +92,15 @@ void ServerClient::SendErrorResponse(const HttpStatus &status, Response *respons
 }
 void ServerClient::ProcessRequest(const Request &request)
 {
-    Response *response = new Response(request);
+    const ServerConfig * virtualServer = ServerUtils::GetRequestVServer(request, _server->GetConfig());
+    Response *response;
+    if (virtualServer == NULL)
+    {
+        std::cerr << "No Host header field provided." << std::endl;
+        response = new Response(request, *_server->GetConfig().begin());
+        return SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST), response);
+    }
+    response = new Response(request, *virtualServer);
     switch (request.getMethod())
     {
     case HTTP_GET: {

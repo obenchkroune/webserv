@@ -3,19 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 02:36:33 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 12:05:48 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ServerClient.hpp"
 #include "ServerUtils.hpp"
+#include "ServerClient.hpp"
 #include <cassert>
 #include <iostream>
 #include <libgen.h>
-#include <netinet/in.h>
 
 namespace ServerUtils
 {
@@ -52,7 +51,7 @@ sockaddr_in GetListenAddr(const ServerConfig &_config)
     address.sin_port = htons(_config.port);
     return address;
 }
-inline void PrintSocketIP(std::ostream &os, const sockaddr_in &address)
+void PrintSocketIP(std::ostream &os, const sockaddr_in &address)
 {
     const uint8_t *IP = (uint8_t *)&address.sin_addr.s_addr;
     os << +IP[0] << '.' << +IP[1] << '.' << +IP[2] << '.' << +IP[3] << ':' << ntohs(address.sin_port) << std::endl;
@@ -112,5 +111,21 @@ std::vector<LocationConfig>::const_iterator GetFileLocation(const ServerConfig &
         }
     }
     return matched_location;
+}
+const ServerConfig *GetRequestVServer(const Request &request, const std::vector<ServerConfig> &config)
+{
+    const HttpHeader *host_header = request.getHeader("Host");
+    if (host_header == NULL)
+        return NULL;
+    // TODO Need to properly implement host matching (treating asetrix wildcard...)
+    std::vector<ServerConfig>::const_iterator it = config.begin();
+    for (; it != config.end(); it++)
+    {
+        std::vector<std::string>::const_iterator names_it = it->server_names.begin();
+        for (; names_it != it->server_names.end(); names_it++)
+            if (*names_it == host_header->value)
+                return &(*it);
+    }
+    return &(*config.begin());
 }
 } // namespace ServerUtils
