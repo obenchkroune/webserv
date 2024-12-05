@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 12:05:48 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/05 15:43:34 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,12 @@ sockaddr_in GetListenAddr(const ServerConfig &_config)
     std::string host = _config.host;
 
     address.sin_family = AF_INET;
+    address.sin_port   = htons(_config.port);
+    if (host.empty() || host == "0.0.0.0")
+    {
+        address.sin_addr.s_addr = INADDR_ANY;
+        return address;
+    }
     if (host == "localhost" || host == "127.0.0.1")
     {
         address.sin_addr.s_addr = INADDR_LOOPBACK;
@@ -48,7 +54,6 @@ sockaddr_in GetListenAddr(const ServerConfig &_config)
             ip_address[i]       = byte;
         }
     }
-    address.sin_port = htons(_config.port);
     return address;
 }
 void PrintSocketIP(std::ostream &os, const sockaddr_in &address)

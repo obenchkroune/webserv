@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 12:04:34 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/05 15:44:09 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,33 +71,6 @@ void Server::Start()
         throw ServerException("Server is already started.");
     _is_started                                  = true;
     std::vector<ServerConfig>::const_iterator it = _config.begin();
-
-    // TODO Need To remove this shit below because we can listen on different ports on the same Fing address ip..
-    // <<----------------------
-    for (; it != _config.end(); it++)
-    {
-        if (it->host.empty() || it->host == "0.0.0.0")
-        {
-            sockaddr_in address;
-            address.sin_family      = AF_INET;
-            address.sin_addr.s_addr = INADDR_ANY;
-            address.sin_port        = htons(it->port);
-            try
-            {
-                listen_on_addr(address);
-                std::cout << "Server started listening on address: " << it->host << ':' << it->port << std::endl;
-                return; // listening on any address no need to listen on other addresses too;
-            }
-            catch (const std::exception &e)
-            {
-                std::cout << "Server failed to listen on address: " << it->host << ':' << it->port << '\n';
-                std::cerr << "reason: " << e.what() << '\n';
-                std::cerr << "trying other virtual server addresses present in config if any.." << std::endl;
-                break; // try to listen on other addresses;
-            }
-        }
-    }
-    // ---------------------->>
     it = _config.begin();
     for (; it != _config.end(); it++)
     {

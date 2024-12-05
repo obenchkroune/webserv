@@ -10,7 +10,7 @@ extern int webserv_unix_signal;
 void handle_sigint(int signal)
 {
     webserv_unix_signal = signal;
-    std::cout << std::endl;
+    std::cout << std::endl << "Got interrupt signal." << std::endl;
 }
 void handle_signals()
 {
