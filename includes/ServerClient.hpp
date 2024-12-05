@@ -6,14 +6,13 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/05 00:06:08 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 02:23:26 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #include "Exceptions.hpp"
 #include "IOEventListener.hpp"
-#include "IOMultiplexer.hpp"
 #include "Response.hpp"
 #include <algorithm>
 #include <iostream>
@@ -27,7 +26,7 @@ private:
     Server     *_server;
 
 public:
-    ServerClient(int socket_fd, Server *server, IOMultiplexer *IOmltplx);
+    ServerClient(int socket_fd, Server *server);
     ServerClient(const ServerClient &client);
     ~ServerClient();
 

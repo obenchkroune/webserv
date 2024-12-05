@@ -6,16 +6,57 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 13:36:39 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 02:36:33 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "ServerClient.hpp"
 #include "ServerUtils.hpp"
 #include <cassert>
+#include <iostream>
 #include <libgen.h>
+#include <netinet/in.h>
 
 namespace ServerUtils
 {
+sockaddr_in GetListenAddr(const ServerConfig &_config)
+{
+    sockaddr_in address;
+    std::string host = _config.host;
+
+    address.sin_family = AF_INET;
+    if (host == "localhost" || host == "127.0.0.1")
+    {
+        address.sin_addr.s_addr = INADDR_LOOPBACK;
+        return address;
+    }
+    {
+        for (size_t dot, pos = 0, i = 0; i < 4; i++, pos = dot + 1)
+        {
+            if ((dot = host.find(".", pos)) == std::string::npos)
+            {
+                if (i < 3)
+                    throw ServerException("Bad host address string.");
+                else
+                    dot = host.length();
+            }
+            if (dot - pos > 3 || dot - pos <= 0)
+                throw ServerException("Bad host address string.");
+            std::string raw_byte = host.substr(pos, dot);
+
+            uint8_t  byte       = std::atoi(raw_byte.c_str());
+            uint8_t *ip_address = (uint8_t *)&address.sin_addr.s_addr;
+            ip_address[i]       = byte;
+        }
+    }
+    address.sin_port = htons(_config.port);
+    return address;
+}
+inline void PrintSocketIP(std::ostream &os, const sockaddr_in &address)
+{
+    const uint8_t *IP = (uint8_t *)&address.sin_addr.s_addr;
+    os << +IP[0] << '.' << +IP[1] << '.' << +IP[2] << '.' << +IP[3] << ':' << ntohs(address.sin_port) << std::endl;
+}
 bool validateFileLocation(const std::string &location_root, const std::string &fname)
 {
     if (fname.find("/..") == std::string::npos)

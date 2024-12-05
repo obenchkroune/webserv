@@ -6,20 +6,18 @@
 /*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/04 13:45:50 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 02:23:43 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerClient.hpp"
 #include "Server.hpp"
 
-ServerClient::ServerClient(const int socket_fd, Server *server, IOMultiplexer *IOmltplx)
+ServerClient::ServerClient(const int socket_fd, Server *server)
     : _socket_fd(socket_fd), _server(server)
 {
     if (server == NULL)
         throw ServerClientException("Can't have a null server ptr.");
-    if (IOmltplx == NULL)
-        throw ServerClientException("Can't have a null IOmltplx ptr.");
 }
 ServerClient::ServerClient(const ServerClient &client)
 {
