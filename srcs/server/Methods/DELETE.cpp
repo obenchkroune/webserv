@@ -1,31 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   POST.cpp                                           :+:      :+:    :+:   */
+/*   DELETE.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 17:30:12 by msitni           ###   ########.fr       */
+/*   Created: 2024/12/07 17:31:57 by msitni            #+#    #+#             */
+/*   Updated: 2024/12/07 17:55:48 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "ServerClient.hpp"
 
-void ServerClient::ProcessPOST(const Request &request, Response *response)
+void ServerClient::ProcessDELETE(const Request &request, Response *response)
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
     if (file_location == response->GetVirtualServer().locations.end())
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    std::pair<HttpStatus, std::string> file = ProcessFilePermission(request, file_location, X_OK);
+    std::pair<HttpStatus, std::string> file =
+        ProcessFilePermission(request, file_location, F_OK); // Should check if file's owner UID matches webserv's UID
     if (file.first.code != STATUS_OK)
         return SendErrorResponse(file.first, response);
-    struct stat  path_stat;
     std::string &file_name = file.second;
-    stat(file_name.c_str(), &path_stat);
 
+    struct stat path_stat;
+    stat(file_name.c_str(), &path_stat);
     if (S_ISDIR(path_stat.st_mode))
     {
         std::vector<std::string>::const_iterator index_it = file_location->index.begin();
@@ -34,7 +35,8 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
             std::string index_file_name = file_name + '/' + *index_it;
             if (access(index_file_name.c_str(), F_OK) == 0)
             {
-                if (access(index_file_name.c_str(), X_OK) == 0)
+                if (access(index_file_name.c_str(), F_OK) ==
+                    0) // Should check if file's owner UID matches webserv's UID
                 {
                     file_name = index_file_name;
                     break;
@@ -44,22 +46,14 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
         }
         if (index_it == file_location->index.end())
             return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    }
-
-    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
-    if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
-        max_sz_limit = file_location->max_body_size;
-    if (request.getBody().size() > max_sz_limit)
-    {
-        std::cerr << "POST request too large: " << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-                                 response);
+        stat(file_name.c_str(), &path_stat);
     }
     /*
-     ** Fork And buffer data to cgi server
-     ** Or
-     ** Upload data to upload dir
-     */
+        Here should we use unlink(), remove()..??
+        Unfortunatly all of those not mentioned in the subject.
+        Please dont tell me we need to execve() just to do `rm` Ugh!!.
+    */
+    response->SetStatusHeaders(HTTP_STATUS_OK);
     response->FinishResponse(true);
     _server->QueueResponse(_socket_fd, response);
 }

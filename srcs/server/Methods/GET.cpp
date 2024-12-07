@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 17:16:14 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 17:47:33 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,17 +23,9 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
     if (file.first.code != STATUS_OK)
         return SendErrorResponse(file.first, response);
     std::string &file_name = file.second;
-    struct stat  path_stat;
+
+    struct stat path_stat;
     stat(file_name.c_str(), &path_stat);
-    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
-    if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
-        max_sz_limit = file_location->max_body_size;
-    if ((size_t)path_stat.st_size > max_sz_limit)
-    {
-        std::cerr << "file too large: " << file_name << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-                                 response);
-    }
     if (S_ISDIR(path_stat.st_mode))
     {
         std::vector<std::string>::const_iterator index_it = file_location->index.begin();
@@ -64,7 +56,19 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
                 return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
             }
         }
+        stat(file_name.c_str(), &path_stat);
     }
+
+    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
+    if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
+        max_sz_limit = file_location->max_body_size;
+    if ((size_t)path_stat.st_size > max_sz_limit)
+    {
+        std::cerr << "file too large: " << file_name << std::endl;
+        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
+                                 response);
+    }
+
     response->SetStatusHeaders(HTTP_STATUS_OK);
     std::string fname = basename(file_name.c_str());
     std::string extension;
