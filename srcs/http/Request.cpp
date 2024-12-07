@@ -1,11 +1,12 @@
 #include "Request.hpp"
 #include "Http.hpp"
 #include "Utils.hpp"
+#include <algorithm>
 #include <cstdio>
 #include <iostream>
 #include <sstream>
 
-Request::Request(const std::string& request) : _request(request)
+Request::Request(const std::string& request) : _buffer(request)
 {
 }
 
@@ -30,13 +31,25 @@ Request::~Request()
 {
 }
 
-void Request::Parse()
+void Request::appendBody(const std::string& body)
 {
-    std::istringstream iss(_request);
+    _body += body;
+    _buffer << body;
+}
 
-    this->ParseRequestLine(iss);
-    this->ParseHeaders(iss);
-    this->ParseBody(iss);
+uint16_t Request::Parse()
+{
+    try
+    {
+        this->parseRequestLine();
+        this->ParseHeaders();
+        this->ParseBody();
+        return 200;
+    }
+    catch (const std::exception& e)
+    {
+        return 400;
+    }
 }
 
 HttpMethod Request::getMethod() const
@@ -124,7 +137,7 @@ void Request::setBody(const std::string& body)
     _body = body;
 }
 
-std::string Request::getline(std::istream& iss) const
+std::string Request::getHeaderLine(std::istream& iss) const
 {
     std::string line;
 
@@ -139,19 +152,26 @@ std::string Request::getline(std::istream& iss) const
         line += ' ';
         while (std::string(" \t").find(iss.peek()) != std::string::npos)
             iss.ignore();
-        line += Request::getline(iss);
+        line += Request::getHeaderLine(iss);
     }
     return line;
 }
 
-void Request::ParseRequestLine(std::istringstream& iss)
+void Request::parseRequestLine()
 {
-    std::vector<std::string> start_line = Utils::ft_split(Request::getline(iss), ' ');
-    if (start_line.size() != 3)
+    std::string method, uri, version;
+
+    if (!std::getline(_buffer, method, ' ') || !std::getline(_buffer, uri, ' '))
         throw RequestException("invalid start line.");
-    this->setMethod(start_line[0]);
-    this->setUri(start_line[1]);
-    this->setVersion(start_line[2]);
+
+    if (!std::getline(_buffer, version, '\n') || version[version.size() - 1] != '\r')
+        throw RequestException("invalid start line.");
+
+    version.erase(version.size() - 1);
+
+    this->setMethod(method);
+    this->setUri(uri);
+    this->setVersion(version);
     this->parseQueryParams();
 }
 
@@ -178,92 +198,27 @@ void Request::parseQueryParams()
     }
 }
 
-void Request::parseHeaderValues(HttpHeader& header)
-{
-
-    bool canHaveMetadata = (header.name == "Accept" || header.name == "Accept-Charset" ||
-                            header.name == "Accept-Encoding" || header.name == "Accept-Language" ||
-                            header.name == "TE");
-
-    if (!canHaveMetadata)
-    {
-        header.values.push_back(Utils::ft_strtrim(header.raw_value));
-        return;
-    }
-
-    std::vector<std::string>                values;
-    std::multimap<float, std::string>       sorted_values;
-    std::multimap<std::string, std::string> metadata;
-
-    std::vector<std::string> parts = Utils::ft_split(header.raw_value, ',');
-    for (size_t i = 0; i < parts.size(); i++)
-    {
-        std::string value = parts[i];
-        value             = Utils::ft_strtrim(value);
-        size_t pos        = value.find(';');
-        if (pos == std::string::npos)
-        {
-            sorted_values.insert(std::make_pair(1.0, value));
-            continue;
-        }
-
-        float                    quality = 1.0;
-        std::vector<std::string> params  = Utils::ft_split(value, ';');
-        for (size_t j = 0; j < params.size(); j++)
-        {
-            std::string param = Utils::ft_strtrim(params[j]);
-            if (param.substr(0, 2) == "q=")
-            {
-                if (!(std::istringstream(param.substr(2)) >> quality) || quality < 0.0 ||
-                    quality > 1.0)
-                    throw RequestException("Invalid quality factor.");
-                continue;
-            }
-            if (param.find('=') != std::string::npos)
-            {
-                std::vector<std::string> kv = Utils::ft_split(param, '=');
-                metadata.insert(std::make_pair(kv[0], kv[1]));
-            }
-            else
-            {
-                metadata.insert(std::make_pair(param, ""));
-            }
-        }
-        sorted_values.insert(std::make_pair(quality, params[0]));
-    }
-
-    std::multimap<float, std::string>::reverse_iterator it;
-    for (it = sorted_values.rbegin(); it != sorted_values.rend(); it++)
-    {
-        values.push_back(it->second);
-    }
-    header.values   = values;
-    header.metadata = metadata;
-}
-
-void Request::ParseHeaders(std::istringstream& iss)
+void Request::ParseHeaders()
 {
     std::string line;
-    while (!(line = Request::getline(iss)).empty())
+    while (!(line = Request::getHeaderLine(_buffer)).empty())
     {
         size_t pos = line.find(':');
         if (pos == std::string::npos)
             throw RequestException("Invalid header.");
-        HttpHeader header;
-        header.name      = Utils::ft_strtrim(line.substr(0, pos));
-        header.raw_value = line.substr(pos + 1);
-
-        this->parseHeaderValues(header);
+        std::string name  = Utils::ft_strtrim(line.substr(0, pos)),
+                    value = Utils::ft_strtrim(line.substr(pos + 1));
+        HttpHeader header(name, value);
         this->setHeader(header);
     }
     this->ValidateHeaders();
 }
 
-void Request::ParseBody(std::istringstream& iss)
+void Request::ParseBody()
 {
     std::string body;
     std::string line;
-    while (std::getline(iss, line, '\n'))
+    while (std::getline(_buffer, line, '\n'))
         body += line + '\n';
 
     this->setBody(body);
@@ -324,10 +279,12 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
 
     for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
-        os << std::setw(max_length) << std::left << it->name << ": " << std::endl;
-        for (size_t i = 0; i < it->values.size(); i++)
+        os << std::setw(max_length) << std::left << it->name << ": " << it->raw_value << std::endl;
+        os << "* Tokens: " << std::endl;
+        std::vector<std::string>::const_iterator it2;
+        for (it2 = it->_tokens.begin(); it2 != it->_tokens.end(); ++it2)
         {
-            os << "  - " << it->values[i] << std::endl;
+            os << "  - " << *it2 << std::endl;
         }
     }
     os << "Body: ";

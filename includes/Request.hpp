@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Config.hpp"
+#include "HttpHeader.hpp"
 #include <iomanip>
+#include <sstream>
 
 class RequestException : public std::exception
 {
@@ -22,7 +24,8 @@ public:
     Request& operator=(const Request& other);
     ~Request();
 
-    void Parse();
+    uint16_t Parse();
+    void     appendBody(const std::string& body);
 
     // getters
     HttpMethod                                getMethod() const;
@@ -40,10 +43,10 @@ public:
     void setHeader(const HttpHeader& header);
     void setBody(const std::string& body);
 
-    std::string getline(std::istream& iss) const;
+    std::string getHeaderLine(std::istream& iss) const;
 
 private:
-    std::string                        _request;
+    std::stringstream                  _buffer;
     std::map<std::string, std::string> _query_params;
     HttpMethod                         _method;
     std::string                        _uri;
@@ -51,13 +54,12 @@ private:
     std::string                        _body;
     std::vector<HttpHeader>            _headers;
 
-    void ValidateHeaders();
+    void ValidateHeaders(); // TODO: refactor
 
-    void ParseRequestLine(std::istringstream& iss);
+    void parseRequestLine();
     void parseQueryParams();
-    void parseHeaderValues(HttpHeader& header);
-    void ParseHeaders(std::istringstream& iss);
-    void ParseBody(std::istringstream& iss);
+    void ParseHeaders();
+    void ParseBody();
 };
 
 std::ostream& operator<<(std::ostream& os, const Request& request);

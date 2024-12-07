@@ -17,19 +17,6 @@ enum HttpMethod
     HTTP_PATCH,
 };
 
-/**
- * @brief Structure to hold HTTP headers the raw_value is the raw trimmed value following the `:` in
- * the header and the values are the parsed values sorted based on the quality factor `q=x` which
- * ranges from 0.0 to 1.0
- */
-struct HttpHeader
-{
-    std::string                             name;
-    std::string                             raw_value;
-    std::vector<std::string>                values;
-    std::multimap<std::string, std::string> metadata;
-};
-
 #define HTTP_VERSION_TOKEN "HTTP/1.1"
 #define CRLF               "\r\n"
 
@@ -141,5 +128,5 @@ struct HttpStatus
 {
     http_status_code code;
     const char*      name;
-    HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name) {};
+    HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name){};
 };
