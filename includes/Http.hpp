@@ -136,4 +136,5 @@ struct HttpStatus
     http_status_code code;
     const char      *name;
     HttpStatus(const http_status_code &_code, const char *_name) : code(_code), name(_name) {};
+    HttpStatus(const HttpStatus &_status) : code(_status.code), name(_status.name) {};
 };

@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/07 15:32:34 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 16:59:51 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,20 +73,24 @@ void ServerClient::SendErrorResponse(const HttpStatus &status, Response *respons
     std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(status.code);
     if (it != error_pages.end())
     {
-        std::vector<LocationConfig>::const_iterator file_location =
+        std::vector<LocationConfig>::const_iterator error_page_file_location =
             ServerUtils::GetFileLocation(response->GetVirtualServer(), it->second);
-        std::string file_name = file_location->root + '/' + it->second.substr(file_location->path.length());
-        int         error_fd  = open(file_name.c_str(), O_RDONLY);
-        if (error_fd >= 0)
+        if (error_page_file_location != response->GetVirtualServer().locations.end())
         {
-            response->ReadFile(error_fd);
-        }
-        else
-        {
-            std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
+            std::string file_name =
+                error_page_file_location->root + '/' + it->second.substr(error_page_file_location->path.length());
+            int error_fd = open(file_name.c_str(), O_RDONLY);
+            if (error_fd >= 0)
+            {
+                response->ReadFile(error_fd);
+            }
+            else
+            {
+                std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
+            }
         }
     }
-    response->FinishResponse();
+    response->FinishResponse(true);
     _server->QueueResponse(_socket_fd, response);
 }
 void ServerClient::ProcessRequest(const Request &request)

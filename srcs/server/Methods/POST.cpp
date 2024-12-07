@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 12:48:17 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 17:16:16 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,11 +17,13 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
-    std::pair<http_status_code, std::string> file = ProcessFilePermission(request, response, file_location, X_OK);
-    if (file.first != STATUS_OK)
-        return;
-    struct stat path_stat;
-    std::string& file_name = file.second;
+    if (file_location == response->GetVirtualServer().locations.end())
+        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+    std::pair<HttpStatus, std::string> file = ProcessFilePermission(request, file_location, X_OK);
+    if (file.first.code != STATUS_OK)
+        return SendErrorResponse(file.first, response);
+    struct stat  path_stat;
+    std::string &file_name = file.second;
     stat(file_name.c_str(), &path_stat);
     size_t max_sz_limit = response->GetVirtualServer().max_body_size;
     if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
@@ -56,6 +58,6 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
      ** Or
      ** Upload data to upload dir
      */
-    response->FinishResponse();
+    response->FinishResponse(true);
     _server->QueueResponse(_socket_fd, response);
 }

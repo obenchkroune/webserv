@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 11:46:29 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 16:58:46 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,15 +75,6 @@ void Response::AppendHeader(const HttpHeader &header)
 }
 void Response::ReadFile(const int fd)
 {
-    struct stat st;
-    fstat(fd, &st);
-    std::ostringstream content_length;
-    content_length << st.st_size;
-    HttpHeader header;
-    header.name  = "Content-Length";
-    header.value = content_length.str();
-    AppendHeader(header);
-
     for (;;)
     {
         uint8_t buff[READ_CHUNK];
@@ -96,9 +87,17 @@ void Response::ReadFile(const int fd)
     }
     close(fd);
 }
-void Response::FinishResponse()
+void Response::FinishResponse(bool append_content_lenghth)
 {
     HttpHeader header;
+    if (append_content_lenghth)
+    {
+        std::ostringstream content_length;
+        content_length << _content.size();
+        header.name  = "Content-Length";
+        header.value = content_length.str();
+        AppendHeader(header);
+    }
     header.name  = "Connection";
     header.value = "keep-alive";
     AppendHeader(header);

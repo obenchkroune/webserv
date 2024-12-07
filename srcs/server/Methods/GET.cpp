@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 12:50:44 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 17:16:14 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,11 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
-    std::pair<http_status_code, std::string> file = ProcessFilePermission(request, response, file_location, R_OK);
-    if (file.first != STATUS_OK)
-        return;
+    if (file_location == response->GetVirtualServer().locations.end())
+        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+    std::pair<HttpStatus, std::string> file = ProcessFilePermission(request, file_location, R_OK);
+    if (file.first.code != STATUS_OK)
+        return SendErrorResponse(file.first, response);
     std::string &file_name = file.second;
     struct stat  path_stat;
     stat(file_name.c_str(), &path_stat);
@@ -87,12 +89,13 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
         header.name  = "Content-Length";
         header.value = content_length.str();
         response->AppendHeader(header);
+        response->FinishResponse(false);
     }
     else
     {
         response->ReadFile(file_fd);
+        response->FinishResponse(true);
     }
-    response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }
 
