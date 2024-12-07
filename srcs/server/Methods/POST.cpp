@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   POST.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/06 14:20:44 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/07 12:48:17 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,35 +17,11 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
-    if (std::find(file_location->allow_methods.begin(), file_location->allow_methods.end(), request.getMethod()) ==
-        file_location->allow_methods.end())
-        return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED, HTTP_STATUS_METHOD_NOT_ALLOWED), response);
-    std::string file_name = file_location->root + '/' + request.getUri().substr(file_location->path.length());
-    if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
-    {
-        std::cerr << "Client fd: " << _socket_fd << " thinks himself a hacker." << std::endl;
-        std::cerr << "Access for file: " << file_name << " is outside the location root, request is forbidden."
-                  << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
-    }
-    if (access(file_name.c_str(), F_OK) == 0) // EXISTENCE ACCESS
-    {
-        if (access(file_name.c_str(), X_OK) != 0) // EXECUTE ACCESS
-        {
-            std::cerr << "X_OK failed for file: " << file_name << std::endl;
-            return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
-        }
-    }
-    std::cerr << "F_OK failed for file: " << file_name << std::endl;
-    return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    
-
-
-    // The code above should be refactored and used for all request methods...
-
-
-    
+    std::pair<http_status_code, std::string> file = ProcessFilePermission(request, response, file_location, X_OK);
+    if (file.first != STATUS_OK)
+        return;
     struct stat path_stat;
+    std::string& file_name = file.second;
     stat(file_name.c_str(), &path_stat);
     size_t max_sz_limit = response->GetVirtualServer().max_body_size;
     if (file_location->max_body_size != response->GetVirtualServer().max_body_size)

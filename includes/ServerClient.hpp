@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/05 15:55:25 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/07 12:44:22 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,9 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <utility>
+
+typedef std::vector<LocationConfig>::const_iterator LocationsIterator;
 
 class ServerClient
 {
@@ -43,6 +46,8 @@ private:
     void SendErrorResponse(const HttpStatus &status, Response *response);
 
 private:
+    std::pair<http_status_code, std::string> ProcessFilePermission(const Request &request, Response *response,
+                                                                   LocationsIterator file_location, int permission);
     void ProcessGET(const Request &request, Response *response, bool send_data = true);
     void ProcessHEAD(const Request &request, Response *response);
     void ProcessPOST(const Request &request, Response *response);
