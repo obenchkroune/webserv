@@ -42,8 +42,8 @@ uint16_t Request::Parse()
     try
     {
         this->parseRequestLine();
-        this->ParseHeaders();
-        this->ParseBody();
+        this->parseHeaders();
+        this->parseBody();
         return 200;
     }
     catch (const std::exception& e)
@@ -199,7 +199,7 @@ void Request::parseQueryParams()
     }
 }
 
-void Request::ParseHeaders()
+void Request::parseHeaders()
 {
     std::string line;
     while (!(line = Request::getHeaderLine(_buffer)).empty())
@@ -215,7 +215,7 @@ void Request::ParseHeaders()
     this->ValidateHeaders();
 }
 
-void Request::ParseBody()
+void Request::parseBody()
 {
     std::string body;
     std::string line;
@@ -280,13 +280,7 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
 
     for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
-        os << std::setw(max_length) << std::left << it->name << ": " << it->raw_value << std::endl;
-        os << "* values: " << std::endl;
-        std::vector<std::string>::const_iterator it2;
-        for (it2 = it->values.begin(); it2 != it->values.end(); ++it2)
-        {
-            os << "  - " << *it2 << std::endl;
-        }
+        os << *it << std::endl;
     }
     os << "Body: ";
     if (request.getBody().empty())

@@ -43,8 +43,6 @@ public:
     void setHeader(const HttpHeader& header);
     void setBody(const std::string& body);
 
-    std::string getHeaderLine(std::istream& iss) const;
-
 private:
     std::stringstream                  _buffer;
     std::map<std::string, std::string> _query_params;
@@ -54,12 +52,12 @@ private:
     std::string                        _body;
     std::vector<HttpHeader>            _headers;
 
-    void ValidateHeaders(); // TODO: refactor
-
-    void parseRequestLine();
-    void parseQueryParams();
-    void ParseHeaders();
-    void ParseBody();
+    void        ValidateHeaders(); // TODO: refactor
+    std::string getHeaderLine(std::istream& iss) const;
+    void        parseRequestLine();
+    void        parseQueryParams();
+    void        parseHeaders();
+    void        parseBody();
 };
 
 std::ostream& operator<<(std::ostream& os, const Request& request);
