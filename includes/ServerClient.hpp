@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/07 12:44:22 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 15:16:49 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,13 @@ typedef std::vector<LocationConfig>::const_iterator LocationsIterator;
 class ServerClient
 {
 private:
-    int         _socket_fd;
+    const int   _socket_fd;
+    const int   _address_fd;
     std::string _request_raw;
     Server     *_server;
 
 public:
-    ServerClient(int socket_fd, Server *server);
+    ServerClient(const int &socket_fd, const int &address_fd, Server *server);
     ServerClient(const ServerClient &client);
     ~ServerClient();
 
@@ -39,7 +40,6 @@ private:
 public:
     void ReceiveRequest(const std::string request);
     int  Getfd() const;
-    void Setfd(const int fd);
 
 private:
     void ProcessRequest(const Request &request);

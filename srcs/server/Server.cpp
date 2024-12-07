@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 15:44:09 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/07 15:31:30 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Server::Server(const std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx)
+Server::Server(std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx)
     : _config(config), _is_started(false), _IOmltplx(IOmltplx)
 {
     if (_IOmltplx == NULL)
@@ -70,7 +70,7 @@ void Server::Start()
     if (_is_started)
         throw ServerException("Server is already started.");
     _is_started                                  = true;
-    std::vector<ServerConfig>::const_iterator it = _config.begin();
+    std::vector<ServerConfig>::iterator it = _config.begin();
     it = _config.begin();
     for (; it != _config.end(); it++)
     {
@@ -78,6 +78,7 @@ void Server::Start()
         {
             sockaddr_in address = ServerUtils::GetListenAddr(*it);
             listen_on_addr(address);
+            it->address_fd = _listen_socket_fds.back();
             std::cout << "Server started listening on address: " << it->host << ':' << it->port << std::endl;
         }
         catch (const std::exception &e)
@@ -113,7 +114,7 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
     }
     std::map<int, ServerClient>::iterator it = _clients.find(peer_fd);
     assert(it == _clients.end());
-    _clients.insert(std::pair<int, ServerClient>(peer_fd, ServerClient(peer_fd, this)));
+    _clients.insert(std::pair<int, ServerClient>(peer_fd, ServerClient(peer_fd, socket_fd, this)));
     epoll_event peer_ev;
     peer_ev.events   = EPOLLIN | EPOLLOUT;
     peer_ev.data.ptr = this;
@@ -128,8 +129,6 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
         return;
     }
     std::cout << "New peer accepted on fd " << peer_fd << ".\n";
-    std::cout << "Address: ";
-    ServerUtils::PrintSocketIP(std::cout, peer_address);
 }
 void Server::HandlePeerEPOLLOUT(const epoll_event &ev, ServerClient &client)
 {

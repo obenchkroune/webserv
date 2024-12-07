@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 15:43:34 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/07 15:35:13 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,20 +117,30 @@ std::vector<LocationConfig>::const_iterator GetFileLocation(const ServerConfig &
     }
     return matched_location;
 }
-const ServerConfig *GetRequestVServer(const Request &request, const std::vector<ServerConfig> &config)
+const ServerConfig &GetRequestVirtualServer(const int &address_fd, const Request &request,
+                                            const std::vector<ServerConfig> &config)
 {
+    std::vector<const ServerConfig *>         matched_servers;
+    std::vector<ServerConfig>::const_iterator vservers_it = config.begin();
+    for (; vservers_it != config.end(); vservers_it++)
+    {
+        if (vservers_it->address_fd == address_fd)
+            matched_servers.insert(matched_servers.end(), &(*vservers_it));
+    }
+    assert(matched_servers.size() > 0 && "IMPOSSIBLE");
+    if (matched_servers.size() == 1)
+        return *matched_servers.front();
     const HttpHeader *host_header = request.getHeader("Host");
     if (host_header == NULL)
-        return NULL;
-    // TODO Need to properly implement host matching (treating asetrix wildcard...)
-    std::vector<ServerConfig>::const_iterator it = config.begin();
-    for (; it != config.end(); it++)
+        return *matched_servers.front();
+    std::vector<const ServerConfig *>::const_iterator matched_servers_it = matched_servers.begin();
+    for (; matched_servers_it != matched_servers.end(); matched_servers_it++)
     {
-        std::vector<std::string>::const_iterator names_it = it->server_names.begin();
-        for (; names_it != it->server_names.end(); names_it++)
+        std::vector<std::string>::const_iterator names_it = (*matched_servers_it)->server_names.begin();
+        for (; names_it != (*matched_servers_it)->server_names.end(); names_it++)
             if (*names_it == host_header->value)
-                return &(*it);
+                return **matched_servers_it;
     }
-    return &(*config.begin());
+    return *matched_servers.front();
 }
 } // namespace ServerUtils

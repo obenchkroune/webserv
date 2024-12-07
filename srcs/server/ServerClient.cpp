@@ -6,20 +6,20 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/05 12:04:19 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 15:32:34 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerClient.hpp"
 #include "Server.hpp"
 
-ServerClient::ServerClient(const int socket_fd, Server *server)
-    : _socket_fd(socket_fd), _server(server)
+ServerClient::ServerClient(const int &socket_fd, const int &address_fd, Server *server)
+    : _socket_fd(socket_fd), _address_fd(address_fd), _server(server)
 {
     if (server == NULL)
         throw ServerClientException("Can't have a null server ptr.");
 }
-ServerClient::ServerClient(const ServerClient &client)
+ServerClient::ServerClient(const ServerClient &client) : _socket_fd(client._socket_fd), _address_fd(client._address_fd)
 {
     *this = client;
 }
@@ -27,7 +27,6 @@ ServerClient &ServerClient::operator=(const ServerClient &client)
 {
     if (this == &client)
         return *this;
-    _socket_fd   = client._socket_fd;
     _request_raw = client._request_raw;
     _server      = client._server;
     return *this;
@@ -92,15 +91,9 @@ void ServerClient::SendErrorResponse(const HttpStatus &status, Response *respons
 }
 void ServerClient::ProcessRequest(const Request &request)
 {
-    const ServerConfig * virtualServer = ServerUtils::GetRequestVServer(request, _server->GetConfig());
-    Response *response;
-    if (virtualServer == NULL)
-    {
-        std::cerr << "No Host header field provided." << std::endl;
-        response = new Response(request, *_server->GetConfig().begin());
-        return SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST), response);
-    }
-    response = new Response(request, *virtualServer);
+    const ServerConfig &virtualServer =
+        ServerUtils::GetRequestVirtualServer(_address_fd, request, _server->GetConfig());
+    Response *response = new Response(request, virtualServer);
     switch (request.getMethod())
     {
     case HTTP_GET: {
@@ -118,8 +111,4 @@ void ServerClient::ProcessRequest(const Request &request)
 int ServerClient::Getfd() const
 {
     return _socket_fd;
-}
-void ServerClient::Setfd(const int fd)
-{
-    _socket_fd = fd;
 }

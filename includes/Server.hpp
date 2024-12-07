@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 12:10:14 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/07 15:04:16 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,17 +40,17 @@ public:
     typedef std::queue<Response *> Responses_queue;
 
 private:
-    std::map<int, ServerClient>     _clients;
-    std::map<int, Responses_queue>  _responses_;
-    const std::vector<ServerConfig> _config;
-    bool                            _is_started;
-    std::vector<sockaddr_in>        _listen_addrs;
-    std::vector<int>                _listen_socket_fds;
-    epoll_event                     _listen_socket_ev;
-    IOMultiplexer                  *_IOmltplx;
+    std::map<int, ServerClient>    _clients;
+    std::map<int, Responses_queue> _responses_;
+    std::vector<ServerConfig>      _config;
+    bool                           _is_started;
+    std::vector<sockaddr_in>       _listen_addrs;
+    std::vector<int>               _listen_socket_fds;
+    epoll_event                    _listen_socket_ev;
+    IOMultiplexer                 *_IOmltplx;
 
 public:
-    Server(const std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx);
+    Server(std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx);
     ~Server();
 
 private:
