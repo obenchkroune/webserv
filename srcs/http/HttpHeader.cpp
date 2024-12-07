@@ -10,6 +10,7 @@ HttpHeader::HttpHeader(const std::string& name, const std::string& value)
     : name(name), raw_value(value)
 {
     this->tokenize();
+    values = _tokens; // TODO: remove this debugging line
 }
 
 HttpHeader::~HttpHeader()
@@ -53,7 +54,7 @@ void HttpHeader::tokenize()
             break;
         case ',':
         case ' ':
-        case '\t':
+        case '\t': {
             if (!in_quote)
             {
                 std::string tok = Utils::ft_strtrim(std::string(start, it));
@@ -62,36 +63,37 @@ void HttpHeader::tokenize()
                 start = it + 1;
             }
             break;
+        }
         case '{':
         case '[':
         case '<':
-        case '(':
-            if (sep_pairs.find(*it) != sep_pairs.end())
+        case '(': {
+            if (it != start)
             {
-                std::string::iterator pair = std::find(it, raw_value.end(), sep_pairs[*it]);
-                if (pair == raw_value.end())
-                {
-                    throw std::runtime_error(
-                        "invalid header field-value: missing closing separator '" +
-                        std::string(1, sep_pairs[*it]) + "'");
-                }
                 std::string tok = Utils::ft_strtrim(std::string(start, it));
                 if (!tok.empty())
                     _tokens.push_back(tok);
-                start = pair + 1;
-                it    = pair;
+                start = it;
             }
+
+            std::string::iterator pair = std::find(it, raw_value.end(), sep_pairs[*it]);
+            if (pair == raw_value.end())
+                throw std::runtime_error("invalid header field-value: missing closing separator '" +
+                                         std::string(1, sep_pairs[*it]) + "'");
+
+            std::string tok = Utils::ft_strtrim(std::string(start, pair + 1));
+            if (!tok.empty())
+                _tokens.push_back(tok);
+            start = pair + 1;
+            it    = pair;
             break;
+        }
         case '}':
         case ']':
         case '>':
         case ')':
-            if (sep_pairs.find(*it) == sep_pairs.end())
-            {
-                throw std::runtime_error(
-                    "invalid header field-value: unexpected closing separator '" +
-                    std::string(1, *it) + "'");
-            }
+            throw std::runtime_error("invalid header field-value: unexpected closing separator '" +
+                                     std::string(1, *it) + "'");
             break;
         default:
             break;

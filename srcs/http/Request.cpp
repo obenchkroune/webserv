@@ -48,6 +48,7 @@ uint16_t Request::Parse()
     }
     catch (const std::exception& e)
     {
+        std::cerr << "\x1b[31m" << "Request error: " << e.what() << "\x1b[0m" << std::endl;
         return 400;
     }
 }
@@ -280,9 +281,9 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
     for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
         os << std::setw(max_length) << std::left << it->name << ": " << it->raw_value << std::endl;
-        os << "* Tokens: " << std::endl;
+        os << "* values: " << std::endl;
         std::vector<std::string>::const_iterator it2;
-        for (it2 = it->_tokens.begin(); it2 != it->_tokens.end(); ++it2)
+        for (it2 = it->values.begin(); it2 != it->values.end(); ++it2)
         {
             os << "  - " << *it2 << std::endl;
         }
