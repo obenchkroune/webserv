@@ -13,16 +13,18 @@
 #include "Server.hpp"
 #include "ServerClient.hpp"
 
-void ServerClient::ProcessGET(const Request &request, Response *response, bool send_data /* = true*/)
+void ServerClient::ProcessGET(const Request& request, Response* response,
+                              bool send_data /* = true*/)
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
-    std::string file_name = file_location->root + '/' + request.getUri().substr(file_location->path.length());
+    std::string file_name =
+        file_location->root + '/' + request.getUri().substr(file_location->path.length());
     if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
     {
         std::cerr << "Client fd: " << _socket_fd << " thinks himself a hacker." << std::endl;
-        std::cerr << "Access for file: " << file_name << " is outside the location root, request is forbidden."
-                  << std::endl;
+        std::cerr << "Access for file: " << file_name
+                  << " is outside the location root, request is forbidden." << std::endl;
         return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
     }
     if (access(file_name.c_str(), F_OK) != 0) // EXISTENCE ACCESS
@@ -43,8 +45,9 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
     if ((size_t)path_stat.st_size > max_sz_limit)
     {
         std::cerr << "file too large: " << file_name << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-                                 response);
+        return SendErrorResponse(
+            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
+            response);
     }
     if (S_ISDIR(path_stat.st_mode))
     {
@@ -68,7 +71,8 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
             }
             else
             {
-                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
+                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN),
+                                         response);
             }
         }
     }
@@ -81,9 +85,9 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
     HttpHeader header;
     header.name = "Content-Type";
     if (extension == "html" || extension == "htm")
-        header.value = "text/html";
+        header.raw_value = "text/html";
     else
-        header.value = "application/octet-stream";
+        header.raw_value = "application/octet-stream";
     response->AppendHeader(header);
     int file_fd = open(file_name.c_str(), O_RDONLY);
     if (file_fd < 0)
@@ -93,8 +97,8 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
         stat(file_name.c_str(), &path_stat);
         std::ostringstream content_length;
         content_length << path_stat.st_size;
-        header.name  = "Content-Length";
-        header.value = content_length.str();
+        header.name      = "Content-Length";
+        header.raw_value = content_length.str();
         response->AppendHeader(header);
     }
     else
@@ -105,7 +109,7 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
     _server->QueueResponse(_socket_fd, response);
 }
 
-void ServerClient::ProcessHEAD(const Request &request, Response *response)
+void ServerClient::ProcessHEAD(const Request& request, Response* response)
 {
     ProcessGET(request, response, false);
 }

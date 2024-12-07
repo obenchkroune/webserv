@@ -13,7 +13,7 @@
 #include "ServerClient.hpp"
 #include "Server.hpp"
 
-ServerClient::ServerClient(const int socket_fd, Server *server, IOMultiplexer *IOmltplx)
+ServerClient::ServerClient(const int socket_fd, Server* server, IOMultiplexer* IOmltplx)
     : _socket_fd(socket_fd), _server(server)
 {
     if (server == NULL)
@@ -21,11 +21,11 @@ ServerClient::ServerClient(const int socket_fd, Server *server, IOMultiplexer *I
     if (IOmltplx == NULL)
         throw ServerClientException("Can't have a null IOmltplx ptr.");
 }
-ServerClient::ServerClient(const ServerClient &client)
+ServerClient::ServerClient(const ServerClient& client)
 {
     *this = client;
 }
-ServerClient &ServerClient::operator=(const ServerClient &client)
+ServerClient& ServerClient::operator=(const ServerClient& client)
 {
     if (this == &client)
         return *this;
@@ -47,10 +47,11 @@ void ServerClient::ReceiveRequest(const std::string buff)
         Request req(_request_raw);
         try
         {
+            std::cout << req << std::endl;
             req.Parse();
             std::cout << "Request parsed successfuly." << std::endl;
         }
-        catch (const std::exception &e)
+        catch (const std::exception& e)
         {
             _request_raw.clear();
             std::cerr << "Request error for client on fd: " << _socket_fd << " reason: " << e.what() << '\n';
@@ -63,16 +64,16 @@ void ServerClient::ReceiveRequest(const std::string buff)
         {
             ProcessRequest(req);
         }
-        catch (const std::exception &e)
+        catch (const std::exception& e)
         {
             std::cerr << "Request not handled due to: " << e.what() << std::endl;
         }
     }
 }
-void ServerClient::SendErrorResponse(const HttpStatus &status, Response *response)
+void ServerClient::SendErrorResponse(const HttpStatus& status, Response* response)
 {
     response->SetStatusHeaders(status.name);
-    const std::map<uint16_t, std::string>          &error_pages = _server->GetConfig().error_pages;
+    const std::map<uint16_t, std::string>&          error_pages = _server->GetConfig().error_pages;
     std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(status.code);
     if (it != error_pages.end())
     {
@@ -92,9 +93,9 @@ void ServerClient::SendErrorResponse(const HttpStatus &status, Response *respons
     response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }
-void ServerClient::ProcessRequest(const Request &request)
+void ServerClient::ProcessRequest(const Request& request)
 {
-    Response *response = new Response(request);
+    Response* response = new Response(request);
     switch (request.getMethod())
     {
     case HTTP_GET: {

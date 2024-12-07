@@ -1,19 +1,21 @@
 #include "Request.hpp"
 #include "Http.hpp"
 #include "Utils.hpp"
+#include <algorithm>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
 
-Request::Request(const std::string &request) : _request(request)
+Request::Request(const std::string& request) : _buffer(request)
 {
 }
 
-Request::Request(const Request &other)
+Request::Request(const Request& other)
 {
     *this = other;
 }
 
-Request &Request::operator=(const Request &other)
+Request& Request::operator=(const Request& other)
 {
     if (this == &other)
         return *this;
@@ -29,46 +31,26 @@ Request::~Request()
 {
 }
 
-void Request::Parse()
+void Request::appendBody(const std::string& body)
 {
-    std::istringstream iss(_request);
+    _body += body;
+    _buffer << body;
+}
 
-    std::string              line       = Request::getline(iss);
-    std::vector<std::string> start_line = Utils::ft_split(line, ' ');
-    if (start_line.size() != 3)
-        throw RequestException(HTTP_STATUS_BAD_REQUEST);
-    setMethod(start_line[0]);
-    setUri(start_line[1]);
-    setVersion(start_line[2]);
-
-    /**
-     * TODO : parse header parameters and secondary values
-     */
-    while (!iss.eof() && !(line = Request::getline(iss)).empty())
+uint16_t Request::Parse()
+{
+    try
     {
-        HttpHeader  header;
-        std::size_t pos = line.find(": ");
-
-        if (pos == std::string::npos)
-            throw RequestException(HTTP_STATUS_BAD_REQUEST);
-        header.name  = line.substr(0, pos);
-        header.value = Utils::ft_strtrim(line.substr(pos + 1));
-        setHeader(header);
+        this->parseRequestLine();
+        this->parseHeaders();
+        this->parseBody();
+        return 200;
     }
-
-    if (getHeader("Host") == NULL)
-        throw RequestException(HTTP_STATUS_BAD_REQUEST);
-
-    if ((iss >> std::ws).eof())
-        return;
-    std::string body = Request::getline(iss);
-
-    HttpMethod method = getMethod();
-    if ((method == HTTP_GET || method == HTTP_DELETE || method == HTTP_HEAD) && !body.empty())
+    catch (const std::exception& e)
     {
-        throw RequestException(HTTP_STATUS_BAD_REQUEST);
+        std::cerr << "\x1b[31m" << "Request error: " << e.what() << "\x1b[0m" << std::endl;
+        return 400;
     }
-    setBody(body);
 }
 
 HttpMethod Request::getMethod() const
@@ -86,7 +68,7 @@ std::string Request::getVersion() const
     return _http_version;
 }
 
-const HttpHeader *Request::getHeader(const std::string &key) const
+const HttpHeader* Request::getHeader(const std::string& key) const
 {
     std::vector<HttpHeader>::const_iterator it = _headers.begin();
     for (; it != _headers.end(); it++)
@@ -97,7 +79,7 @@ const HttpHeader *Request::getHeader(const std::string &key) const
     return NULL;
 }
 
-const std::vector<HttpHeader> &Request::getHeaders() const
+const std::vector<HttpHeader>& Request::getHeaders() const
 {
     return _headers;
 }
@@ -105,6 +87,11 @@ const std::vector<HttpHeader> &Request::getHeaders() const
 std::string Request::getBody() const
 {
     return _body;
+}
+
+const std::map<std::string, std::string>& Request::getQueryParams() const
+{
+    return _query_params;
 }
 
 void Request::setMethod(std::string method)
@@ -123,41 +110,133 @@ void Request::setMethod(std::string method)
         throw RequestException("Invalid HTTP method.");
 }
 
-void Request::setUri(const std::string &uri)
+void Request::setUri(const std::string& uri)
 {
     if (uri.empty() || uri[0] != '/')
         throw RequestException("Invalid URI.");
     _uri = uri;
 }
 
-void Request::setVersion(const std::string &version)
+void Request::setVersion(const std::string& version)
 {
-    if (version != "HTTP/1.1")
-        throw RequestException(HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED);
+    if (version.substr(0, 5) != "HTTP/")
+        throw RequestException("Invalid HTTP version.");
+
+    int major, minor;
+    if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2 || major != 1 || minor != 1)
+        throw RequestException("Invalid HTTP version.");
     _http_version = version;
 }
 
-void Request::setHeader(const HttpHeader &header)
+void Request::setHeader(const HttpHeader& header)
 {
     _headers.push_back(header);
 }
 
-void Request::setBody(const std::string &body)
+void Request::setBody(const std::string& body)
 {
     _body = body;
 }
 
-std::string Request::getline(std::istream &iss) const
+std::string Request::getHeaderLine(std::istream& iss) const
 {
     std::string line;
+
     std::getline(iss, line, '\n');
     if (line.empty() || line[line.size() - 1] != '\r')
-        throw RequestException(HTTP_STATUS_BAD_REQUEST);
+        throw RequestException("Invalid line ending.");
     line.erase(line.size() - 1);
+
+    if (std::string(" \t").find(iss.peek()) != std::string::npos)
+    {
+        iss.ignore();
+        line += ' ';
+        while (std::string(" \t").find(iss.peek()) != std::string::npos)
+            iss.ignore();
+        line += Request::getHeaderLine(iss);
+    }
     return line;
 }
 
-std::ostream &operator<<(std::ostream &os, const Request &request)
+void Request::parseRequestLine()
+{
+    std::string method, uri, version;
+
+    if (!std::getline(_buffer, method, ' ') || !std::getline(_buffer, uri, ' '))
+        throw RequestException("invalid start line.");
+
+    if (!std::getline(_buffer, version, '\n') || version[version.size() - 1] != '\r')
+        throw RequestException("invalid start line.");
+
+    version.erase(version.size() - 1);
+
+    this->setMethod(method);
+    this->setUri(uri);
+    this->setVersion(version);
+    this->parseQueryParams();
+}
+
+void Request::parseQueryParams()
+{
+    size_t pos = _uri.find('?');
+    if (pos == std::string::npos)
+        return;
+    std::string query = _uri.substr(pos + 1);
+    _uri              = _uri.substr(0, pos);
+
+    std::vector<std::string> params = Utils::ft_split(query, '&');
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        if (params[i].empty())
+            continue;
+        if (params[i].find('=') == std::string::npos)
+            throw RequestException("Invalid query parameter.");
+        std::vector<std::string> param = Utils::ft_split(params[i], '=');
+        if (param.size() == 2)
+            _query_params[param[0]] = param[1];
+        else
+            _query_params[param[0]] = "";
+    }
+}
+
+void Request::parseHeaders()
+{
+    std::string line;
+    while (!(line = Request::getHeaderLine(_buffer)).empty())
+    {
+        size_t pos = line.find(':');
+        if (pos == std::string::npos)
+            throw RequestException("Invalid header.");
+        std::string name  = Utils::ft_strtrim(line.substr(0, pos)),
+                    value = Utils::ft_strtrim(line.substr(pos + 1));
+        HttpHeader header(name, value);
+        this->setHeader(header);
+    }
+    this->ValidateHeaders();
+}
+
+void Request::parseBody()
+{
+    std::string body;
+    std::string line;
+    while (std::getline(_buffer, line, '\n'))
+        body += line + '\n';
+
+    this->setBody(body);
+
+    HttpMethod method     = this->getMethod();
+    bool       isBodyless = (method == HTTP_GET || method == HTTP_DELETE || method == HTTP_HEAD);
+    if (isBodyless && !this->getBody().empty())
+        throw RequestException("Body not allowed for this method.");
+}
+
+void Request::ValidateHeaders()
+{
+    if (this->getHeader("Host") == NULL)
+        throw RequestException("Host header is required.");
+}
+
+std::ostream& operator<<(std::ostream& os, const Request& request)
 {
     os << "Method: ";
     switch (request.getMethod())
@@ -182,6 +261,12 @@ std::ostream &operator<<(std::ostream &os, const Request &request)
     }
     os << std::endl;
     os << "URI: " << request.getUri() << std::endl;
+    os << "Query params: " << std::endl;
+    for (size_t i = 0; i < request.getQueryParams().size(); i++)
+    {
+        os << "- " << request.getQueryParams().begin()->first << " = "
+           << request.getQueryParams().begin()->second << std::endl;
+    }
     os << "HTTP version: " << request.getVersion() << std::endl;
     os << "Headers:\n";
 
@@ -195,7 +280,7 @@ std::ostream &operator<<(std::ostream &os, const Request &request)
 
     for (it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it)
     {
-        os << std::setw(max_length) << std::left << it->name << ": " << it->value << std::endl;
+        os << *it << std::endl;
     }
     os << "Body: ";
     if (request.getBody().empty())

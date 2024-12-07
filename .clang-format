@@ -5,3 +5,5 @@ AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignConsecutiveMacros: true
 AccessModifierOffset: -4
+PointerAlignment: Left
+ColumnLimit: 100
