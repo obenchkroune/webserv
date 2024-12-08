@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:31:57 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/07 17:55:48 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/08 17:14:17 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,8 @@ void ServerClient::ProcessDELETE(const Request &request, Response *response)
         Unfortunatly all of those not mentioned in the subject.
         Please dont tell me we need to execve() just to do `rm` Ugh!!.
     */
+    if (unlink(file_name.c_str()) == -1)
+        return SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response);
     response->SetStatusHeaders(HTTP_STATUS_OK);
     response->FinishResponse(true);
     _server->QueueResponse(_socket_fd, response);

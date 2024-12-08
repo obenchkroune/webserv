@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/07 17:34:07 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/08 17:15:57 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,5 +51,6 @@ private:
     void                               ProcessGET(const Request &request, Response *response, bool send_data = true);
     void                               ProcessHEAD(const Request &request, Response *response);
     void                               ProcessPOST(const Request &request, Response *response);
+    void                               ProcessPUT(const Request &request, Response *response);
     void                               ProcessDELETE(const Request &request, Response *response);
 };

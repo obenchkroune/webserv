@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 16:58:00 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/08 17:31:52 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,5 +59,5 @@ public:
     void SetStatusHeaders(const char *status_string);
     void AppendHeader(const HttpHeader &header);
     void ReadFile(const int fd);
-    void FinishResponse(bool append_content_lenghth);
+    void FinishResponse(bool append_content_length);
 };

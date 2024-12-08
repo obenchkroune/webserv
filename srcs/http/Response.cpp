@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 16:58:46 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/08 17:31:47 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,10 +87,10 @@ void Response::ReadFile(const int fd)
     }
     close(fd);
 }
-void Response::FinishResponse(bool append_content_lenghth)
+void Response::FinishResponse(bool append_content_length)
 {
     HttpHeader header;
-    if (append_content_lenghth)
+    if (append_content_length)
     {
         std::ostringstream content_length;
         content_length << _content.size();

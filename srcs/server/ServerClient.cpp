@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/07 16:59:51 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/08 17:37:46 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,6 +106,14 @@ void ServerClient::ProcessRequest(const Request &request)
     }
     case HTTP_HEAD: {
         ProcessHEAD(request, response);
+        break;
+    }
+    case HTTP_PUT: {
+        ProcessPUT(request, response);
+        break;
+    }
+    case HTTP_DELETE: {
+        ProcessDELETE(request, response);
         break;
     }
     default:
