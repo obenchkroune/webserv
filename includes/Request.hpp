@@ -5,26 +5,28 @@
 #include <iomanip>
 #include <sstream>
 
-class RequestException : public std::exception
-{
+class RequestException : public std::exception {
 public:
     RequestException(const std::string& message);
+    RequestException(uint16_t error_code, const std::string& message);
     ~RequestException() throw();
     const char* what() const throw();
 
+    uint16_t getErrorCode() const;
+
 private:
     std::string _message;
+    uint16_t    _error_code;
 };
 
-class Request
-{
+class Request {
 public:
     Request(const std::string& request);
     Request(const Request& other);
     Request& operator=(const Request& other);
     ~Request();
 
-    uint16_t Parse();
+    uint16_t parse();
     void     appendBody(const std::string& body);
 
     // getters
@@ -52,12 +54,10 @@ private:
     std::string                        _body;
     std::vector<HttpHeader>            _headers;
 
-    void        ValidateHeaders(); // TODO: refactor
-    std::string getHeaderLine(std::istream& iss) const;
-    void        parseRequestLine();
-    void        parseQueryParams();
-    void        parseHeaders();
-    void        parseBody();
+    void                               parseRequestLine();
+    std::map<std::string, std::string> parseQueryParams(const std::string& query);
+    std::string                        getHeaderLine();
+    void                               parseHeaders();
 };
 
 std::ostream& operator<<(std::ostream& os, const Request& request);

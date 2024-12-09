@@ -6,10 +6,8 @@
 #include <stdint.h>
 #include <string>
 
-enum HttpMethod
-{
-    HTTP_ANY = 0,
-    HTTP_GET,
+enum HttpMethod {
+    HTTP_GET = 0,
     HTTP_HEAD,
     HTTP_POST,
     HTTP_PUT,
@@ -72,8 +70,7 @@ enum HttpMethod
 #define HTTP_STATUS_GATEWAY_TIMEOUT            "504 Gateway Timeout"
 #define HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED "505 HTTP Version Not Supported"
 
-enum http_status_code
-{
+enum http_status_code {
     // 100 - 102
     STATUS_CONTINUE = 100,
     STATUS_SWITCHING_PROTOCOLS,
@@ -124,8 +121,7 @@ enum http_status_code
     STATUS_HTTP_VERSION_NOT_SUPPORTED,
 };
 
-struct HttpStatus
-{
+struct HttpStatus {
     http_status_code code;
     const char*      name;
     HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name){};

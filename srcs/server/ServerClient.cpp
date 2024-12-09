@@ -48,13 +48,14 @@ void ServerClient::ReceiveRequest(const std::string buff)
         try
         {
             std::cout << req << std::endl;
-            req.Parse();
+            req.parse();
             std::cout << "Request parsed successfuly." << std::endl;
         }
         catch (const std::exception& e)
         {
             _request_raw.clear();
-            std::cerr << "Request error for client on fd: " << _socket_fd << " reason: " << e.what() << '\n';
+            std::cerr << "Request error for client on fd: " << _socket_fd << " reason: " << e.what()
+                      << '\n';
             std::cerr << "Request ignored." << std::endl;
             return;
         }
@@ -79,15 +80,17 @@ void ServerClient::SendErrorResponse(const HttpStatus& status, Response* respons
     {
         std::vector<LocationConfig>::const_iterator file_location =
             ServerUtils::GetFileLocation(_server->GetConfig(), it->second);
-        std::string file_name = file_location->root + '/' + it->second.substr(file_location->path.length());
-        int         error_fd  = open(file_name.c_str(), O_RDONLY);
+        std::string file_name =
+            file_location->root + '/' + it->second.substr(file_location->path.length());
+        int error_fd = open(file_name.c_str(), O_RDONLY);
         if (error_fd >= 0)
         {
             response->ReadFile(error_fd);
         }
         else
         {
-            std::cerr << "open() failed for error page file: " << file_name << " ignoring." << std::endl;
+            std::cerr << "open() failed for error page file: " << file_name << " ignoring."
+                      << std::endl;
         }
     }
     response->FinishResponse();
@@ -107,7 +110,8 @@ void ServerClient::ProcessRequest(const Request& request)
         break;
     }
     default:
-        return SendErrorResponse(HttpStatus(STATUS_NOT_IMPLEMENTED, HTTP_STATUS_NOT_IMPLEMENTED), response);
+        return SendErrorResponse(HttpStatus(STATUS_NOT_IMPLEMENTED, HTTP_STATUS_NOT_IMPLEMENTED),
+                                 response);
     }
 }
 int ServerClient::Getfd() const
