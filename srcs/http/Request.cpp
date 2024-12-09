@@ -26,6 +26,10 @@ Request& Request::operator=(const Request& other) {
     _http_version = other._http_version;
     _method       = other._method;
     _uri          = other._uri;
+    _query_params = other._query_params;
+
+    _buffer.clear();
+    _buffer << other._buffer.rdbuf();
     return *this;
 }
 
