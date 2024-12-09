@@ -165,10 +165,10 @@ std::map<std::string, std::string> Request::parseQueryParams(const std::string& 
     std::string                 key, value;
     for (; it != query.end(); ++it) {
         if (*it == '=' && start != it) {
-            key   = Utils::ft_strtrim(std::string(start, it));
+            key   = util::ft_strtrim(std::string(start, it));
             start = it + 1;
         } else if (*it == '&' && !key.empty()) {
-            value       = Utils::ft_strtrim(std::string(start, it));
+            value       = util::ft_strtrim(std::string(start, it));
             params[key] = value;
             start       = it + 1;
             key.clear();
@@ -184,8 +184,8 @@ void Request::parseHeaders() {
         size_t pos = line.find(':');
         if (pos == std::string::npos)
             throw RequestException(400, HTTP_STATUS_BAD_REQUEST);
-        std::string name  = Utils::ft_strtrim(line.substr(0, pos)),
-                    value = Utils::ft_strtrim(line.substr(pos + 1));
+        std::string name  = util::ft_strtrim(line.substr(0, pos)),
+                    value = util::ft_strtrim(line.substr(pos + 1));
         HttpHeader header(name, value);
         this->setHeader(header);
     }
