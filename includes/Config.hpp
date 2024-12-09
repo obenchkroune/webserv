@@ -43,7 +43,7 @@ struct ServerConfig
 {
     ServerConfig();
 
-    int                             address_fd;
+    int                             listen_address_fd;
     std::string                     host;
     uint16_t                        port;
     std::vector<std::string>        server_names;
