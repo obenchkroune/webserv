@@ -7,6 +7,11 @@
 #include <sstream>
 
 Request::Request(const std::string& request) : _buffer(request) {
+    setHeader(HttpHeader("Host", "localhost")); // TODO: get the host from the server instance
+    setHeader(HttpHeader("Accept", "*/*"));
+    setHeader(HttpHeader("Connection", "close"));
+    setHeader(HttpHeader("Accept-Language", "en"));
+    setHeader(HttpHeader("Accept-Charset", "*"));
 }
 
 Request::Request(const Request& other) {
@@ -102,7 +107,9 @@ void Request::setVersion(const std::string& version) {
         throw RequestException(400, HTTP_STATUS_BAD_REQUEST);
 
     int major, minor;
-    if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2 || major != 1 || minor != 1)
+    if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2)
+        throw RequestException(400, HTTP_STATUS_BAD_REQUEST);
+    if (major != 1 || minor != 1)
         throw RequestException(505, HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED);
     _http_version = version;
 }
@@ -187,9 +194,9 @@ void Request::parseHeaders() {
         std::string name  = util::ft_strtrim(line.substr(0, pos)),
                     value = util::ft_strtrim(line.substr(pos + 1));
         HttpHeader header(name, value);
-        this->setHeader(header);
+        setHeader(header);
     }
-    // TODO: check for the required headers (the server instance is needed)
+    // TODO: check for the required host headers (the server instance is needed)
 }
 
 std::ostream& operator<<(std::ostream& os, const Request& request) {
