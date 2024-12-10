@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 15:31:30 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/10 14:02:19 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ void Server::Start()
         {
             sockaddr_in address = ServerUtils::GetListenAddr(*it);
             listen_on_addr(address);
-            it->address_fd = _listen_socket_fds.back();
+            it->listen_address_fd = _listen_socket_fds.back();
             std::cout << "Server started listening on address: " << it->host << ':' << it->port << std::endl;
         }
         catch (const std::exception &e)

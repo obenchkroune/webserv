@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 16:45:07 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/10 14:36:20 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,7 @@ const ServerConfig &GetRequestVirtualServer(const int &address_fd, const Request
     std::vector<ServerConfig>::const_iterator vservers_it = config.begin();
     for (; vservers_it != config.end(); vservers_it++)
     {
-        if (vservers_it->address_fd == address_fd)
+        if (vservers_it->listen_address_fd == address_fd)
             matched_servers.insert(matched_servers.end(), &(*vservers_it));
     }
     assert(matched_servers.size() > 0 && "IMPOSSIBLE");
@@ -138,7 +138,7 @@ const ServerConfig &GetRequestVirtualServer(const int &address_fd, const Request
     {
         std::vector<std::string>::const_iterator names_it = (*matched_servers_it)->server_names.begin();
         for (; names_it != (*matched_servers_it)->server_names.end(); names_it++)
-            if (*names_it == host_header->value)
+            if (*names_it == host_header->values.front().value)
                 return **matched_servers_it;
     }
     return *matched_servers.front();

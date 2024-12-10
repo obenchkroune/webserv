@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/08 17:31:47 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/10 14:01:31 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,7 @@ void Response::SetStatusHeaders(const char *status_string)
     _headers += time_buff;
     _headers += CRLF;
 }
-void Response::AppendHeader(const HttpHeader &header)
+void Response::AppendHeader(const ResponseHeader &header)
 {
     _headers += header.name + ": " + header.value + CRLF;
 }
@@ -89,7 +89,7 @@ void Response::ReadFile(const int fd)
 }
 void Response::FinishResponse(bool append_content_length)
 {
-    HttpHeader header;
+    ResponseHeader header;
     if (append_content_length)
     {
         std::ostringstream content_length;

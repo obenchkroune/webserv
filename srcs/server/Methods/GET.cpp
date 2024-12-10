@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 17:47:33 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/10 14:02:45 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ void ServerClient::ProcessGET(const Request &request, Response *response, bool s
     if (fname.find_last_of(".") != std::string::npos)
         extension = fname.substr(fname.find_last_of(".") + 1);
     // todo : need to be imported from mime types
-    HttpHeader header;
+    ResponseHeader header;
     header.name = "Content-Type";
     if (extension == "html" || extension == "htm")
         header.value = "text/html";
