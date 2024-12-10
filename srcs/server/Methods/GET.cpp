@@ -13,8 +13,7 @@
 #include "Server.hpp"
 #include "ServerClient.hpp"
 
-void ServerClient::ProcessGET(const Request& request, Response* response,
-                              bool send_data /* = true*/)
+void ServerClient::ProcessGET(const Request &request, Response *response, bool send_data /* = true*/)
 {
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
@@ -54,8 +53,7 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
             }
             else
             {
-                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN),
-                                         response);
+                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
             }
         }
         stat(file_name.c_str(), &path_stat);
@@ -80,9 +78,9 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
     ResponseHeader header;
     header.name = "Content-Type";
     if (extension == "html" || extension == "htm")
-        header.raw_value = "text/html";
+        header.value = "text/html";
     else
-        header.raw_value = "application/octet-stream";
+        header.value = "application/octet-stream";
     response->AppendHeader(header);
     int file_fd = open(file_name.c_str(), O_RDONLY);
     if (file_fd < 0)
@@ -92,8 +90,8 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
         stat(file_name.c_str(), &path_stat);
         std::ostringstream content_length;
         content_length << path_stat.st_size;
-        header.name      = "Content-Length";
-        header.raw_value = content_length.str();
+        header.name  = "Content-Length";
+        header.value = content_length.str();
         response->AppendHeader(header);
         response->FinishResponse(false);
     }
@@ -105,7 +103,7 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
     _server->QueueResponse(_socket_fd, response);
 }
 
-void ServerClient::ProcessHEAD(const Request& request, Response* response)
+void ServerClient::ProcessHEAD(const Request &request, Response *response)
 {
     ProcessGET(request, response, false);
 }

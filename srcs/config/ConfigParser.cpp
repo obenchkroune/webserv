@@ -16,7 +16,8 @@ LocationConfig::LocationConfig(const ServerConfig& server)
     error_pages   = server.error_pages;
 }
 
-ServerConfig::ServerConfig() {
+ServerConfig::ServerConfig()
+{
     port          = 0;
     root          = "/var/www/html";
     max_body_size = 1024 * 1024;
@@ -29,15 +30,19 @@ ConfigParser::ConfigParser(const std::string& file) : _lexer(file)
     //
 }
 
-ConfigParser::~ConfigParser() {
+ConfigParser::~ConfigParser()
+{
     //
 }
 
-std::vector<ServerConfig> ConfigParser::parse() {
+std::vector<ServerConfig> ConfigParser::parse()
+{
     std::vector<ServerConfig> result;
 
-    try {
-        while (_lexer.peek().type != T_EOF) {
+    try
+    {
+        while (_lexer.peek().type != T_EOF)
+        {
             result.push_back(parseServerBlock());
         }
 
@@ -50,11 +55,13 @@ std::vector<ServerConfig> ConfigParser::parse() {
     return result;
 }
 
-Directive ConfigParser::parseDirective() {
+Directive ConfigParser::parseDirective()
+{
     Directive directive;
     directive.name = _lexer.expect(T_WORD).value;
 
-    do {
+    do
+    {
         directive.values.push_back(_lexer.expect(T_WORD).value);
     } while (_lexer.peek().type == T_WORD);
 
@@ -66,12 +73,14 @@ void ConfigParser::parseServerDirective(ServerConfig& server)
 {
     Directive directive = parseDirective();
 
-    if (directive.name == "listen") {
+    if (directive.name == "listen")
+    {
         std::pair<std::string, uint16_t> listen = Validate::listenDirective(directive);
 
         server.host = listen.first;
         server.port = listen.second;
-    } else if (directive.name == "error_page")
+    }
+    else if (directive.name == "error_page")
         server.error_pages.insert(Validate::errorPageDirective(directive));
     else if (directive.name == "server_name")
         server.server_names.swap(directive.values);
@@ -89,13 +98,15 @@ void ConfigParser::parseServerDirective(ServerConfig& server)
         throw std::runtime_error("unknown directive: " + directive.name);
 }
 
-ServerConfig ConfigParser::parseServerBlock() {
+ServerConfig ConfigParser::parseServerBlock()
+{
     _lexer.expect(Token(T_WORD, "server"));
     _lexer.expect(T_BLOCK_START);
 
     ServerConfig server;
 
-    while (_lexer.peek().type != T_BLOCK_END) {
+    while (_lexer.peek().type != T_BLOCK_END)
+    {
         if (_lexer.peek().value == "location")
             server.locations.push_back(parseLocationBlock(server));
         else
@@ -124,15 +135,19 @@ void ConfigParser::parseLocationDirective(LocationConfig& location)
         location.allow_methods = Validate::allowMethodsDirective(directive);
     else if (directive.name == "autoindex")
         location.autoindex = Validate::autoindexDirective(directive);
-    else if (directive.name == "return") {
+    else if (directive.name == "return")
+    {
         std::pair<std::string, uint16_t> redirect = Validate::redirectDirective(directive);
         location.redirect                         = true;
         location.redirect_path                    = redirect.first;
         location.redirect_code                    = redirect.second;
-    } else if (directive.name == "upload_dir") {
+    }
+    else if (directive.name == "upload_dir")
+    {
         location.upload      = true;
         location.upload_path = directive.values[0];
-    } else
+    }
+    else
         throw std::runtime_error("unknown directive: " + directive.name);
 }
 
