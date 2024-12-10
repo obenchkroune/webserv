@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "Utils.tpp"
+
 namespace util {
 
 std::string ft_strtrim(const std::string& str);
