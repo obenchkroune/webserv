@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GET.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 14:12:51 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/10 14:02:45 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,48 +17,30 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
                               bool send_data /* = true*/)
 {
     std::vector<LocationConfig>::const_iterator file_location =
-        ServerUtils::GetFileLocation(_server->GetConfig(), request.getUri());
-    std::string file_name =
-        file_location->root + '/' + request.getUri().substr(file_location->path.length());
-    if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
-    {
-        std::cerr << "Client fd: " << _socket_fd << " thinks himself a hacker." << std::endl;
-        std::cerr << "Access for file: " << file_name
-                  << " is outside the location root, request is forbidden." << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
-    }
-    if (access(file_name.c_str(), F_OK) != 0) // EXISTENCE ACCESS
-    {
-        std::cerr << "F_OK failed for file: " << file_name << std::endl;
+        ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
+    if (file_location == response->GetVirtualServer().locations.end())
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    }
-    if (access(file_name.c_str(), R_OK) != 0) // READ ACCESS
-    {
-        std::cerr << "R_OK failed for file: " << file_name << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
-    }
+    std::pair<HttpStatus, std::string> file = ProcessFilePermission(request, file_location, R_OK);
+    if (file.first.code != STATUS_OK)
+        return SendErrorResponse(file.first, response);
+    std::string &file_name = file.second;
+
     struct stat path_stat;
     stat(file_name.c_str(), &path_stat);
-    size_t max_sz_limit = _server->GetConfig().max_body_size;
-    if (file_location->max_body_size != _server->GetConfig().max_body_size)
-        max_sz_limit = file_location->max_body_size;
-    if ((size_t)path_stat.st_size > max_sz_limit)
-    {
-        std::cerr << "file too large: " << file_name << std::endl;
-        return SendErrorResponse(
-            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-            response);
-    }
     if (S_ISDIR(path_stat.st_mode))
     {
         std::vector<std::string>::const_iterator index_it = file_location->index.begin();
         for (; index_it != file_location->index.end(); index_it++)
         {
             std::string index_file_name = file_name + '/' + *index_it;
-            if (access(index_file_name.c_str(), R_OK) == 0)
+            if (access(index_file_name.c_str(), F_OK) == 0)
             {
-                file_name = index_file_name;
-                break;
+                if (access(index_file_name.c_str(), R_OK) == 0)
+                {
+                    file_name = index_file_name;
+                    break;
+                }
+                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
             }
         }
         if (index_it == file_location->index.end())
@@ -68,6 +50,7 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
                 std::cerr << "[Error] Directory listing is not yet implemented" << std::endl;
                 std::cerr << "Try specifying a file path like /index.html" << std::endl;
                 throw NotImplemented();
+                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
             }
             else
             {
@@ -75,14 +58,26 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
                                          response);
             }
         }
+        stat(file_name.c_str(), &path_stat);
     }
+
+    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
+    if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
+        max_sz_limit = file_location->max_body_size;
+    if ((size_t)path_stat.st_size > max_sz_limit)
+    {
+        std::cerr << "file too large: " << file_name << std::endl;
+        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
+                                 response);
+    }
+
     response->SetStatusHeaders(HTTP_STATUS_OK);
     std::string fname = basename(file_name.c_str());
     std::string extension;
     if (fname.find_last_of(".") != std::string::npos)
         extension = fname.substr(fname.find_last_of(".") + 1);
     // todo : need to be imported from mime types
-    HttpHeader header;
+    ResponseHeader header;
     header.name = "Content-Type";
     if (extension == "html" || extension == "htm")
         header.raw_value = "text/html";
@@ -100,12 +95,13 @@ void ServerClient::ProcessGET(const Request& request, Response* response,
         header.name      = "Content-Length";
         header.raw_value = content_length.str();
         response->AppendHeader(header);
+        response->FinishResponse(false);
     }
     else
     {
         response->ReadFile(file_fd);
+        response->FinishResponse(true);
     }
-    response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }
 

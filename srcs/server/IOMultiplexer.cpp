@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 02:09:10 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/05 11:57:02 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,7 @@ void IOMultiplexer::StartEventLoop()
     if (!_listeners.size())
         return;
     _is_started = true;
+    std::cout << "IOMultiplexer loop started." << std::endl;
     while (_is_started)
     {
         int events_count = epoll_wait(_epoll_fd, _events, EPOLL_EVENTS_MAX, -1);

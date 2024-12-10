@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexerException.cpp                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 18:16:15 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/11/25 11:57:04 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/05 02:35:11 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Exceptions.hpp"
 
 IOMultiplexerException::IOMultiplexerException(std::string reason) throw()
-    : _reason("[Reason]: " + reason)
+    : _reason("[IOMultiplexerException::IOMultiplexerException] [Reason]: " + reason)
 {
 }
 const char* IOMultiplexerException::what() const throw()

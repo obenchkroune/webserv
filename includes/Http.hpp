@@ -6,7 +6,8 @@
 #include <stdint.h>
 #include <string>
 
-enum HttpMethod {
+enum HttpMethod
+{
     HTTP_GET = 0,
     HTTP_HEAD,
     HTTP_POST,
@@ -124,5 +125,7 @@ enum http_status_code {
 struct HttpStatus {
     http_status_code code;
     const char*      name;
-    HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name){};
+    HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name) {};
+    HttpStatus(const HttpStatus& _status) : code(_status.code), name(_status.name) {};
+    HttpStatus() : code(STATUS_OK), name(HTTP_STATUS_OK) {};
 };
