@@ -5,7 +5,8 @@
 #include <iomanip>
 #include <sstream>
 
-class RequestException : public std::exception {
+class RequestException : public std::exception
+{
 public:
     RequestException(const HttpStatus& error_code);
     ~RequestException() throw();
@@ -17,7 +18,8 @@ private:
     HttpStatus  _error_code;
 };
 
-class Request {
+class Request
+{
 public:
     Request(const std::string& request);
     Request(const Request& other);

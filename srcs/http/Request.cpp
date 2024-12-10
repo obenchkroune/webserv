@@ -31,7 +31,8 @@ Request& Request::operator=(const Request& other)
     return *this;
 }
 
-Request::~Request() {
+Request::~Request()
+{
 }
 
 void Request::appendBody(const std::string& body)
@@ -53,22 +54,26 @@ HttpStatus Request::parse()
     }
 }
 
-HttpMethod Request::getMethod() const {
+HttpMethod Request::getMethod() const
+{
     return _method;
 }
 
-std::string Request::getUri() const {
+std::string Request::getUri() const
+{
     return _uri;
 }
 
-std::string Request::getVersion() const {
+std::string Request::getVersion() const
+{
     return _http_version;
 }
 
 const HttpHeader* Request::getHeader(const std::string& key) const
 {
     std::vector<HttpHeader>::const_iterator it = _headers.begin();
-    for (; it != _headers.end(); it++) {
+    for (; it != _headers.end(); it++)
+    {
         if (it->name == key)
             return it.base();
     }
@@ -80,7 +85,8 @@ const std::vector<HttpHeader>& Request::getHeaders() const
     return _headers;
 }
 
-std::string Request::getBody() const {
+std::string Request::getBody() const
+{
     return _body;
 }
 
