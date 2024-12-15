@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directory Listing</title>
+    <style>
+      body {
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 2rem;
+        background: #f5f5f5;
+        color: #333;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+      }
+      h1 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 0.5rem;
+      }
+      .directory-list {
+        list-style: none;
+        padding: 0;
+      }
+      .directory-list li {
+        border-bottom: 1px solid #eee;
+      }
+      .directory-list a {
+        text-decoration: none;
+        color: #2980b9;
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        transition: background-color 0.2s;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .directory-list a:hover {
+        background-color: #f8f9fa;
+        color: #3498db;
+      }
+      .directory-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+      .file-info {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-left: auto;
+      }
+      .icon {
+        margin-right: 0.75rem;
+        width: 20px;
+        text-align: center;
+      }
+      .parent-dir {
+        background-color: #f8f9fa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Directory Contents</h1>
+      <ul class="directory-list">
+        <li class="parent-dir">
+          <a href="../" class="directory-item">
+            <span class="icon">📁</span>
+            <span>..</span>
+            <span class="file-info">Parent Directory</span>
+          </a>
+        </li>
+        <li>
+          <a href="folder1/" class="directory-item">
+            <span class="icon">📁</span>
+            <span>folder1</span>
+            <span class="file-info">Directory</span>
+          </a>
+        </li>
+        <li>
+          <a href="folder2/" class="directory-item">
+            <span class="icon">📁</span>
+            <span>folder2</span>
+            <span class="file-info">Directory</span>
+          </a>
+        </li>
+        <li>
+          <a href="file1.txt" class="directory-item">
+            <span class="icon">📄</span>
+            <span>file1.txt</span>
+            <span class="file-info">15 KB</span>
+          </a>
+        </li>
+        <li>
+          <a href="file2.txt" class="directory-item">
+            <span class="icon">📄</span>
+            <span>file2.txt</span>
+            <span class="file-info">20 KB</span>
+          </a>
+        </li>
+        <!-- Directory entries will be inserted here -->
+      </ul>
+    </div>
+  </body>
+</html>
