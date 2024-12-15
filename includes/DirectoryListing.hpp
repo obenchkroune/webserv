@@ -16,7 +16,6 @@ public:
         size_t      size;
         time_t      modTime;
 
-        // Add comparison operator
         static bool compare(const Entry& a, const Entry& b) {
             if (a.isDirectory != b.isDirectory)
                 return a.isDirectory > b.isDirectory;
