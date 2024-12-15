@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 13:55:29 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/10 14:37:56 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,22 @@
 #include "Request.hpp"
 #include <ctime>
 #include <exception>
+#include <iostream>
 #include <ranges>
 #include <sstream>
 #include <string>
-#include <unistd.h>
-#include <iostream>
 #include <sys/stat.h>
+#include <unistd.h>
+
+struct ResponseHeader
+{
+    std::string name;
+    std::string value;
+
+    ResponseHeader() {};
+    ResponseHeader(const std::string& _name, const std::string& _value)
+        : name(_name), value(_value) {};
+};
 
 class ResponseException
 {
@@ -28,7 +38,7 @@ private:
 
 public:
     ResponseException(std::string reason) throw();
-    const char *what() const throw();
+    const char* what() const throw();
     ~ResponseException() throw();
 };
 
@@ -39,23 +49,25 @@ private:
     std::vector<uint8_t> _content;
     size_t               _content_sent;
     const Request        _request;
+    const ServerConfig&  _virtual_server;
 
 public:
-    Response(const Request &request);
+    Response(const Request& request, const ServerConfig& virtual_server);
     ~Response();
 
 private:
-    Response(const Response &response);
-    Response &operator=(const Response &response);
+    Response(const Response& response);
+    Response& operator=(const Response& response);
 
 public:
-    const uint8_t *GetResponseBuff() const;
-    void           ResponseSent(const size_t n);
-    size_t         ResponseCount() const;
+    const ServerConfig& GetVirtualServer() const;
+    const uint8_t*      GetResponseBuff() const;
+    void                ResponseSent(const size_t n);
+    size_t              ResponseCount() const;
 
 public:
-    void SetStatusHeaders(const char *status_string);
-    void AppendHeader(const HttpHeader &header);
+    void SetStatusHeaders(const char* status_string);
+    void AppendHeader(const ResponseHeader& header);
     void ReadFile(const int fd);
-    void FinishResponse();
+    void FinishResponse(bool append_content_length);
 };

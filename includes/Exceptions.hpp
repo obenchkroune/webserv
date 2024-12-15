@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Exceptions.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 20:42:12 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/25 17:12:47 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/05 02:33:54 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,10 +34,9 @@ class ServerException : public std::exception
 {
 private:
     std::string   _reason;
-    const Server& _server;
 
 public:
-    ServerException(std::string reason, const Server& server) throw();
+    ServerException(std::string reason) throw();
     const char* what() const throw();
     ~ServerException() throw();
 };

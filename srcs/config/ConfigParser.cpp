@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <stdexcept>
 
-LocationConfig::LocationConfig(const ServerConfig &server)
+LocationConfig::LocationConfig(const ServerConfig& server)
 {
     root          = server.root;
     index         = server.index;
@@ -22,11 +22,10 @@ ServerConfig::ServerConfig()
     root          = "/var/www/html";
     max_body_size = 1024 * 1024;
     autoindex     = false;
-    allow_methods.push_back(HTTP_ANY);
     index.push_back("index.html");
 }
 
-ConfigParser::ConfigParser(const std::string &file) : _lexer(file)
+ConfigParser::ConfigParser(const std::string& file) : _lexer(file)
 {
     //
 }
@@ -49,7 +48,7 @@ std::vector<ServerConfig> ConfigParser::parse()
 
         _lexer.expect(T_EOF);
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         throw InvalidConfigException(_lexer.rpeek().line_number);
     }
@@ -70,7 +69,7 @@ Directive ConfigParser::parseDirective()
     return directive;
 }
 
-void ConfigParser::parseServerDirective(ServerConfig &server)
+void ConfigParser::parseServerDirective(ServerConfig& server)
 {
     Directive directive = parseDirective();
 
@@ -120,7 +119,7 @@ ServerConfig ConfigParser::parseServerBlock()
     return server;
 }
 
-void ConfigParser::parseLocationDirective(LocationConfig &location)
+void ConfigParser::parseLocationDirective(LocationConfig& location)
 {
     Directive directive = parseDirective();
 
@@ -152,17 +151,13 @@ void ConfigParser::parseLocationDirective(LocationConfig &location)
         throw std::runtime_error("unknown directive: " + directive.name);
 }
 
-LocationConfig ConfigParser::parseLocationBlock(const ServerConfig &server)
+LocationConfig ConfigParser::parseLocationBlock(const ServerConfig& server)
 {
     _lexer.expect(Token(T_WORD, "location"));
 
     LocationConfig location(server);
 
     location.path = _lexer.expect(T_WORD).value;
-
-/*
-    TODO: add path validation..
-*/
 
     _lexer.expect(T_BLOCK_START);
 

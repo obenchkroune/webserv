@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/03 23:52:11 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/07 15:04:16 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,18 +42,20 @@ public:
 private:
     std::map<int, ServerClient>    _clients;
     std::map<int, Responses_queue> _responses_;
-    ServerConfig                   _config;
+    std::vector<ServerConfig>      _config;
     bool                           _is_started;
-    sockaddr_in                    _listen_addr;
-    int                            _listen_socket_fd;
+    std::vector<sockaddr_in>       _listen_addrs;
+    std::vector<int>               _listen_socket_fds;
     epoll_event                    _listen_socket_ev;
     IOMultiplexer                 *_IOmltplx;
 
 public:
-    Server(const ServerConfig &config, IOMultiplexer *IOmltplx, bool start = false);
+    Server(std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx);
+    ~Server();
+
+private:
     Server(const Server &server);
     Server &operator=(const Server &server);
-    ~Server();
 
 public:
     void Start();
@@ -61,18 +63,19 @@ public:
 
     /* Const */
 public:
-    bool                is_started() const;
-    const ServerConfig &GetConfig() const;
+    bool                             is_started() const;
+    const std::vector<ServerConfig> &GetConfig() const;
 
     /* Interface */
 public:
     virtual void ConsumeEvent(const epoll_event ev);
-    void Terminate();
+    void         Terminate();
 
     /* Private Methods */
 private:
-    sockaddr_in get_listen_addr(ServerConfig &_config);
-    void        acceptNewPeer();
-    void        handlePeerEvent(const epoll_event &ev);
-    void        RemoveClient(const epoll_event ev);
+    void listen_on_addr(const sockaddr_in &_listen_addr);
+    void AcceptNewPeerOnSocket(int socket_fd);
+    void HandlePeerEPOLLIN(const epoll_event &ev, ServerClient &client);
+    void HandlePeerEPOLLOUT(const epoll_event &ev, ServerClient &client);
+    void RemoveClient(const epoll_event ev);
 };

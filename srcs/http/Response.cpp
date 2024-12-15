@@ -3,23 +3,24 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 13:56:37 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/10 14:01:31 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(const Request& request) : _content_sent(0), _request(request)
+Response::Response(const Request &request, const ServerConfig &virtual_server)
+    : _content_sent(0), _request(request), _virtual_server(virtual_server)
 {
 }
-Response::Response(const Response& response) : _request(response._request)
+Response::Response(const Response &response) : _request(response._request), _virtual_server(response._virtual_server)
 {
     *this = response;
 }
-Response& Response::operator=(const Response& response)
+Response &Response::operator=(const Response &response)
 {
     if (this == &response)
         return *this;
@@ -31,9 +32,13 @@ Response& Response::operator=(const Response& response)
 Response::~Response()
 {
 }
-const uint8_t* Response::GetResponseBuff() const
+const ServerConfig &Response::GetVirtualServer() const
 {
-    return (uint8_t*)&_content[_content_sent];
+    return _virtual_server;
+}
+const uint8_t *Response::GetResponseBuff() const
+{
+    return (uint8_t *)&_content[_content_sent];
 }
 void Response::ResponseSent(const size_t n)
 {
@@ -45,7 +50,7 @@ size_t Response::ResponseCount() const
         return 0;
     return _content.size() - _content_sent;
 }
-void Response::SetStatusHeaders(const char* status_string)
+void Response::SetStatusHeaders(const char *status_string)
 {
     _headers = HTTP_VERSION_TOKEN " ";
     _headers += status_string;
@@ -53,7 +58,7 @@ void Response::SetStatusHeaders(const char* status_string)
     _headers += "Server: " PROGNAME "/" PROGVERSION CRLF;
 
     time_t t_now   = time(0);
-    tm*    now     = gmtime(&t_now);
+    tm    *now     = gmtime(&t_now);
     size_t buff_sz = sizeof("aaa, dd bbb YYYY HH:MM:SS GMT");
     char   time_buff[buff_sz];
     size_t bytes = std::strftime(time_buff, buff_sz, "%a, %d %b %Y %H:%M:%S GMT", now);
@@ -64,21 +69,12 @@ void Response::SetStatusHeaders(const char* status_string)
     _headers += time_buff;
     _headers += CRLF;
 }
-void Response::AppendHeader(const HttpHeader& header)
+void Response::AppendHeader(const ResponseHeader &header)
 {
-    _headers += header.name + ": " + header.raw_value + CRLF;
+    _headers += header.name + ": " + header.value + CRLF;
 }
 void Response::ReadFile(const int fd)
 {
-    struct stat st;
-    fstat(fd, &st);
-    std::ostringstream content_length;
-    content_length << st.st_size;
-    HttpHeader header;
-    header.name      = "Content-Length";
-    header.raw_value = content_length.str();
-    AppendHeader(header);
-
     for (;;)
     {
         uint8_t buff[READ_CHUNK];
@@ -91,11 +87,19 @@ void Response::ReadFile(const int fd)
     }
     close(fd);
 }
-void Response::FinishResponse()
+void Response::FinishResponse(bool append_content_length)
 {
-    HttpHeader header;
-    header.name      = "Connection";
-    header.raw_value = "keep-alive";
+    ResponseHeader header;
+    if (append_content_length)
+    {
+        std::ostringstream content_length;
+        content_length << _content.size();
+        header.name  = "Content-Length";
+        header.value = content_length.str();
+        AppendHeader(header);
+    }
+    header.name  = "Connection";
+    header.value = "keep-alive";
     AppendHeader(header);
     _headers += CRLF;
     _content.insert(_content.begin(), _headers.begin(), _headers.end());

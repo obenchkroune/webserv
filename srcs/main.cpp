@@ -10,7 +10,7 @@ extern int webserv_unix_signal;
 void handle_sigint(int signal)
 {
     webserv_unix_signal = signal;
-    std::cout << std::endl;
+    std::cout << std::endl << "Got interrupt signal." << std::endl;
 }
 void handle_signals()
 {
@@ -30,40 +30,16 @@ int main(int ac, char **av)
     {
         handle_signals();
         Config::getInstance().loadConfig(ac == 2 ? av[1] : DEFAULT_CONFIG_PATH);
-        std::vector<ServerConfig> configs = Config::getInstance().getServers();
-
-        std::vector<Server>                 servers;
-        IOMultiplexer                       IOmltplxr;
-        std::vector<ServerConfig>::iterator conf_it = configs.begin();
-        for (; conf_it != configs.end(); conf_it++)
-        {
-            servers.push_back(Server(*conf_it, &IOmltplxr));
-        }
-        std::vector<Server>::iterator it = servers.begin();
-        for (; it != servers.end(); it++)
-        {
-            try
-            {
-                it->Start();
-            }
-            catch (const std::exception &e)
-            {
-                std::cerr << "Server Error: " << e.what() << std::endl;
-            }
-        }
-        try
-        {
-            IOmltplxr.StartEventLoop();
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "I/O Error: " << e.what() << std::endl;
-        }
+        std::vector<ServerConfig> config = Config::getInstance().getServers();
+        IOMultiplexer IOmltplxr;
+        Server        server(config, &IOmltplxr);
+        server.Start();
+        IOmltplxr.StartEventLoop();
         std::cout << PROGNAME "/" PROGVERSION " exited." << std::endl;
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Fatal Error: " << e.what() << std::endl;
+        std::cerr << "Fatal Error. reason:\n" << e.what() << std::endl;
     }
     return 0;
 }

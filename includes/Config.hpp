@@ -2,6 +2,7 @@
 
 #include "Http.hpp"
 #include <map>
+#include <netinet/in.h>
 #include <stdint.h>
 #include <string>
 #include <vector>
@@ -42,6 +43,7 @@ struct ServerConfig
 {
     ServerConfig();
 
+    int                             listen_address_fd;
     std::string                     host;
     uint16_t                        port;
     std::vector<std::string>        server_names;

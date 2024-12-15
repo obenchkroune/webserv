@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Utils.hpp                                          :+:      :+:    :+:   */
+/*   util.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -16,11 +16,10 @@
 #include <string>
 #include <vector>
 
-namespace Utils
-{
+#include "Utils.tpp"
 
-std::string              ft_strtrim(const std::string &str);
-std::vector<std::string> ft_split(const std::string &str, char delim);
-size_t                   ft_strlcpy(char *dst, const char *src, size_t sz);
+namespace util {
 
-} // namespace Utils
+std::string ft_strtrim(const std::string& str);
+
+} // namespace util

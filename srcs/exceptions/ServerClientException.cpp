@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClientException.cpp                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/21 20:43:52 by msitni            #+#    #+#             */
-/*   Updated: 2024/11/25 17:13:33 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/05 02:35:37 by msitni1337       ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "Server.hpp"
 
 ServerClientException::ServerClientException(std::string reason) throw()
-    : _reason("ServerClientException::ServerClientException : [Reason]: " + reason)
+    : _reason("[ServerClientException::ServerClientException] [Reason]: " + reason)
 {}
 const char* ServerClientException::what() const throw()
 {

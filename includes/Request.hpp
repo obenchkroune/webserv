@@ -8,12 +8,14 @@
 class RequestException : public std::exception
 {
 public:
-    RequestException(const std::string& message);
+    RequestException(const HttpStatus& error_code);
     ~RequestException() throw();
     const char* what() const throw();
 
+    HttpStatus getErrorCode() const;
+
 private:
-    std::string _message;
+    HttpStatus  _error_code;
 };
 
 class Request
@@ -24,8 +26,8 @@ public:
     Request& operator=(const Request& other);
     ~Request();
 
-    uint16_t Parse();
-    void     appendBody(const std::string& body);
+    HttpStatus parse();
+    void       appendBody(const std::string& body);
 
     // getters
     HttpMethod                                getMethod() const;
@@ -52,12 +54,10 @@ private:
     std::string                        _body;
     std::vector<HttpHeader>            _headers;
 
-    void        ValidateHeaders(); // TODO: refactor
-    std::string getHeaderLine(std::istream& iss) const;
-    void        parseRequestLine();
-    void        parseQueryParams();
-    void        parseHeaders();
-    void        parseBody();
+    void                               parseRequestLine();
+    std::map<std::string, std::string> parseQueryParams(const std::string& query);
+    std::string                        getHeaderLine();
+    void                               parseHeaders();
 };
 
 std::ostream& operator<<(std::ostream& os, const Request& request);
