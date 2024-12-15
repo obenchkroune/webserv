@@ -2,8 +2,7 @@
 
 #include "Http.hpp"
 
-struct HttpHeaderValue
-{
+struct HttpHeaderValue {
     std::string                             value;
     std::multimap<std::string, std::string> parameters;
     float                                   quality_factor;
@@ -17,8 +16,7 @@ struct HttpHeaderValue
     HttpHeaderValue& operator=(const HttpHeaderValue& other);
 };
 
-struct HttpHeader
-{
+struct HttpHeader {
 public:
     std::string                  name;
     std::string                  raw_value;
@@ -38,6 +36,12 @@ private:
 
     void tokenize();
     void parse();
+
+    bool                   isValidFieldName(const std::string& name);
+    bool                   isTokenChar(char c);
+    std::string            unquote(const std::string& str);
+    void                   skipOWS(std::string::size_type& pos, const std::string& str);
+    std::string::size_type findCommentEnd(const std::string& str, std::string::size_type pos);
 };
 
 std::ostream& operator<<(std::ostream& os, const HttpHeader& header);

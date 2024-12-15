@@ -9,3 +9,5 @@ ColumnLimit: 100
 IndentWidth: 4
 AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: None
+AlwaysBreakTemplateDeclarations: "Yes"
+AlignAfterOpenBracket: BlockIndent
