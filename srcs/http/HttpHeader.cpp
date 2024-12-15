@@ -98,26 +98,33 @@ void HttpHeader::skipOWS(std::string::size_type& pos, const std::string& str) {
 
 std::string::size_type
 HttpHeader::findCommentEnd(const std::string& str, std::string::size_type pos) {
-    int  depth    = 1;
-    bool in_quote = false;
-    ++pos; // Skip initial '('
+    int  depth   = 1;
+    bool escaped = false;
 
-    while (pos < str.size() && depth > 0) {
-        if (str[pos] == '\\' && !in_quote) {
-            pos += 2;
+    while (pos < str.size()) {
+        if (escaped) {
+            escaped = false;
+            ++pos;
             continue;
         }
-        if (str[pos] == '"')
-            in_quote = !in_quote;
-        else if (!in_quote) {
-            if (str[pos] == '(')
-                ++depth;
-            else if (str[pos] == ')')
-                --depth;
+
+        if (str[pos] == '\\') {
+            escaped = true;
+            ++pos;
+            continue;
+        }
+
+        if (str[pos] == '(') {
+            ++depth;
+        } else if (str[pos] == ')') {
+            --depth;
+            if (depth == 0) {
+                return pos + 1;
+            }
         }
         ++pos;
     }
-    return pos;
+    throw std::runtime_error("Unterminated comment in header value");
 }
 
 void HttpHeader::tokenize() {
@@ -141,10 +148,28 @@ void HttpHeader::tokenize() {
                 token += raw_value[pos++];
             }
         } else if (raw_value[pos] == '(') {
-            pos = findCommentEnd(raw_value, pos);
+            std::string::size_type comment_end = findCommentEnd(raw_value, pos + 1);
+            pos                                = comment_end;
             continue;
         } else {
             while (pos < raw_value.size() && raw_value[pos] != ',') {
+                if (raw_value[pos] == '(') {
+                    std::string::size_type comment_end = findCommentEnd(raw_value, pos + 1);
+                    pos                                = comment_end;
+                    continue;
+                }
+
+                // Check if we hit a space that's not within a comment or quote
+                if (raw_value[pos] == ' ' && !token.empty()) {
+                    std::string cleaned = util::strtrim(token);
+                    if (!cleaned.empty()) {
+                        _tokens.push_back(cleaned);
+                    }
+                    token.clear();
+                    ++pos;
+                    continue;
+                }
+
                 token += raw_value[pos++];
             }
         }
