@@ -1,4 +1,6 @@
 #include "HttpHeader.hpp"
+#include "Utils.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -7,7 +9,12 @@
 HttpHeaderValue::HttpHeaderValue() : quality_factor(1.0) {
 }
 
-HttpHeaderValue::HttpHeaderValue(const std::string& value) : value(value), quality_factor(1.0) {
+HttpHeaderValue::HttpHeaderValue(const std::string& val) : quality_factor(1.0) {
+    if (val.size() >= 2 && val[0] == '"' && val[val.size() - 1] == '"') {
+        value = val.substr(1, val.size() - 2);
+    } else {
+        value = val;
+    }
 }
 
 HttpHeaderValue::~HttpHeaderValue() {
@@ -34,6 +41,9 @@ HttpHeader::HttpHeader() {
 
 HttpHeader::HttpHeader(const std::string& name, const std::string& value)
     : name(name), raw_value(value) {
+    if (!isValidFieldName(name)) {
+        throw std::runtime_error("Invalid header field name");
+    }
     this->tokenize();
     this->parse();
 }
@@ -50,86 +60,127 @@ HttpHeader& HttpHeader::operator=(const HttpHeader& other) {
     return *this;
 }
 
+bool HttpHeader::isTokenChar(char c) {
+    static const char* separators = "()<>@,;:\\\"/[]?={} \t";
+    return (c >= '!' && c <= '~') && strchr(separators, c) == NULL;
+}
+
+bool HttpHeader::isValidFieldName(const std::string& name) {
+    if (name.empty())
+        return false;
+    for (std::string::size_type i = 0; i < name.size(); ++i) {
+        if (!isTokenChar(name[i]))
+            return false;
+    }
+    return true;
+}
+
+std::string HttpHeader::unquote(const std::string& str) {
+    if (str.size() < 2 || str[0] != '"' || str[str.size() - 1] != '"') {
+        return str;
+    }
+    std::string result;
+    for (std::string::size_type i = 1; i < str.size() - 1; ++i) {
+        if (str[i] == '\\' && i + 1 < str.size() - 1) {
+            result += str[++i];
+        } else {
+            result += str[i];
+        }
+    }
+    return result;
+}
+
+void HttpHeader::skipOWS(std::string::size_type& pos, const std::string& str) {
+    while (pos < str.size() && (str[pos] == ' ' || str[pos] == '\t')) {
+        ++pos;
+    }
+}
+
+std::string::size_type
+HttpHeader::findCommentEnd(const std::string& str, std::string::size_type pos) {
+    int  depth   = 1;
+    bool escaped = false;
+
+    while (pos < str.size()) {
+        if (escaped) {
+            escaped = false;
+            ++pos;
+            continue;
+        }
+
+        if (str[pos] == '\\') {
+            escaped = true;
+            ++pos;
+            continue;
+        }
+
+        if (str[pos] == '(') {
+            ++depth;
+        } else if (str[pos] == ')') {
+            --depth;
+            if (depth == 0) {
+                return pos + 1;
+            }
+        }
+        ++pos;
+    }
+    throw std::runtime_error("Unterminated comment in header value");
+}
+
 void HttpHeader::tokenize() {
-    std::map<char, char> sep_pairs;
-    sep_pairs['{'] = '}';
-    sep_pairs['['] = ']';
-    sep_pairs['<'] = '>';
-    sep_pairs['"'] = '"';
+    _tokens.clear();
+    std::string            token;
+    std::string::size_type pos      = 0;
+    bool                   in_quote = false;
 
-    if (raw_value.empty()) {
-        return;
-    }
-
-    std::string::iterator it       = raw_value.begin();
-    std::string::iterator start    = it;
-    bool                  in_quote = false;
-    for (; it != raw_value.end(); it++) {
-        switch (*it) {
-        case '"':
-            in_quote = !in_quote;
+    while (pos < raw_value.size()) {
+        skipOWS(pos, raw_value);
+        if (pos >= raw_value.size())
             break;
-        case ',':
-        case ' ':
-        case '\t': {
-            if (!in_quote) {
-                std::string tok = util::ft_strtrim(std::string(start, it));
-                if (!tok.empty())
-                    _tokens.push_back(tok);
-                start = it + 1;
+
+        if (raw_value[pos] == '"') {
+            in_quote = true;
+            token += raw_value[pos++];
+            while (pos < raw_value.size() && (in_quote || raw_value[pos] != ',')) {
+                if (raw_value[pos] == '"' && (pos == 0 || raw_value[pos - 1] != '\\')) {
+                    in_quote = false;
+                }
+                token += raw_value[pos++];
             }
-            break;
-        }
-        case '(': {
-            std::string tok = util::ft_strtrim(std::string(start, it));
-            if (!tok.empty())
-                _tokens.push_back(tok);
+        } else if (raw_value[pos] == '(') {
+            std::string::size_type comment_end = findCommentEnd(raw_value, pos + 1);
+            pos                                = comment_end;
+            continue;
+        } else {
+            while (pos < raw_value.size() && raw_value[pos] != ',') {
+                if (raw_value[pos] == '(') {
+                    std::string::size_type comment_end = findCommentEnd(raw_value, pos + 1);
+                    pos                                = comment_end;
+                    continue;
+                }
 
-            std::string::iterator pair = std::find(it, raw_value.end(), ')');
-            if (pair == raw_value.end())
-                throw std::runtime_error(
-                    "invalid header field-value: missing closing separator ')'");
-            it    = pair;
-            start = pair + 1;
+                // Check if we hit a space that's not within a comment or quote
+                if (raw_value[pos] == ' ' && !token.empty()) {
+                    std::string cleaned = util::strtrim(token);
+                    if (!cleaned.empty()) {
+                        _tokens.push_back(cleaned);
+                    }
+                    token.clear();
+                    ++pos;
+                    continue;
+                }
 
-            break;
-        }
-        case '{':
-        case '[':
-        case '<': {
-            if (it != start) {
-                std::string tok = util::ft_strtrim(std::string(start, it));
-                if (!tok.empty())
-                    _tokens.push_back(tok);
-                start = it;
+                token += raw_value[pos++];
             }
-
-            std::string::iterator pair = std::find(it, raw_value.end(), sep_pairs[*it]);
-            if (pair == raw_value.end())
-                throw std::runtime_error("invalid header field-value: missing closing separator '" +
-                                         std::string(1, sep_pairs[*it]) + "'");
-
-            std::string tok = util::ft_strtrim(std::string(start, pair + 1));
-            if (!tok.empty())
-                _tokens.push_back(tok);
-            start = pair + 1;
-            it    = pair;
-            break;
         }
-        case '}':
-        case ']':
-        case '>':
-        case ')':
-            throw std::runtime_error("invalid header field-value: unexpected closing separator '" +
-                                     std::string(1, *it) + "'");
-            break;
-        default:
-            break;
-        }
-    }
 
-    if (start != raw_value.end()) {
-        _tokens.push_back(std::string(start, raw_value.end()));
+        token = util::strtrim(token);
+        if (!token.empty()) {
+            _tokens.push_back(token);
+        }
+        token.clear();
+        if (pos < raw_value.size() && raw_value[pos] == ',')
+            ++pos;
     }
 }
 
@@ -141,14 +192,14 @@ std::vector<std::string> HttpHeader::stripParameters(const std::string& str) {
 
     for (; it != str.end(); ++it) {
         if (*it == ';') {
-            std::string tok = util::ft_strtrim(std::string(start, it));
+            std::string tok = util::strtrim(std::string(start, it));
             if (!tok.empty())
                 tokens.push_back(tok);
             start = it + 1;
         }
     }
     if (start != str.end()) {
-        std::string tok = util::ft_strtrim(std::string(start, str.end()));
+        std::string tok = util::strtrim(std::string(start, str.end()));
         if (!tok.empty())
             tokens.push_back(tok);
     }
@@ -161,8 +212,8 @@ std::pair<std::string, std::string> HttpHeader::parseParameter(const std::string
 
     for (; it != str.end(); ++it) {
         if (*it == '=') {
-            key   = util::ft_strtrim(std::string(str.begin(), it));
-            value = util::ft_strtrim(std::string(it + 1, str.end()));
+            key   = unquote(util::strtrim(std::string(str.begin(), it)));
+            value = unquote(util::strtrim(std::string(it + 1, str.end())));
             break;
         }
     }

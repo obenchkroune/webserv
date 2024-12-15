@@ -20,6 +20,6 @@
 
 namespace util {
 
-std::string ft_strtrim(const std::string& str);
+std::string strtrim(const std::string& str);
 
 } // namespace util
