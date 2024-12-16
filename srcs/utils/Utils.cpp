@@ -16,7 +16,7 @@
 
 namespace util {
 
-std::string ft_strtrim(const std::string& str) {
+std::string strtrim(const std::string& str) {
     std::string::const_iterator         it  = str.begin();
     std::string::const_reverse_iterator rit = str.rbegin();
 
