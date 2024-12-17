@@ -31,19 +31,43 @@ ConfigParser::~ConfigParser() {
     //
 }
 
-std::vector<ServerConfig> ConfigParser::parse() {
+std::pair<std::vector<ServerConfig>, MimeTypes> ConfigParser::parse() {
     std::vector<ServerConfig> result;
+    MimeTypes                 mime_types;
 
     try {
         while (_lexer.peek().type != T_EOF) {
-            result.push_back(parseServerBlock());
+            if (_lexer.peek().value == "server") {
+                result.push_back(parseServerBlock());
+            } else if (_lexer.peek().value == "types") {
+                MimeTypes types = parseMimeTypesBlock();
+                mime_types.insert(types.begin(), types.end());
+            } else {
+                throw std::runtime_error("unexpected token: " + _lexer.peek().value);
+            }
         }
 
         _lexer.expect(T_EOF);
     } catch (const std::exception& e) {
         throw InvalidConfigException(_lexer.getCurrentLine());
     }
-    return result;
+
+    return std::make_pair(result, mime_types);
+}
+
+MimeTypes ConfigParser::parseMimeTypesBlock() {
+    _lexer.expect(Token(T_WORD, "types"));
+    _lexer.expect(T_BLOCK_START);
+
+    MimeTypes mime_types;
+
+    while (_lexer.peek().type != T_BLOCK_END) {
+        Directive directive        = parseDirective();
+        mime_types[directive.name] = directive.values;
+    }
+
+    _lexer.expect(T_BLOCK_END);
+    return mime_types;
 }
 
 Directive ConfigParser::parseDirective() {

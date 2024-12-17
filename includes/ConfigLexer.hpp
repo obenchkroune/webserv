@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -48,7 +48,8 @@ public:
 private:
     ConfigLexer(const ConfigLexer& other);
     ConfigLexer& operator=(const ConfigLexer& other);
+    void         includeFile(const std::string& path);
 
-    std::ifstream _ifs;
-    std::size_t   _current_line;
+    std::stringstream _ss;
+    std::size_t       _current_line;
 };
