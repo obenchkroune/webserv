@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   shared.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/01 21:09:07 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/02 20:34:55 by msitni1337       ###   ########.fr       */
+/*   Updated: 2024/12/10 17:08:49 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,3 +17,4 @@
 #define READ_CHUNK 1024 * 4
 #define RECV_CHUNK 1024
 #define SEND_CHUNK 1024
+#define REQUEST_HEADER_LIMIT RECV_CHUNK * 100UL

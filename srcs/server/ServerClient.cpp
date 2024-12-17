@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/10 14:33:37 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/10 18:02:02 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,6 @@ ServerClient::~ServerClient()
 void ServerClient::ReceiveRequest(const std::string buff)
 {
     _request_raw += buff;
-    /*
-        TODO: Add a header length limit.
-    */
     if (_request_raw.find("\r\n\r\n") != std::string::npos)
     {
         std::cout << "Client fd: " << _socket_fd << " Got the full request:\n";
@@ -66,6 +63,15 @@ void ServerClient::ReceiveRequest(const std::string buff)
             std::cerr << "Request not handled due to: " << e.what() << std::endl;
             std::cerr << req;
         }
+    }
+    else if (_request_raw.size() > REQUEST_HEADER_LIMIT)
+    {
+        std::cerr << "Request Headers exceeded the REQUEST_HEADER_LIMIT: " << REQUEST_HEADER_LIMIT
+                  << std::endl;
+        Request req("");
+        _request_raw.clear();
+        Response* response = new Response(req, _server->GetConfig().front());
+        return SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST), response);
     }
 }
 void ServerClient::SendErrorResponse(const HttpStatus& status, Response* response)
