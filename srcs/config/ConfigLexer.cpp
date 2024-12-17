@@ -3,32 +3,37 @@
 #include <iostream>
 #include <limits>
 
-ConfigLexer::ConfigLexer(const std::string &file) : _current_line(1)
-{
-    std::ifstream ifs(file.c_str());
-    if (!ifs.is_open())
+ConfigLexer::ConfigLexer(const std::string& file) : _ifs(file.c_str()), _current_line(1) {
+    if (!_ifs.is_open())
         throw std::runtime_error("could not open config file: " + file);
+}
 
-    while (ifs && !ifs.eof())
-    {
-        char c = ifs.peek();
-        switch (c)
-        {
+ConfigLexer::~ConfigLexer() {
+}
+
+const Token ConfigLexer::peek() {
+    std::ifstream::pos_type pos   = _ifs.tellg();
+    Token                   token = getNextToken();
+    _ifs.seekg(pos);
+    return token;
+}
+
+const Token ConfigLexer::getNextToken() {
+    while (_ifs && !_ifs.eof()) {
+        char c = _ifs.peek();
+        switch (c) {
         case '#':
-            ifs.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            _ifs.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             _current_line++;
             break;
         case '{':
-            _tokens.push_back(Token(T_BLOCK_START, ifs.get(), _current_line));
-            break;
+            return Token(T_BLOCK_START, _ifs.get(), _current_line);
         case '}':
-            _tokens.push_back(Token(T_BLOCK_END, ifs.get(), _current_line));
-            break;
+            return Token(T_BLOCK_END, _ifs.get(), _current_line);
         case ';':
-            _tokens.push_back(Token(T_SEMICOL, ifs.get(), _current_line));
-            break;
+            return Token(T_SEMICOL, _ifs.get(), _current_line);
         case '\n':
-            ifs.ignore();
+            _ifs.ignore();
             _current_line++;
             break;
         case ' ':
@@ -36,76 +41,43 @@ ConfigLexer::ConfigLexer(const std::string &file) : _current_line(1)
         case '\r':
         case '\v':
         case '\f':
-            ifs.ignore();
+            _ifs.ignore();
             break;
         default:
             std::string reserved("#{};");
             std::string value;
-            while (ifs.good())
-            {
-                char c = ifs.peek();
+            while (_ifs.good()) {
+                char c = _ifs.peek();
                 if (reserved.find(c) != std::string::npos || std::isspace(c))
                     break;
-                value += ifs.get();
+                value += _ifs.get();
             }
-            if (!value.empty())
-            {
-                _tokens.push_back(Token(T_WORD, value));
-                _tokens.back().line_number = _current_line;
+            if (!value.empty()) {
+                return Token(T_WORD, value);
             }
         }
     }
-    _tokens.push_back(Token(T_EOF));
-    _tokens.back().line_number = _current_line;
-    _current                   = _tokens.begin();
+    return Token(T_EOF);
 }
 
-ConfigLexer::~ConfigLexer()
-{
-    //
-}
-
-const Token &ConfigLexer::peek() const
-{
-    return *_current;
-}
-
-const Token &ConfigLexer::getNext()
-{
-    if (_current->type != T_EOF && _current != _tokens.end())
-        return *_current++;
-    return *_current;
-}
-
-const Token &ConfigLexer::rpeek()
-{
-    if (_current == _tokens.begin())
-        return *_current;
-    return *(_current - 1);
-}
-
-const Token &ConfigLexer::expect(Token token)
-{
-    const Token &tok = this->getNext();
+const Token ConfigLexer::expect(Token token) {
+    const Token& tok = this->getNextToken();
     if (token == tok)
         return tok;
     throw UnexpectedTokenException();
 }
 
-const Token &ConfigLexer::expect(TokenType type)
-{
-    const Token &tok = this->getNext();
+const Token ConfigLexer::expect(TokenType type) {
+    const Token& tok = this->getNextToken();
     if (type == tok.type)
         return tok;
     throw UnexpectedTokenException();
 }
 
-std::size_t ConfigLexer::getCurrentLine() const
-{
+std::size_t ConfigLexer::getCurrentLine() const {
     return _current_line;
 }
 
-const char *ConfigLexer::UnexpectedTokenException::what() const throw()
-{
+const char* ConfigLexer::UnexpectedTokenException::what() const throw() {
     return "Unexpected token.";
 }

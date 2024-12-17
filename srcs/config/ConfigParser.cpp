@@ -41,7 +41,7 @@ std::vector<ServerConfig> ConfigParser::parse() {
 
         _lexer.expect(T_EOF);
     } catch (const std::exception& e) {
-        throw InvalidConfigException(_lexer.rpeek().line_number);
+        throw InvalidConfigException(_lexer.getCurrentLine());
     }
     return result;
 }
