@@ -40,11 +40,6 @@ public:
     const Token expect(TokenType type);
     std::size_t getCurrentLine() const;
 
-    class UnexpectedTokenException : public std::exception {
-    public:
-        const char* what() const throw();
-    };
-
 private:
     ConfigLexer(const ConfigLexer& other);
     ConfigLexer& operator=(const ConfigLexer& other);
@@ -52,4 +47,5 @@ private:
 
     std::stringstream _ss;
     std::size_t       _current_line;
+    std::string       _directory;
 };

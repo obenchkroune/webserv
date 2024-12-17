@@ -1,5 +1,6 @@
 #include "ConfigParser.hpp"
 #include "./ConfigUtils.hpp"
+
 #include <cstdlib>
 #include <stdexcept>
 
@@ -24,7 +25,6 @@ ServerConfig::ServerConfig() {
 }
 
 ConfigParser::ConfigParser(const std::string& file) : _lexer(file) {
-    //
 }
 
 ConfigParser::~ConfigParser() {
@@ -35,22 +35,18 @@ std::pair<std::vector<ServerConfig>, MimeTypes> ConfigParser::parse() {
     std::vector<ServerConfig> result;
     MimeTypes                 mime_types;
 
-    try {
-        while (_lexer.peek().type != T_EOF) {
-            if (_lexer.peek().value == "server") {
-                result.push_back(parseServerBlock());
-            } else if (_lexer.peek().value == "types") {
-                MimeTypes types = parseMimeTypesBlock();
-                mime_types.insert(types.begin(), types.end());
-            } else {
-                throw std::runtime_error("unexpected token: " + _lexer.peek().value);
-            }
+    while (_lexer.peek().type != T_EOF) {
+        if (_lexer.peek().value == "server") {
+            result.push_back(parseServerBlock());
+        } else if (_lexer.peek().value == "types") {
+            MimeTypes types = parseMimeTypesBlock();
+            mime_types.insert(types.begin(), types.end());
+        } else {
+            throw InvalidConfigException(_lexer);
         }
-
-        _lexer.expect(T_EOF);
-    } catch (const std::exception& e) {
-        throw InvalidConfigException(_lexer.getCurrentLine());
     }
+
+    _lexer.expect(T_EOF);
 
     return std::make_pair(result, mime_types);
 }

@@ -1,4 +1,5 @@
 #include "ConfigLexer.hpp"
+#include "ConfigParser.hpp"
 #include "Utils.tpp"
 
 #include <fstream>
@@ -10,6 +11,13 @@ ConfigLexer::ConfigLexer(const std::string& file) : _current_line(1) {
     if (!ifs.is_open())
         throw std::runtime_error("could not open config file: " + file);
     _ss << ifs.rdbuf();
+
+    std::string::size_type pos = file.find_last_of('/');
+    if (pos != std::string::npos) {
+        _directory = file.substr(0, pos + 1);
+    } else {
+        _directory = "./";
+    }
 }
 
 ConfigLexer::~ConfigLexer() {
@@ -63,12 +71,10 @@ const Token ConfigLexer::getNextToken() {
                         "include directive must have a path." + utils::to_string(_current_line)
                     );
                 }
-                if (getNextToken().type != T_SEMICOL) {
-                    throw std::runtime_error(
-                        "unexpected token after include directive. in line " +
-                        utils::to_string(_current_line)
-                    );
+                if (peek().type != T_SEMICOL) {
+                    throw InvalidConfigException(_current_line);
                 }
+                getNextToken();
                 includeFile(path);
                 return getNextToken();
             }
@@ -81,7 +87,9 @@ const Token ConfigLexer::getNextToken() {
 }
 
 void ConfigLexer::includeFile(const std::string& path) {
-    std::ifstream ifs(path.c_str());
+    std::string file = (path[0] != '/') ? _directory + path : path;
+
+    std::ifstream ifs(file.c_str());
     if (!ifs.is_open())
         throw std::runtime_error("could not open included file: " + path);
     std::stringstream included;
@@ -96,20 +104,16 @@ const Token ConfigLexer::expect(Token token) {
     const Token& tok = this->getNextToken();
     if (token == tok)
         return tok;
-    throw UnexpectedTokenException();
+    throw InvalidConfigException(*this);
 }
 
 const Token ConfigLexer::expect(TokenType type) {
     const Token& tok = this->getNextToken();
     if (type == tok.type)
         return tok;
-    throw UnexpectedTokenException();
+    throw InvalidConfigException(*this);
 }
 
 std::size_t ConfigLexer::getCurrentLine() const {
     return _current_line;
-}
-
-const char* ConfigLexer::UnexpectedTokenException::what() const throw() {
-    return "Unexpected token.";
 }

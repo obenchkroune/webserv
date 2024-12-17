@@ -11,6 +11,7 @@ class InvalidConfigException : public std::exception {
 public:
     InvalidConfigException(const std::string& token);
     InvalidConfigException(std::size_t line);
+    InvalidConfigException(ConfigLexer& lexer);
     ~InvalidConfigException() throw();
     const char* what() const throw();
 
