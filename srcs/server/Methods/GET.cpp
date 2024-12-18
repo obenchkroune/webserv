@@ -80,13 +80,20 @@ void ServerClient::
     std::string extension;
     if (fname.find_last_of(".") != std::string::npos)
         extension = fname.substr(fname.find_last_of(".") + 1);
-    // todo : need to be imported from mime types
+
     ResponseHeader header;
-    header.name = "Content-Type";
-    if (extension == "html" || extension == "htm")
-        header.value = "text/html";
-    else
-        header.value = "application/octet-stream";
+    header.name                 = "Content-Type";
+    header.value                = "text/plain";
+    const MimeTypes& mime_types = Config::getInstance().getMimeTypes();
+
+    for (MimeTypes::const_iterator it = mime_types.begin(); it != mime_types.end(); ++it) {
+        const std::vector<std::string>& extensions = it->second;
+        if (std::find(extensions.begin(), extensions.end(), extension) != extensions.end()) {
+            header.value = it->first;
+            break;
+        }
+    }
+
     response->AppendHeader(header);
     int file_fd = open(file_name.c_str(), O_RDONLY);
     if (file_fd < 0)
