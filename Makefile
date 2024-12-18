@@ -5,7 +5,7 @@ INCLUDES		= 	includes
 
 
 CXX             =   c++
-CXXFLAGS        =   -Wall -Wextra -std=c++98 -MMD -MP -I$(INCLUDES) -g3 #-fsanitize=address
+CXXFLAGS        =   -Wall -Wextra -Werror -std=c++98 -MMD -MP -I$(INCLUDES) -g3 #-fsanitize=address
 
 ifeq ($(shell uname -s),Darwin)
 	CXXFLAGS += -DMAC_BUILD
@@ -32,10 +32,10 @@ $(NAME): $(OBJ)
 	$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME)
 
 clean:
-	$(RM) $(OBJ)
+	$(RM) $(BUILD_DIR)
 
 fclean: clean
-	$(RM) $(BUILD_DIR) $(NAME)
+	$(RM) $(NAME)
 
 re: fclean all
 
