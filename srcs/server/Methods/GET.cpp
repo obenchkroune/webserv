@@ -83,9 +83,10 @@ void ServerClient::
 
     ResponseHeader header;
     header.name                 = "Content-Type";
-    header.value                = "text/plain";
+    header.value                = "text/plain"; // TODO: refactor this to be dynamic later
     const MimeTypes& mime_types = Config::getInstance().getMimeTypes();
 
+    // TODO: also check for the request `Accept` header field
     for (MimeTypes::const_iterator it = mime_types.begin(); it != mime_types.end(); ++it) {
         const std::vector<std::string>& extensions = it->second;
         if (std::find(extensions.begin(), extensions.end(), extension) != extensions.end()) {
