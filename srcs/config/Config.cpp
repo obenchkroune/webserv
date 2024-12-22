@@ -84,10 +84,7 @@ std::ostream& operator<<(std::ostream& os, const Config& cfg) {
     }
     MimeTypes::const_iterator mime = cfg.getMimeTypes().begin();
     for (; mime != cfg.getMimeTypes().end(); mime++) {
-        os << "Mime type: " << mime->first << " -> ";
-        for (std::size_t i = 0; i < mime->second.size(); i++) {
-            os << mime->second[i] << " ";
-        }
+        os << "Mime type: " << mime->first << " -> " << mime->second << std::endl;
         os << std::endl;
     }
     return os;

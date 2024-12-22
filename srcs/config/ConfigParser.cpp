@@ -58,8 +58,10 @@ MimeTypes ConfigParser::parseMimeTypesBlock() {
     MimeTypes mime_types;
 
     while (_lexer.peek().type != T_BLOCK_END) {
-        Directive directive        = parseDirective();
-        mime_types[directive.name] = directive.values;
+        Directive directive = parseDirective();
+        for (size_t i = 0; i < directive.values.size(); i++) {
+            mime_types[directive.values[i]] = directive.name;
+        }
     }
 
     _lexer.expect(T_BLOCK_END);
