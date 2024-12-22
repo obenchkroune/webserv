@@ -126,7 +126,9 @@ ServerConfig ConfigParser::parseServerBlock() {
 void ConfigParser::parseLocationDirective(LocationConfig& location) {
     Directive directive = parseDirective();
 
-    if (directive.name == "root")
+    if (directive.name == "cgi_path")
+        location.cgi_path = ConfigUtils::cgiPathDirective(directive);
+    else if (directive.name == "root")
         location.root = ConfigUtils::rootDirective(directive);
     else if (directive.name == "error_page")
         location.error_pages.insert(ConfigUtils::errorPageDirective(directive));

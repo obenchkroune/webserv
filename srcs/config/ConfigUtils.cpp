@@ -11,6 +11,12 @@
 
 namespace ConfigUtils {
 
+std::string cgiPathDirective(const Directive& directive) {
+    if (directive.values.size() != 1)
+        throw InvalidConfigException(directive.name);
+    return directive.values[0];
+}
+
 std::size_t maxSizeDirective(const Directive& directive) {
     std::size_t        res;
     char               size_multiplier = 'B';
