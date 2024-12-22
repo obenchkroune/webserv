@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/10 14:37:56 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/22 14:37:03 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,5 @@ public:
     void AppendHeader(const ResponseHeader& header);
     void ReadFile(const int fd);
     void FinishResponse(bool append_content_length);
-    void AppendContent(const std::vector<uint8_t>& content) {
-        _content.insert(_content.end(), content.begin(), content.end());
-    }
+    void AppendContent(const std::vector<uint8_t>& content);
 };

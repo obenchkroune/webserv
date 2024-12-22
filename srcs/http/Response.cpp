@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/10 14:01:31 by msitni           ###   ########.fr       */
+/*   Updated: 2024/12/22 14:37:32 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,9 @@ void Response::SetStatusHeaders(const char *status_string)
 void Response::AppendHeader(const ResponseHeader &header)
 {
     _headers += header.name + ": " + header.value + CRLF;
+}
+void Response::AppendContent(const std::vector<uint8_t>& content) {
+    _content.insert(_content.end(), content.begin(), content.end());
 }
 void Response::ReadFile(const int fd)
 {
