@@ -60,7 +60,7 @@ struct Directive {
     std::vector<std::string> values;
 };
 
-typedef std::map<std::string, std::vector<std::string> > MimeTypes;
+typedef std::map<std::string, std::string> MimeTypes;
 
 class ConfigParser {
 public:
