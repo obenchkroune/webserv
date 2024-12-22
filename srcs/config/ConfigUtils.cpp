@@ -14,6 +14,12 @@ namespace ConfigUtils {
 std::string cgiPathDirective(const Directive& directive) {
     if (directive.values.size() != 1)
         throw InvalidConfigException(directive.name);
+    // check if the executable exists and valid
+    struct stat buffer;
+    bool isvalid = stat(directive.values[0].c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode) &&
+                   buffer.st_mode & S_IXUSR;
+    if (!isvalid)
+        throw InvalidConfigException(directive.values[0]);
     return directive.values[0];
 }
 
