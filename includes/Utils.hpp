@@ -21,5 +21,6 @@
 namespace util {
 
 std::string strtrim(const std::string& str);
+std::string quoted(const std::string& str, bool double_quotes = false);
 
 } // namespace util

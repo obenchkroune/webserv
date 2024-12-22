@@ -21,18 +21,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-struct ResponseHeader
-{
+struct ResponseHeader {
     std::string name;
     std::string value;
 
-    ResponseHeader() {};
+    ResponseHeader(){};
     ResponseHeader(const std::string& _name, const std::string& _value)
-        : name(_name), value(_value) {};
+        : name(_name), value(_value){};
 };
 
-class ResponseException
-{
+class ResponseException {
 private:
     std::string _reason;
 
@@ -42,8 +40,7 @@ public:
     ~ResponseException() throw();
 };
 
-class Response
-{
+class Response {
 private:
     std::string          _headers;
     std::vector<uint8_t> _content;
@@ -70,4 +67,7 @@ public:
     void AppendHeader(const ResponseHeader& header);
     void ReadFile(const int fd);
     void FinishResponse(bool append_content_length);
+    void AppendContent(const std::vector<uint8_t>& content) {
+        _content.insert(_content.end(), content.begin(), content.end());
+    }
 };

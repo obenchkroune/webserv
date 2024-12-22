@@ -27,4 +27,10 @@ std::string strtrim(const std::string& str) {
     return std::string(it, rit.base());
 }
 
+std::string quoted(const std::string& str, bool double_quotes /* = false */) {
+    if (double_quotes)
+        return "\"" + str + "\"";
+    return "'" + str + "'";
+}
+
 } // namespace util
