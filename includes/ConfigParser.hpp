@@ -36,6 +36,7 @@ struct LocationConfig {
     bool                            upload;
     std::string                     upload_path;
     std::map<uint16_t, std::string> error_pages;
+    std::string                     cgi_path;
 };
 
 struct ServerConfig {

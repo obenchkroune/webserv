@@ -5,6 +5,7 @@
 
 namespace ConfigUtils {
 
+std::string                      cgiPathDirective(const Directive& directive);
 std::pair<std::string, uint16_t> listenDirective(const Directive& directive);
 std::pair<std::string, uint16_t> redirectDirective(const Directive& directive);
 std::string                      rootDirective(const Directive& directive);

@@ -47,6 +47,7 @@ std::ostream& operator<<(std::ostream& os, const Config& cfg) {
             os << *index << " ";
         }
         os << std::endl;
+
         os << "  max_body_size: " << it->max_body_size << std::endl;
         os << "  allow_methods: ";
         std::vector<HttpMethod>::const_iterator method = it->allow_methods.begin();
@@ -65,6 +66,8 @@ std::ostream& operator<<(std::ostream& os, const Config& cfg) {
             for (; index != location->index.end(); index++) {
                 os << *index << " ";
             }
+            os << std::endl;
+            os << "      cgi_path: " << location->cgi_path << std::endl;
             os << std::endl;
             os << "      max_body_size: " << location->max_body_size << std::endl;
             os << "      allow_methods: ";
