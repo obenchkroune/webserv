@@ -7,7 +7,8 @@
 #include <string>
 #include <vector>
 
-class InvalidConfigException : public std::exception {
+class InvalidConfigException : public std::exception
+{
 public:
     InvalidConfigException(const std::string& token);
     InvalidConfigException(std::size_t line);
@@ -21,7 +22,8 @@ private:
 
 struct ServerConfig;
 
-struct LocationConfig {
+struct LocationConfig
+{
     LocationConfig(const ServerConfig& server);
 
     std::string                     path;
@@ -37,9 +39,11 @@ struct LocationConfig {
     std::string                     upload_path;
     std::map<uint16_t, std::string> error_pages;
     std::string                     cgi_path;
+    std::vector<std::string>        cgi_extensions;
 };
 
-struct ServerConfig {
+struct ServerConfig
+{
     ServerConfig();
 
     int                             listen_address_fd;
@@ -55,14 +59,16 @@ struct ServerConfig {
     std::map<uint16_t, std::string> error_pages;
 };
 
-struct Directive {
+struct Directive
+{
     std::string              name;
     std::vector<std::string> values;
 };
 
 typedef std::map<std::string, std::string> MimeTypes;
 
-class ConfigParser {
+class ConfigParser
+{
 public:
     ConfigParser(const std::string& file);
     ConfigParser(const ConfigParser& other);

@@ -3,24 +3,25 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/10 14:01:31 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 22:00:41 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(const Request &request, const ServerConfig &virtual_server)
+Response::Response(const Request& request, const ServerConfig& virtual_server)
     : _content_sent(0), _request(request), _virtual_server(virtual_server)
 {
 }
-Response::Response(const Response &response) : _request(response._request), _virtual_server(response._virtual_server)
+Response::Response(const Response& response)
+    : _request(response._request), _virtual_server(response._virtual_server)
 {
     *this = response;
 }
-Response &Response::operator=(const Response &response)
+Response& Response::operator=(const Response& response)
 {
     if (this == &response)
         return *this;
@@ -29,16 +30,47 @@ Response &Response::operator=(const Response &response)
     _content      = response._content;
     return *this;
 }
-Response::~Response()
+Response::~Response() {}
+/* getters & setters*/
+const Request& Response::GetRequest() const
 {
+    return _request;
 }
-const ServerConfig &Response::GetVirtualServer() const
+const std::string& Response::GetFileName() const
+{
+    return _file_name;
+}
+void Response::SetFileName(const std::string& fname)
+{
+    _file_name = fname;
+}
+const std::string& Response::GetFileExtension() const
+{
+    return _file_extension;
+}
+void Response::SetFileExtension(const std::string& ext)
+{
+    _file_extension = ext;
+}
+const LocationIterator& Response::GetFileLocation() const
+{
+    return _file_location;
+}
+void Response::SetFileLocation(const LocationIterator& location)
+{
+    _file_location = location;
+}
+struct stat& Response::GetFileStat()
+{
+    return _file_stats;
+}
+const ServerConfig& Response::GetVirtualServer() const
 {
     return _virtual_server;
 }
-const uint8_t *Response::GetResponseBuff() const
+const uint8_t* Response::GetResponseBuff() const
 {
-    return (uint8_t *)&_content[_content_sent];
+    return (uint8_t*)&_content[_content_sent];
 }
 void Response::ResponseSent(const size_t n)
 {
@@ -50,7 +82,7 @@ size_t Response::ResponseCount() const
         return 0;
     return _content.size() - _content_sent;
 }
-void Response::SetStatusHeaders(const char *status_string)
+void Response::SetStatusHeaders(const char* status_string)
 {
     _headers = HTTP_VERSION_TOKEN " ";
     _headers += status_string;
@@ -58,7 +90,7 @@ void Response::SetStatusHeaders(const char *status_string)
     _headers += "Server: " PROGNAME "/" PROGVERSION CRLF;
 
     time_t t_now   = time(0);
-    tm    *now     = gmtime(&t_now);
+    tm*    now     = gmtime(&t_now);
     size_t buff_sz = sizeof("aaa, dd bbb YYYY HH:MM:SS GMT");
     char   time_buff[buff_sz];
     size_t bytes = std::strftime(time_buff, buff_sz, "%a, %d %b %Y %H:%M:%S GMT", now);
@@ -69,9 +101,13 @@ void Response::SetStatusHeaders(const char *status_string)
     _headers += time_buff;
     _headers += CRLF;
 }
-void Response::AppendHeader(const ResponseHeader &header)
+void Response::AppendHeader(const ResponseHeader& header)
 {
     _headers += header.name + ": " + header.value + CRLF;
+}
+void Response::AppendContent(const std::vector<uint8_t>& content)
+{
+    _content.insert(_content.end(), content.begin(), content.end());
 }
 void Response::ReadFile(const int fd)
 {

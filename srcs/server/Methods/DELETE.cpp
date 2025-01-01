@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DELETE.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:31:57 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/08 17:14:17 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 01:47:23 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ void ServerClient::ProcessDELETE(const Request &request, Response *response)
     if (file_location == response->GetVirtualServer().locations.end())
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
     std::pair<HttpStatus, std::string> file =
-        ProcessFilePermission(request, file_location, F_OK); // Should check if file's owner UID matches webserv's UID
+        CheckRequest(request, file_location); // Should check if file's owner UID matches webserv's UID
     if (file.first.code != STATUS_OK)
         return SendErrorResponse(file.first, response);
     std::string &file_name = file.second;

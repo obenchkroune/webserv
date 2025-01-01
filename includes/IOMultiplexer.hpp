@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni1337 <msitni1337@gmail.com>          +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:31:05 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/04 01:42:24 by msitni1337       ###   ########.fr       */
+/*   Updated: 2025/01/01 22:37:22 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,18 +24,19 @@
 class IOMultiplexer
 {
 private:
-    epoll_event                       _events[EPOLL_EVENTS_MAX];
-    std::map<int, AIOEventListener *> _listeners;
-    int                               _epoll_fd;
-    bool                              _is_started;
+    epoll_event                      _events[EPOLL_EVENTS_MAX];
+    std::map<int, AIOEventListener*> _listeners;
+    int                              _epoll_fd;
+    bool                             _is_started;
 
-public:
+private:
     IOMultiplexer();
-    IOMultiplexer(const IOMultiplexer &IOM);
-    IOMultiplexer &operator=(const IOMultiplexer &IOM);
+    IOMultiplexer(const IOMultiplexer& IOM);
+    IOMultiplexer& operator=(const IOMultiplexer& IOM);
     ~IOMultiplexer();
 
 public:
+    static IOMultiplexer& GetInstance();
     void AddEvent(epoll_event ev, int fd);
     void RemoveEvent(epoll_event ev, int fd);
     void StartEventLoop();
