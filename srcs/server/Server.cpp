@@ -3,20 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/10 14:02:19 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 23:02:49 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Server::Server(std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx)
-    : _config(config), _is_started(false), _IOmltplx(IOmltplx)
+Server::Server(const std::vector<ServerConfig> &config)
+    : _config(config), _is_started(false)
 {
-    if (_IOmltplx == NULL)
-        throw ServerException("I/O Multiplexer object is set to NULL\n");
     _listen_socket_ev.events   = EPOLLIN;
     _listen_socket_ev.data.ptr = this;
 }
@@ -56,7 +54,7 @@ void Server::listen_on_addr(const sockaddr_in &_listen_addr)
         close(_listen_socket_fd), throw ServerException("listen(): failed.");
     try
     {
-        _IOmltplx->AddEvent(_listen_socket_ev, _listen_socket_fd);
+        IOMultiplexer::GetInstance().AddEvent(_listen_socket_ev, _listen_socket_fd);
     }
     catch (const std::exception &e)
     {
@@ -120,7 +118,7 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
     peer_ev.data.ptr = this;
     try
     {
-        _IOmltplx->AddEvent(peer_ev, peer_fd);
+        IOMultiplexer::GetInstance().AddEvent(peer_ev, peer_fd);
     }
     catch (const std::exception &e)
     {
@@ -197,7 +195,7 @@ void Server::RemoveClient(const epoll_event ev)
         for (; it->second.size(); it->second.pop())
             delete it->second.front();
     }
-    _IOmltplx->RemoveEvent(ev, ev.data.fd);
+    IOMultiplexer::GetInstance().RemoveEvent(ev, ev.data.fd);
     close(ev.data.fd);
     std::cout << "Client fd: " << ev.data.fd << " disconnected." << std::endl;
 }
@@ -209,7 +207,7 @@ void Server::Terminate()
     {
         std::vector<int>::iterator it = _listen_socket_fds.begin();
         for (; it != _listen_socket_fds.end(); it++)
-            _IOmltplx->RemoveEvent(_listen_socket_ev, *it);
+            IOMultiplexer::GetInstance().RemoveEvent(_listen_socket_ev, *it);
         close(*it);
     }
     {

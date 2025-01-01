@@ -4,6 +4,7 @@ __build__
 .cache
 compile_commands.json
 .vscode
+logs
 
 # object files and dependencies #
 **/*.o

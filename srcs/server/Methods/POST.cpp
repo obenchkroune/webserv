@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   POST.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 17:30:12 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 01:47:36 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
     if (file_location == response->GetVirtualServer().locations.end())
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    std::pair<HttpStatus, std::string> file = ProcessFilePermission(request, file_location, X_OK);
+    std::pair<HttpStatus, std::string> file = CheckRequest(request, file_location);
     if (file.first.code != STATUS_OK)
         return SendErrorResponse(file.first, response);
     struct stat  path_stat;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/22 14:37:03 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 22:03:47 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,16 +21,18 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-struct ResponseHeader {
+struct ResponseHeader
+{
     std::string name;
     std::string value;
 
-    ResponseHeader(){};
+    ResponseHeader() {};
     ResponseHeader(const std::string& _name, const std::string& _value)
-        : name(_name), value(_value){};
+        : name(_name), value(_value) {};
 };
 
-class ResponseException {
+class ResponseException
+{
 private:
     std::string _reason;
 
@@ -40,12 +42,19 @@ public:
     ~ResponseException() throw();
 };
 
-class Response {
+typedef std::vector<LocationConfig>::const_iterator LocationIterator;
+
+class Response
+{
 private:
     std::string          _headers;
     std::vector<uint8_t> _content;
     size_t               _content_sent;
     const Request        _request;
+    std::string          _file_name;
+    std::string          _file_extension;
+    LocationIterator     _file_location;
+    struct stat          _file_stats;
     const ServerConfig&  _virtual_server;
 
 public:
@@ -55,6 +64,18 @@ public:
 private:
     Response(const Response& response);
     Response& operator=(const Response& response);
+    /**
+     * getters & setters
+     */
+public:
+    const Request&          GetRequest() const;
+    const std::string&      GetFileName() const;
+    void                    SetFileName(const std::string& fname);
+    const std::string&      GetFileExtension() const;
+    void                    SetFileExtension(const std::string& ext);
+    const LocationIterator& GetFileLocation() const;
+    void                    SetFileLocation(const LocationIterator& location);
+    struct stat&            GetFileStat();
 
 public:
     const ServerConfig& GetVirtualServer() const;

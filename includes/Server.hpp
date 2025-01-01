@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 15:04:16 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 23:03:56 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,10 +47,9 @@ private:
     std::vector<sockaddr_in>       _listen_addrs;
     std::vector<int>               _listen_socket_fds;
     epoll_event                    _listen_socket_ev;
-    IOMultiplexer                 *_IOmltplx;
 
 public:
-    Server(std::vector<ServerConfig> &config, IOMultiplexer *IOmltplx);
+    Server(const std::vector<ServerConfig> &config);
     ~Server();
 
 private:

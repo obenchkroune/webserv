@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/05 11:57:02 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 22:47:40 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "IOMultiplexer.hpp"
+#include <cstdlib>
 
 int webserv_unix_signal = 0; // Global variable signal
 
@@ -18,40 +19,32 @@ IOMultiplexer::IOMultiplexer() : _is_started(false)
 {
     _epoll_fd = epoll_create(__INT32_MAX__);
     if (_epoll_fd == -1)
-        throw IOMultiplexerException("epoll(): failed.");
+        throw IOMultiplexerException("epoll_create(): failed.");
 }
-IOMultiplexer::IOMultiplexer(const IOMultiplexer &IOM)
+IOMultiplexer& IOMultiplexer::GetInstance()
 {
-    *this = IOM;
-}
-IOMultiplexer &IOMultiplexer::operator=(const IOMultiplexer &IOM)
-{
-    if (this == &IOM)
-        return *this;
-    for (size_t i = 0; i < sizeof(_events) / sizeof(epoll_event); i++)
-        _events[i] = IOM._events[i];
-    _listeners  = IOM._listeners;
-    _epoll_fd   = IOM._epoll_fd;
-    _is_started = IOM._is_started;
-    return *this;
+    static IOMultiplexer instance;
+    return instance;
 }
 IOMultiplexer::~IOMultiplexer()
 {
+    Terminate();
+    close(_epoll_fd);
 }
 void IOMultiplexer::AddEvent(epoll_event ev, int fd)
 {
-    std::map<int, AIOEventListener *>::iterator it = _listeners.find(fd);
+    std::map<int, AIOEventListener*>::iterator it = _listeners.find(fd);
     if (it != _listeners.end())
         throw IOMultiplexerException("AddEvent() : Event listener already added.");
-    AIOEventListener *listener = (AIOEventListener *)ev.data.ptr;
-    _listeners.insert(std::pair<int, AIOEventListener *>(fd, listener));
+    AIOEventListener* listener = (AIOEventListener*)ev.data.ptr;
+    _listeners.insert(std::pair<int, AIOEventListener*>(fd, listener));
     ev.data.fd = fd;
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw IOMultiplexerException("epoll_ctl() failed.");
 }
 void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
 {
-    std::map<int, AIOEventListener *>::iterator it = _listeners.find(fd);
+    std::map<int, AIOEventListener*>::iterator it = _listeners.find(fd);
     if (it == _listeners.end())
         throw IOMultiplexerException("RemoveEvent() : Event listener not found.");
     ev.data.fd = fd;
@@ -79,9 +72,11 @@ void IOMultiplexer::StartEventLoop()
         }
         for (int i = 0; i < events_count; i++)
         {
-            std::map<int, AIOEventListener *>::iterator it = _listeners.find(_events[i].data.fd);
+            std::map<int, AIOEventListener*>::iterator it = _listeners.find(_events[i].data.fd);
             if (it == _listeners.end())
-                throw IOMultiplexerException("fd not found in [std::map<int, AIOEventListener*> _listeners] member.");
+                throw IOMultiplexerException(
+                    "fd not found in [std::map<int, AIOEventListener*> _listeners] member."
+                );
             it->second->ConsumeEvent(_events[i]);
         }
         if (webserv_unix_signal == SIGINT)
@@ -93,9 +88,8 @@ void IOMultiplexer::Terminate()
 {
     if (_is_started == false)
         return;
-    _is_started                                    = false;
-    std::map<int, AIOEventListener *>::iterator it = _listeners.begin();
+    _is_started                                   = false;
+    std::map<int, AIOEventListener*>::iterator it = _listeners.begin();
     for (; it != _listeners.end(); it = _listeners.begin())
         it->second->Terminate();
-    close(_epoll_fd);
 }

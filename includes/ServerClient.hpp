@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2024/12/08 17:15:57 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/01 22:04:58 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,30 +27,35 @@ private:
     const int   _socket_fd;
     const int   _address_fd;
     std::string _request_raw;
-    Server     *_server;
+    Server*     _server;
 
 public:
-    ServerClient(const int &socket_fd, const int &address_fd, Server *server);
-    ServerClient(const ServerClient &client);
+    ServerClient(const int& socket_fd, const int& address_fd, Server* server);
+    ServerClient(const ServerClient& client);
     ~ServerClient();
 
 private:
-    ServerClient &operator=(const ServerClient &client);
+    ServerClient& operator=(const ServerClient& client);
 
 public:
     void ReceiveRequest(const std::string request);
     int  Getfd() const;
 
 private:
-    void ProcessRequest(const Request &request);
-    void SendErrorResponse(const HttpStatus &status, Response *response);
+    void ProcessRequest(const Request& request);
+    void SendErrorResponse(const HttpStatus& status, Response* response);
 
 private:
-    std::pair<HttpStatus, std::string> ProcessFilePermission(const Request &request, LocationsIterator file_location,
-                                                             int permission);
-    void                               ProcessGET(const Request &request, Response *response, bool send_data = true);
-    void                               ProcessHEAD(const Request &request, Response *response);
-    void                               ProcessPOST(const Request &request, Response *response);
-    void                               ProcessPUT(const Request &request, Response *response);
-    void                               ProcessDELETE(const Request &request, Response *response);
+    void auto_index(Response* response);
+
+private:
+    std::pair<HttpStatus, std::string> CheckRequest(
+        const Request& request, const LocationsIterator& file_location
+    );
+    void ProcessCGI(Response* response);
+    void ProcessGET(Response* response, bool send_data = true);
+    void ProcessHEAD(Response* response);
+    void ProcessPOST(const Request& request, Response* response);
+    void ProcessPUT(const Request& request, Response* response);
+    void ProcessDELETE(const Request& request, Response* response);
 };
