@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/01 22:06:09 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 15:12:00 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,7 @@ void ServerClient::ProcessRequest(const Request& request)
     const ServerConfig& virtualServer =
         ServerUtils::GetRequestVirtualServer(_address_fd, request, _server->GetConfig());
     Response* response = new Response(request, virtualServer);
+    response->SetClientSocketFd(_socket_fd);
     response->SetFileLocation(
         ServerUtils::GetFileLocation(response->GetVirtualServer(), response->GetRequest().getUri())
     );
