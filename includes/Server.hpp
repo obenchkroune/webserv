@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 15:56:52 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/02 20:10:49 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,10 +62,12 @@ public:
     void QueueResponse(int socket_fd, Response* response);
     void QueueCGIResponse(int pipe_fd, Response* response);
 
-    /* Const */
+    /* Getters & Setters */
 public:
-    bool                             is_started() const;
-    const std::vector<ServerConfig>& GetConfig() const;
+    bool                               is_started() const;
+    const std::vector<ServerConfig>&   GetConfig() const;
+    const std::map<int, ServerClient>& GetClients() const;
+    const std::vector<int>&            GetListenSockets() const;
 
     /* Interface */
 public:

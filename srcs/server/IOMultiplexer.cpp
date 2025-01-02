@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 22:47:40 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 19:48:49 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,10 @@ IOMultiplexer::~IOMultiplexer()
 {
     Terminate();
     close(_epoll_fd);
+}
+const int& IOMultiplexer::GetEpollFd() const
+{
+    return _epoll_fd;
 }
 void IOMultiplexer::AddEvent(epoll_event ev, int fd)
 {

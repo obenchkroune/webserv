@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/02 15:12:00 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/02 19:03:26 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ void ServerClient::ReceiveRequest(const std::string buff)
             return SendErrorResponse(status, response);
         }
         std::cout << "Request parsed successfuly." << std::endl;
-        std::cout << req;
+        std::cout << "URI: " << req.getUri() << std::endl;
         try
         {
             ProcessRequest(req);

@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:31:05 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 22:37:22 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 19:47:13 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,9 @@ private:
     IOMultiplexer& operator=(const IOMultiplexer& IOM);
     ~IOMultiplexer();
 
+/* getters & setters */
+public:
+    const int& GetEpollFd() const;
 public:
     static IOMultiplexer& GetInstance();
     void AddEvent(epoll_event ev, int fd);

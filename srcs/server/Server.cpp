@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 15:57:09 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/02 21:04:16 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,14 @@ bool Server::is_started() const
 const std::vector<ServerConfig>& Server::GetConfig() const
 {
     return _config;
+}
+const std::map<int, ServerClient>& Server::GetClients() const
+{
+    return _clients;
+}
+const std::vector<int>& Server::GetListenSockets() const
+{
+    return _listen_socket_fds;
 }
 void Server::listen_on_addr(const sockaddr_in& _listen_addr)
 {
@@ -207,8 +215,30 @@ void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
 }
 void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
 {
-    (void)ev, (void)response;
-    throw NotImplemented();
+    std::cout << "CGI CHUNK RESPONSE STARTED for pipe_fd: " << ev.data.fd << std::endl;
+    std::map<int, ServerClient>::iterator clients_it = _clients.find(response->GetClientSocketFd());
+    if (clients_it == _clients.end())
+        throw ServerException("HandleCGIEPOLLIN(): Client not found.");
+    std::vector<uint8_t> buff(READ_CHUNK, 0);
+    ssize_t              bytes = read(ev.data.fd, buff.data(), READ_CHUNK - 1);
+    if (bytes < 0)
+        throw ServerException("HandleCGIEPOLLIN(): read() failed.");
+    if (bytes == 0)
+    {
+        std::cout << "CGI RESPONSE ENDED for pipe_fd: " << ev.data.fd << std::endl;
+        epoll_event event = ev;
+        event.data.ptr    = this;
+        IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
+        return delete response;
+    }
+    buff.erase(buff.begin() + bytes, buff.end());
+    std::cout << bytes << " bytes CGI RESPONSE CHUNK QUEUED for pipe_fd: " << ev.data.fd
+              << std::endl;
+    std::cout << buff.data() << std::endl;
+    Response* response_chunk =
+        new Response(response->GetRequest(), Config::getInstance().getServers().front());
+    response_chunk->AppendContent(buff);
+    QueueResponse(response->GetClientSocketFd(), response_chunk);
 }
 void Server::RemoveClient(const epoll_event ev)
 {
