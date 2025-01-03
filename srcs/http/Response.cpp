@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 22:00:41 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 15:11:12 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,14 @@ Response& Response::operator=(const Response& response)
 }
 Response::~Response() {}
 /* getters & setters*/
+const int& Response::GetClientSocketFd() const
+{
+    return _client_socket_fd;
+}
+void Response::SetClientSocketFd(const int& fd)
+{
+    _client_socket_fd = fd;
+}
 const Request& Response::GetRequest() const
 {
     return _request;

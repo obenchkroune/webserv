@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 22:47:40 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/03 18:31:26 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,10 @@ IOMultiplexer::~IOMultiplexer()
 {
     Terminate();
     close(_epoll_fd);
+}
+const int& IOMultiplexer::GetEpollFd() const
+{
+    return _epoll_fd;
 }
 void IOMultiplexer::AddEvent(epoll_event ev, int fd)
 {
@@ -57,7 +61,10 @@ void IOMultiplexer::StartEventLoop()
     if (_is_started)
         throw IOMultiplexerException("Events loop already started.");
     if (!_listeners.size())
+    {
+        std::cout << "No Virtual Server is running, program will quit." << std::endl;
         return;
+    }
     _is_started = true;
     std::cout << "IOMultiplexer loop started." << std::endl;
     while (_is_started)

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:16:12 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/07 15:30:11 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/03 21:58:30 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 
 namespace ServerUtils
 {
+std::string HttpMethodToString(HttpMethod method);
 sockaddr_in GetListenAddr(const ServerConfig &_config);
 void        PrintSocketIP(std::ostream &os, const sockaddr_in &address);
 bool        validateFileLocation(const std::string &location_root, const std::string &fname);

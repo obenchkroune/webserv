@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 22:03:47 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 15:11:17 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,7 @@ typedef std::vector<LocationConfig>::const_iterator LocationIterator;
 class Response
 {
 private:
+    int                  _client_socket_fd;
     std::string          _headers;
     std::vector<uint8_t> _content;
     size_t               _content_sent;
@@ -68,6 +69,8 @@ private:
      * getters & setters
      */
 public:
+    const int&              GetClientSocketFd() const;
+    void                    SetClientSocketFd(const int& fd);
     const Request&          GetRequest() const;
     const std::string&      GetFileName() const;
     void                    SetFileName(const std::string& fname);

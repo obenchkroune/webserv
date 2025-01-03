@@ -15,7 +15,7 @@ public:
     HttpStatus getErrorCode() const;
 
 private:
-    HttpStatus  _error_code;
+    HttpStatus _error_code;
 };
 
 class Request
@@ -37,6 +37,8 @@ public:
     const std::vector<HttpHeader>&            getHeaders() const;
     std::string                               getBody() const;
     const std::map<std::string, std::string>& getQueryParams() const;
+    const std::string&                        getQueryParamsString() const;
+    const std::stringstream&                  getRawBuffer() const;
 
     // setters
     void setMethod(std::string method);
@@ -48,6 +50,7 @@ public:
 private:
     std::stringstream                  _buffer;
     std::map<std::string, std::string> _query_params;
+    std::string                        _query_params_string;
     HttpMethod                         _method;
     std::string                        _uri;
     std::string                        _http_version;
@@ -55,7 +58,7 @@ private:
     std::vector<HttpHeader>            _headers;
 
     void                               parseRequestLine();
-    std::map<std::string, std::string> parseQueryParams(const std::string& query);
+    std::map<std::string, std::string> parseQueryParams(const std::string query);
     std::string                        getHeaderLine();
     void                               parseHeaders();
 };
