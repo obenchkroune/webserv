@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/02 21:21:36 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 23:05:46 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,40 +38,21 @@ void ServerClient::ProcessCGI(Response* response)
     }
     else
     {
-        for (int fd = 3; fd <= 10; fd++)
-        {
-            struct stat st;
-            if (fstat(fd, &st) == -1)
-                std::cerr << "fd: " << fd << " is closed." << std::endl;
-            else
-                std::cerr << "fd: " << fd << " is open." << std::endl;
-        }
-        close(IOMultiplexer::GetInstance().GetEpollFd());
-        std::map<int, ServerClient>::const_iterator clients = _server->GetClients().begin();
-        for (; clients != _server->GetClients().end(); clients++)
-            close(clients->first);
-        std::vector<int>::const_iterator sockets = _server->GetListenSockets().begin();
-        for (; sockets != _server->GetListenSockets().end(); sockets++)
-            close(*sockets);
-        
-        
         close(pipe_fd[0]);
         if (dup2(pipe_fd[1], STDOUT_FILENO) == -1)
         {
             std::cerr << "dup2() failed for cgi file: " << response->GetFileName() << std::endl;
-            IOMultiplexer::GetInstance().Terminate();
-            exit(10);
+            exit(13);
         }
         close(pipe_fd[1]);
-        
-        std::cerr << "================================" << std::endl;
-        for (int fd = 3; fd <= 10; fd++)
+        pipe(pipe_fd);
+        std::string raw_request_headers(response->GetRequest().getRawBuffer().str());
+        write(pipe_fd[1], raw_request_headers.c_str(), raw_request_headers.size());
+        close(pipe_fd[1]);
+        if (dup2(pipe_fd[0], STDIN_FILENO) == -1)
         {
-            struct stat st;
-            if (fstat(fd, &st) == -1)
-                std::cerr << "fd: " << fd << " is closed." << std::endl;
-            else
-                std::cerr << "fd: " << fd << " is open." << std::endl;
+            std::cerr << "dup2() failed for cgi file: " << response->GetFileName() << std::endl;
+            exit(12);
         }
         std::vector<char*> argv(3, NULL);
         argv[0] = strdup(response->GetFileLocation()->cgi_path.c_str());

@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 21:04:16 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/02 23:14:25 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,7 +220,7 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
     if (clients_it == _clients.end())
         throw ServerException("HandleCGIEPOLLIN(): Client not found.");
     std::vector<uint8_t> buff(READ_CHUNK, 0);
-    ssize_t              bytes = read(ev.data.fd, buff.data(), READ_CHUNK - 1);
+    ssize_t              bytes = read(ev.data.fd, buff.data(), READ_CHUNK);
     if (bytes < 0)
         throw ServerException("HandleCGIEPOLLIN(): read() failed.");
     if (bytes == 0)
@@ -231,10 +231,10 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
         return delete response;
     }
-    buff.erase(buff.begin() + bytes, buff.end());
+    if (bytes < READ_CHUNK)
+        buff.erase(buff.begin() + bytes, buff.end());
     std::cout << bytes << " bytes CGI RESPONSE CHUNK QUEUED for pipe_fd: " << ev.data.fd
               << std::endl;
-    std::cout << buff.data() << std::endl;
     Response* response_chunk =
         new Response(response->GetRequest(), Config::getInstance().getServers().front());
     response_chunk->AppendContent(buff);
@@ -258,12 +258,16 @@ void Server::Terminate()
     if (_is_started == false)
         return;
     _is_started = false;
+    // closing listen sockets
     {
         std::vector<int>::iterator it = _listen_socket_fds.begin();
         for (; it != _listen_socket_fds.end(); it++)
+        {
             IOMultiplexer::GetInstance().RemoveEvent(_listen_socket_ev, *it);
-        close(*it);
+            close(*it);
+        }
     }
+    // closing clients socket fd
     {
         std::map<int, ServerClient>::iterator it = _clients.begin();
         for (; it != _clients.end(); it = _clients.begin())
@@ -272,6 +276,17 @@ void Server::Terminate()
             ev.events  = EPOLLIN | EPOLLOUT;
             ev.data.fd = it->first;
             RemoveClient(ev);
+        }
+    }
+    // closing clients socket fd
+    {
+        std::map<int, Response*>::iterator it = _cgi_responses.begin();
+        for (; it != _cgi_responses.end(); it++)
+        {
+            epoll_event ev;
+            ev.events   = EPOLLIN;
+            ev.data.ptr = this;
+            IOMultiplexer::GetInstance().RemoveEvent(ev, it->first);
         }
     }
 }
