@@ -22,7 +22,7 @@ void handle_signals()
     if (signal(SIGINT, &handle_sigint) == SIG_ERR)
         throw std::runtime_error("signal() failed.");
 }
-int main(int ac, char** av)
+int main(const int ac, const char** av, const char** envp)
 {
     if (ac != 2)
     {
@@ -33,7 +33,7 @@ int main(int ac, char** av)
     {
         handle_signals();
         Config::getInstance().loadConfig(ac == 2 ? av[1] : DEFAULT_CONFIG_PATH);
-        Server server(Config::getInstance().getServers());
+        Server server(Config::getInstance().getServers(), envp);
         server.Start();
         IOMultiplexer::GetInstance().StartEventLoop();
         std::cout << PROGNAME "/" PROGVERSION " exited." << std::endl;

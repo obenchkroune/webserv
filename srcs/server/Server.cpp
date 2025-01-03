@@ -6,13 +6,14 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 23:14:25 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/03 21:40:41 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Server::Server(const std::vector<ServerConfig>& config) : _config(config), _is_started(false)
+Server::Server(const std::vector<ServerConfig>& config, const char** environ)
+    : _environ(environ), _config(config), _is_started(false)
 {
     _listen_socket_ev.events   = EPOLLIN;
     _listen_socket_ev.data.ptr = this;
@@ -46,6 +47,11 @@ const std::vector<int>& Server::GetListenSockets() const
 {
     return _listen_socket_fds;
 }
+const char** Server::GetEnviron() const
+{
+    return _environ;
+}
+
 void Server::listen_on_addr(const sockaddr_in& _listen_addr)
 {
     int _listen_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -129,7 +135,7 @@ void Server::ConsumeEvent(const epoll_event ev)
     // CGI pipe I/O ready:
     std::map<int, Response*>::iterator cgi_it = _cgi_responses.find(ev.data.fd);
     assert(cgi_it != _cgi_responses.end());
-    if (ev.events & EPOLLIN)
+    if (ev.events & (EPOLLIN | EPOLLHUP))
         HandleCGIEPOLLIN(ev, cgi_it->second);
 }
 void Server::AcceptNewPeerOnSocket(int socket_fd)
@@ -191,6 +197,8 @@ fetch_next_response:
     if (bytes_sent != (int)bytes_to_send)
         std::cerr << "Tried to send " << bytes_to_send << " but send() only sent " << bytes_sent
                   << "\nRemainder data will be sent on next call." << std::endl;
+    else
+        std::cout << bytes_sent << " bytes sent to client fd: " << ev.data.fd << std::endl;
     response->ResponseSent(bytes_sent);
     if (response->ResponseCount() == 0)
     {
@@ -225,9 +233,10 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         throw ServerException("HandleCGIEPOLLIN(): read() failed.");
     if (bytes == 0)
     {
-        std::cout << "CGI RESPONSE ENDED for pipe_fd: " << ev.data.fd << std::endl;
+        std::cout << "CGI RESPONSE END for pipe_fd: " << ev.data.fd << std::endl;
         epoll_event event = ev;
         event.data.ptr    = this;
+        _cgi_responses.erase(ev.data.fd);
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
         return delete response;
     }

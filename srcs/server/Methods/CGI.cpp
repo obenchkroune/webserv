@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/02 23:05:46 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/03 22:31:46 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,19 +45,30 @@ void ServerClient::ProcessCGI(Response* response)
             exit(13);
         }
         close(pipe_fd[1]);
-        pipe(pipe_fd);
-        std::string raw_request_headers(response->GetRequest().getRawBuffer().str());
-        write(pipe_fd[1], raw_request_headers.c_str(), raw_request_headers.size());
-        close(pipe_fd[1]);
-        if (dup2(pipe_fd[0], STDIN_FILENO) == -1)
-        {
-            std::cerr << "dup2() failed for cgi file: " << response->GetFileName() << std::endl;
-            exit(12);
-        }
+
         std::vector<char*> argv(3, NULL);
-        argv[0] = strdup(response->GetFileLocation()->cgi_path.c_str());
-        argv[1] = strdup(response->GetFileName().c_str());
-        execve(response->GetFileLocation()->cgi_path.c_str(), argv.data(), environ);
+        argv[0] = (char*)response->GetFileLocation()->cgi_path.c_str();
+        argv[1] = (char*)response->GetFileName().c_str();
+
+        std::vector<char*> envp;
+        std::string        env_redirect = "REDIRECT_STATUS=CGI";
+        std::string        env_method =
+            "REQUEST_METHOD=" + ServerUtils::HttpMethodToString(response->GetRequest().getMethod());
+        std::string env_uri   = "REQUEST_URI=" + response->GetRequest().getUri();
+        std::string env_query = "QUERY_STRING=" + response->GetRequest().getQueryParamsString();
+        std::string env_script_name = "SCRIPT_FILENAME=";
+        env_script_name += response->GetFileName().c_str();
+        envp.insert(envp.end(), (char*)env_redirect.c_str());
+        envp.insert(envp.end(), (char*)env_method.c_str());
+        envp.insert(envp.end(), (char*)env_uri.c_str());
+        envp.insert(envp.end(), (char*)env_query.c_str());
+        envp.insert(envp.end(), (char*)env_script_name.c_str());
+        // const char** environ = _server->GetEnviron();
+        // for (; environ != NULL && *environ != NULL; environ++)
+        //     envp.insert(envp.end(), (char*)*environ);
+        envp.insert(envp.end(), NULL);
+
+        execve(response->GetFileLocation()->cgi_path.c_str(), argv.data(), envp.data());
         std::cerr << "execve() failed for cgi file: " << response->GetFileName() << std::endl;
         exit(10);
     }

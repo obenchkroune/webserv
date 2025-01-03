@@ -17,12 +17,13 @@ Request& Request::operator=(const Request& other)
 {
     if (this == &other)
         return *this;
-    _body         = other._body;
-    _headers      = other._headers;
-    _http_version = other._http_version;
-    _method       = other._method;
-    _uri          = other._uri;
-    _query_params = other._query_params;
+    _body                = other._body;
+    _headers             = other._headers;
+    _http_version        = other._http_version;
+    _method              = other._method;
+    _uri                 = other._uri;
+    _query_params_string = other._query_params_string;
+    _query_params        = other._query_params;
 
     _buffer.clear();
     _buffer << other._buffer.rdbuf();
@@ -90,6 +91,11 @@ const std::map<std::string, std::string>& Request::getQueryParams() const
 {
     return _query_params;
 }
+const std::string& Request::getQueryParamsString() const
+{
+    return _query_params_string;
+}
+
 const std::stringstream& Request::getRawBuffer() const
 {
     return _buffer;
@@ -167,7 +173,7 @@ std::string Request::getHeaderLine()
 
 void Request::parseRequestLine()
 {
-    std::string method, uri, query, version;
+    std::string method, uri, version;
 
     if (!std::getline(_buffer, method, ' ') || !std::getline(_buffer, uri, ' '))
     {
@@ -176,9 +182,9 @@ void Request::parseRequestLine()
 
     if (uri.find('?') != std::string::npos)
     {
-        query         = uri.substr(uri.find('?') + 1);
-        uri           = uri.substr(0, uri.find('?'));
-        _query_params = parseQueryParams(query);
+        _query_params_string = uri.substr(uri.find('?') + 1);
+        uri                  = uri.substr(0, uri.find('?'));
+        _query_params        = parseQueryParams(_query_params_string);
     }
 
     if (!std::getline(_buffer, version, '\n') || version[version.size() - 1] != '\r')
@@ -193,7 +199,7 @@ void Request::parseRequestLine()
     setVersion(version);
 }
 
-std::map<std::string, std::string> Request::parseQueryParams(const std::string& query)
+std::map<std::string, std::string> Request::parseQueryParams(const std::string query)
 {
     std::map<std::string, std::string> params;
 
@@ -262,6 +268,7 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
     }
     os << '\n';
     os << "URI: " << request.getUri() << '\n';
+    os << "Query string: " << request.getQueryParamsString() << '\n';
     os << "Query params: " << '\n';
     for (size_t i = 0; i < request.getQueryParams().size(); i++)
     {

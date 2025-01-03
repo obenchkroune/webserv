@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 20:10:49 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/03 21:40:50 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ public:
     typedef std::queue<Response*> Responses_queue;
 
 private:
+    const char**                   _environ;
     std::map<int, ServerClient>    _clients;
     std::map<int, Responses_queue> _clients_responses;
     std::map<int, Response*>       _cgi_responses;
@@ -50,7 +51,7 @@ private:
     epoll_event                    _listen_socket_ev;
 
 public:
-    Server(const std::vector<ServerConfig>& config);
+    Server(const std::vector<ServerConfig>& config, const char** environ);
     ~Server();
 
 private:
@@ -68,6 +69,7 @@ public:
     const std::vector<ServerConfig>&   GetConfig() const;
     const std::map<int, ServerClient>& GetClients() const;
     const std::vector<int>&            GetListenSockets() const;
+    const char**                       GetEnviron() const;
 
     /* Interface */
 public:
