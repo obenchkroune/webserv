@@ -213,7 +213,7 @@ std::map<std::string, std::string> Request::parseQueryParams(const std::string q
             key   = util::strtrim(std::string(start, it));
             start = it + 1;
         }
-        else if (*it == '&' && !key.empty())
+        else if ((*it == '&' || it + 1 == query.end()) && !key.empty())
         {
             value       = util::strtrim(std::string(start, it));
             params[key] = value;
