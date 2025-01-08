@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:31:57 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/08 15:14:30 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,6 @@ void ServerClient::ProcessDELETE(const Request &request, Response *response)
     if (unlink(file_name.c_str()) == -1)
         return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response);
     response->SetStatusHeaders(HTTP_STATUS_OK);
-    response->FinishResponse(true);
+    response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }

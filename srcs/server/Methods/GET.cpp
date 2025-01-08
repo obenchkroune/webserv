@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 15:14:32 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:17:04 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
     else
     {
         response->ReadFile(file_fd);
-        response->FinishResponse(true);
+        response->FinishResponse();
     }
     _server->QueueResponse(_socket_fd, response);
 }

@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 15:14:39 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,6 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
      ** Or
      ** Upload data to upload dir
      */
-    response->FinishResponse(true);
+    response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }

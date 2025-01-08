@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 14:59:21 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:53:34 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ protected:
     struct stat          _file_stats;
     const Request        _request;
     const ServerConfig&  _virtual_server;
-    Server*        _server;
+    Server*              _server;
 
 public:
     Response(const Request& request, const ServerConfig& virtual_server, Server* server);
@@ -82,7 +82,8 @@ public:
     const LocationIterator& GetFileLocation() const;
     void                    SetFileLocation(const LocationIterator& location);
     struct stat&            GetFileStat();
-    Server*             GetServer();
+    Server*                 GetServer() const;
+    size_t            GetContentSize() const;
 
 public:
     const ServerConfig& GetVirtualServer() const;
@@ -96,6 +97,6 @@ public:
     void         SetStatusHeaders(const char* status_string);
     void         AppendHeader(const ResponseHeader& header);
     void         ReadFile(const int fd);
-    virtual void FinishResponse(bool append_content_length);
+    virtual void FinishResponse(bool append_content_length = true);
     void         AppendContent(const std::vector<uint8_t>& content);
 };

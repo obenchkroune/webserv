@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 03:42:05 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:55:10 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -221,7 +221,7 @@ void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
 }
 void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
 {
-    std::cout << "CGI CHUNK RESPONSE STARTED for pipe_fd: " << ev.data.fd << std::endl;
+    std::cout << "CGI RESPONSE reading from pipe_fd: " << ev.data.fd << std::endl;
     std::map<int, ServerClient>::iterator clients_it = _clients.find(response->GetClientSocketFd());
     if (clients_it == _clients.end())
         throw ServerException("HandleCGIEPOLLIN(): Client not found.");
@@ -231,18 +231,21 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         throw ServerException("HandleCGIEPOLLIN(): read() failed.");
     if (bytes == 0)
     {
-        std::cout << "CGI RESPONSE END for pipe_fd: " << ev.data.fd << std::endl;
+        std::cout << "CGI RESPONSE reading ended for pipe_fd: " << ev.data.fd << std::endl;
         epoll_event event = ev;
         event.data.ptr    = this;
         _cgi_responses.erase(ev.data.fd);
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
-        response->FinishResponse(true);
-        QueueResponse(response->GetClientSocketFd(), response);
+        if (response->GetContentSize() == 0)
+            return ServerUtils::SendErrorResponse(
+                HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR),
+                response
+            );
+        response->FinishResponse();
+        return QueueResponse(response->GetClientSocketFd(), response);
     }
     if (bytes < READ_CHUNK)
         buff.erase(buff.begin() + bytes, buff.end());
-    std::cout << bytes << " bytes CGI RESPONSE CHUNK QUEUED for pipe_fd: " << ev.data.fd
-              << std::endl;
     response->AppendContent(buff);
 }
 void Server::RemoveClient(const epoll_event ev)
