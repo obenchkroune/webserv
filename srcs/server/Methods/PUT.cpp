@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:32:02 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/08 15:14:42 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:16:29 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,6 @@ void ServerClient::ProcessPUT(const Request &request, Response *response)
         return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response);
     }
     response->SetStatusHeaders(HTTP_STATUS_OK);
-    response->FinishResponse(true);
+    response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }

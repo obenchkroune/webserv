@@ -85,16 +85,23 @@
   </head>
   <body>
     <div class="container">
-      <h1>Webserv</h1>
-      <p class="status">web server up and running.</p>
-      <div class="badge">Server Active</div>
+      <h1>Webserv/php-cgi</h1>
+      <div class="badge">php cgi is up and running</div>
+<?php
+if (isset($_GET['name']))
+{
+    echo "<div class='status'> <h4> Hello Mr. ". $_GET['name']."</h4></div>";
+}
+else
+{
+    echo "<div class='status'> <h4> Hello Mr. Uknown, kindly provide your name ie. ?name=John</h4></div>";
+}
+?>
       <div class="server-info">
         <p>Built with C++98 | HTTP/1.1 Compliant</p>
-        <a href="/php-cgi">php-cgi</a>
+        <a href="/">main</a>
         |
-        <a href="/python">python-cgi</a>
-        |
-        <a href="/blog">Blog</a>
+        <a href="/php-cgi/php_info.php">php_info</a>
         |
         <a href="https://github.com/obenchkroune/webserv" target="_blank">
           View on GitHub

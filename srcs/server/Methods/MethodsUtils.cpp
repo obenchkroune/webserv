@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/01 22:04:50 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ void ServerClient::auto_index(Response* response)
     std::string html = DirectoryListing::generate(response->GetFileName(), response->GetRequest().getUri());
     std::vector<uint8_t> content(html.begin(), html.end());
     response->AppendContent(content);
-    response->FinishResponse(true);
+    response->FinishResponse();
     _server->QueueResponse(_socket_fd, response);
 }
 

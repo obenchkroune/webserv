@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 15:05:21 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,7 @@ void SendErrorResponse(const HttpStatus& status, Response* response)
             }
         }
     }
-    error_response->FinishResponse(true);
+    error_response->FinishResponse();
     error_response->GetServer()->QueueResponse(client_socket_fd, error_response);
 }
 sockaddr_in GetListenAddr(const ServerConfig& _config)

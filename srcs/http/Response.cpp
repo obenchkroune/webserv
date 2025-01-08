@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 14:59:34 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 16:53:50 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,9 +82,13 @@ const ServerConfig& Response::GetVirtualServer() const
 {
     return _virtual_server;
 }
-Server* Response::GetServer()
+Server* Response::GetServer() const
 {
     return _server;
+}
+size_t Response::GetContentSize() const
+{
+    return _content.size();
 }
 const uint8_t* Response::GetResponseBuff() const
 {
@@ -141,7 +145,7 @@ void Response::ReadFile(const int fd)
     }
     close(fd);
 }
-void Response::FinishResponse(bool append_content_length)
+void Response::FinishResponse(bool append_content_length /* = true*/)
 {
     ResponseHeader header;
     if (append_content_length)
