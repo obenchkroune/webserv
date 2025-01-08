@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/03 22:31:46 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:14:24 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ void ServerClient::ProcessCGI(Response* response)
     if (pipe(pipe_fd) == -1)
     {
         std::cerr << "pipe() failed for cgi file: " << response->GetFileName() << std::endl;
-        return SendErrorResponse(
+        return ServerUtils::SendErrorResponse(
             HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
         );
     }
@@ -27,7 +27,7 @@ void ServerClient::ProcessCGI(Response* response)
     {
         std::cerr << "fork() failed for cgi file: " << response->GetFileName() << std::endl;
         close(pipe_fd[0]), close(pipe_fd[1]);
-        return SendErrorResponse(
+        return ServerUtils::SendErrorResponse(
             HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
         );
     }

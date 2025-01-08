@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:31:57 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/01 01:47:23 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:14:30 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,11 @@ void ServerClient::ProcessDELETE(const Request &request, Response *response)
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
     if (file_location == response->GetVirtualServer().locations.end())
-        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
     std::pair<HttpStatus, std::string> file =
         CheckRequest(request, file_location); // Should check if file's owner UID matches webserv's UID
     if (file.first.code != STATUS_OK)
-        return SendErrorResponse(file.first, response);
+        return ServerUtils::SendErrorResponse(file.first, response);
     std::string &file_name = file.second;
 
     struct stat path_stat;
@@ -41,11 +41,11 @@ void ServerClient::ProcessDELETE(const Request &request, Response *response)
                     file_name = index_file_name;
                     break;
                 }
-                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
+                return ServerUtils::SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
             }
         }
         if (index_it == file_location->index.end())
-            return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+            return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
         stat(file_name.c_str(), &path_stat);
     }
     /*
@@ -54,7 +54,7 @@ void ServerClient::ProcessDELETE(const Request &request, Response *response)
         Please dont tell me we need to execve() just to do `rm` Ugh!!.
     */
     if (unlink(file_name.c_str()) == -1)
-        return SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response);
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response);
     response->SetStatusHeaders(HTTP_STATUS_OK);
     response->FinishResponse(true);
     _server->QueueResponse(_socket_fd, response);

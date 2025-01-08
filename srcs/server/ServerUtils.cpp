@@ -6,10 +6,11 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/03 22:02:07 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:05:21 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "Server.hpp"
 #include "ServerUtils.hpp"
 #include "ServerClient.hpp"
 #include <cassert>
@@ -38,7 +39,37 @@ std::string HttpMethodToString(HttpMethod method)
     throw ImpossibleToReach();
     return "";
 }
-
+void SendErrorResponse(const HttpStatus& status, Response* response)
+{
+    Response* error_response = new Response(response->GetRequest(),response->GetVirtualServer(), response->GetServer());
+    int client_socket_fd = response->GetClientSocketFd();
+    delete  response;
+    error_response->SetStatusHeaders(status.name);
+    const std::map<uint16_t, std::string>& error_pages = error_response->GetVirtualServer().error_pages;
+    std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
+    if (it != error_pages.end())
+    {
+        std::vector<LocationConfig>::const_iterator error_page_file_location =
+            ServerUtils::GetFileLocation(error_response->GetVirtualServer(), it->second);
+        if (error_page_file_location != error_response->GetVirtualServer().locations.end())
+        {
+            std::string file_name = error_page_file_location->root + '/' +
+                                    it->second.substr(error_page_file_location->path.length());
+            int error_fd = open(file_name.c_str(), O_RDONLY);
+            if (error_fd >= 0)
+            {
+                error_response->ReadFile(error_fd);
+            }
+            else
+            {
+                std::cerr << "open() failed for error page file: " << file_name << " ignoring."
+                          << std::endl;
+            }
+        }
+    }
+    error_response->FinishResponse(true);
+    error_response->GetServer()->QueueResponse(client_socket_fd, error_response);
+}
 sockaddr_in GetListenAddr(const ServerConfig& _config)
 {
     sockaddr_in address;
