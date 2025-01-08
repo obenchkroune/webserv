@@ -3,21 +3,22 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 15:11:12 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/08 14:59:34 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(const Request& request, const ServerConfig& virtual_server)
-    : _content_sent(0), _request(request), _virtual_server(virtual_server)
+Response::Response(const Request& request, const ServerConfig& virtual_server, Server* server)
+    : _content_sent(0), _request(request), _virtual_server(virtual_server), _server(server)
 {
 }
 Response::Response(const Response& response)
-    : _request(response._request), _virtual_server(response._virtual_server)
+    : _request(response._request), _virtual_server(response._virtual_server),
+      _server(response._server)
 {
     *this = response;
 }
@@ -25,9 +26,14 @@ Response& Response::operator=(const Response& response)
 {
     if (this == &response)
         return *this;
-    _headers      = response._headers;
-    _content_sent = response._content_sent;
-    _content      = response._content;
+    _client_socket_fd = response._client_socket_fd;
+    _headers          = response._headers;
+    _content          = response._content;
+    _content_sent     = response._content_sent;
+    _file_name        = response._file_name;
+    _file_extension   = response._file_extension;
+    _file_location    = response._file_location;
+    _file_stats       = response._file_stats;
     return *this;
 }
 Response::~Response() {}
@@ -75,6 +81,10 @@ struct stat& Response::GetFileStat()
 const ServerConfig& Response::GetVirtualServer() const
 {
     return _virtual_server;
+}
+Server* Response::GetServer()
+{
+    return _server;
 }
 const uint8_t* Response::GetResponseBuff() const
 {

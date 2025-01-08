@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 21:41:37 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:14:32 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
     if (file_fd < 0)
     {
         std::cerr << "open() failed for file: " << response->GetFileName();
-        return SendErrorResponse(
+        return ServerUtils::SendErrorResponse(
             HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
         );
     }

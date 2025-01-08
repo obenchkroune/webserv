@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/01 01:47:36 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:14:39 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,10 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
     std::vector<LocationConfig>::const_iterator file_location =
         ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
     if (file_location == response->GetVirtualServer().locations.end())
-        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
     std::pair<HttpStatus, std::string> file = CheckRequest(request, file_location);
     if (file.first.code != STATUS_OK)
-        return SendErrorResponse(file.first, response);
+        return ServerUtils::SendErrorResponse(file.first, response);
     struct stat  path_stat;
     std::string &file_name = file.second;
     stat(file_name.c_str(), &path_stat);
@@ -39,11 +39,11 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
                     file_name = index_file_name;
                     break;
                 }
-                return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
+                return ServerUtils::SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
             }
         }
         if (index_it == file_location->index.end())
-            return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+            return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
     }
 
     size_t max_sz_limit = response->GetVirtualServer().max_body_size;
@@ -52,7 +52,7 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
     if (request.getBody().size() > max_sz_limit)
     {
         std::cerr << "POST request too large: " << std::endl;
-        return SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
                                  response);
     }
     /*

@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/03 22:31:05 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:12:37 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,19 +39,19 @@ void ServerClient::ReceiveRequest(const std::string buff)
     if (_request_raw.find("\r\n\r\n") != std::string::npos)
     {
         std::cout << "Client fd: " << _socket_fd << " Got the full request:\n";
-        std::cout << "Parsing request" << std::endl;
+        std::cout << _request_raw << "\nParsing request" << std::endl;
         Request req(_request_raw);
         _request_raw.clear();
         HttpStatus status = req.parse();
         if (status.code != STATUS_OK)
         {
-            Response* response = new Response(req, _server->GetConfig().front());
+            Response* response = new Response(req, _server->GetConfig().front(), _server);
             std::cerr << "HTTP_Request not accepted due to: " << status.name << std::endl;
             std::cerr << req;
-            return SendErrorResponse(status, response);
+            return ServerUtils::SendErrorResponse(status, response);
         }
         std::cout << "Request parsed successfuly." << std::endl;
-        std::cout << "URI: " << req.getUri() << std::endl;
+        std::cout << req.getUri() << std::endl;
         try
         {
             ProcessRequest(req);
@@ -68,53 +68,25 @@ void ServerClient::ReceiveRequest(const std::string buff)
                   << std::endl;
         Request req("");
         _request_raw.clear();
-        Response* response = new Response(req, _server->GetConfig().front());
-        return SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST), response);
+        Response* response = new Response(req, _server->GetConfig().front(), _server);
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST), response);
     }
-}
-void ServerClient::SendErrorResponse(const HttpStatus& status, Response* response)
-{
-    response->SetStatusHeaders(status.name);
-    const std::map<uint16_t, std::string>& error_pages = response->GetVirtualServer().error_pages;
-    std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
-    if (it != error_pages.end())
-    {
-        std::vector<LocationConfig>::const_iterator error_page_file_location =
-            ServerUtils::GetFileLocation(response->GetVirtualServer(), it->second);
-        if (error_page_file_location != response->GetVirtualServer().locations.end())
-        {
-            std::string file_name = error_page_file_location->root + '/' +
-                                    it->second.substr(error_page_file_location->path.length());
-            int error_fd = open(file_name.c_str(), O_RDONLY);
-            if (error_fd >= 0)
-            {
-                response->ReadFile(error_fd);
-            }
-            else
-            {
-                std::cerr << "open() failed for error page file: " << file_name << " ignoring."
-                          << std::endl;
-            }
-        }
-    }
-    response->FinishResponse(true);
-    _server->QueueResponse(_socket_fd, response);
 }
 void ServerClient::ProcessRequest(const Request& request)
 {
     const ServerConfig& virtualServer =
         ServerUtils::GetRequestVirtualServer(_address_fd, request, _server->GetConfig());
-    Response* response = new Response(request, virtualServer);
+    Response* response = new Response(request, virtualServer, _server);
     response->SetClientSocketFd(_socket_fd);
     response->SetFileLocation(
         ServerUtils::GetFileLocation(response->GetVirtualServer(), response->GetRequest().getUri())
     );
     if (response->GetFileLocation() == response->GetVirtualServer().locations.end())
-        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
     std::pair<HttpStatus, std::string> check =
         CheckRequest(response->GetRequest(), response->GetFileLocation());
     if (check.first.code != STATUS_OK)
-        return SendErrorResponse(check.first, response);
+        return ServerUtils::SendErrorResponse(check.first, response);
     response->SetFileName(check.second);
     stat(response->GetFileName().c_str(), &response->GetFileStat());
     if (S_ISDIR(response->GetFileStat().st_mode))
@@ -135,14 +107,14 @@ void ServerClient::ProcessRequest(const Request& request)
             if (response->GetFileLocation()->autoindex)
                 return auto_index(response);
             else
-                return SendErrorResponse(
+                return ServerUtils::SendErrorResponse(
                     HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response
                 );
         }
         stat(response->GetFileName().c_str(), &response->GetFileStat());
     }
     if (access(response->GetFileName().c_str(), R_OK) != 0)
-        return SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
     std::string fname = basename(response->GetFileName().c_str());
     if (fname.find_last_of(".") != std::string::npos)
         response->SetFileExtension(fname.substr(fname.find_last_of(".") + 1));
@@ -154,7 +126,9 @@ void ServerClient::ProcessRequest(const Request& request)
         );
         if (it != response->GetFileLocation()->cgi_extensions.end())
         {
-            return ProcessCGI(response);
+            Response* CGIresponse = new ResponseCGI(*response);
+            delete response;
+            return ProcessCGI(CGIresponse);
         }
     }
     switch (request.getMethod())
@@ -176,7 +150,7 @@ void ServerClient::ProcessRequest(const Request& request)
         break;
     }
     default:
-        SendErrorResponse(
+        ServerUtils::SendErrorResponse(
             HttpStatus(STATUS_NOT_IMPLEMENTED, HTTP_STATUS_NOT_IMPLEMENTED), response
         );
     }

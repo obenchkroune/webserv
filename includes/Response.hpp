@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/02 15:11:17 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/08 14:59:21 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
+
+class Server;
 
 struct ResponseHeader
 {
@@ -46,24 +48,25 @@ typedef std::vector<LocationConfig>::const_iterator LocationIterator;
 
 class Response
 {
-private:
+protected:
     int                  _client_socket_fd;
     std::string          _headers;
     std::vector<uint8_t> _content;
     size_t               _content_sent;
-    const Request        _request;
     std::string          _file_name;
     std::string          _file_extension;
     LocationIterator     _file_location;
     struct stat          _file_stats;
+    const Request        _request;
     const ServerConfig&  _virtual_server;
+    Server*        _server;
 
 public:
-    Response(const Request& request, const ServerConfig& virtual_server);
-    ~Response();
+    Response(const Request& request, const ServerConfig& virtual_server, Server* server);
+    virtual ~Response();
+    Response(const Response& response);
 
 private:
-    Response(const Response& response);
     Response& operator=(const Response& response);
     /**
      * getters & setters
@@ -79,17 +82,20 @@ public:
     const LocationIterator& GetFileLocation() const;
     void                    SetFileLocation(const LocationIterator& location);
     struct stat&            GetFileStat();
+    Server*             GetServer();
 
 public:
     const ServerConfig& GetVirtualServer() const;
     const uint8_t*      GetResponseBuff() const;
-    void                ResponseSent(const size_t n);
-    size_t              ResponseCount() const;
 
 public:
-    void SetStatusHeaders(const char* status_string);
-    void AppendHeader(const ResponseHeader& header);
-    void ReadFile(const int fd);
-    void FinishResponse(bool append_content_length);
-    void AppendContent(const std::vector<uint8_t>& content);
+    void   ResponseSent(const size_t n);
+    size_t ResponseCount() const;
+
+public:
+    void         SetStatusHeaders(const char* status_string);
+    void         AppendHeader(const ResponseHeader& header);
+    void         ReadFile(const int fd);
+    virtual void FinishResponse(bool append_content_length);
+    void         AppendContent(const std::vector<uint8_t>& content);
 };

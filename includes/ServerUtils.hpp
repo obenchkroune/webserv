@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:16:12 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/03 21:58:30 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 15:13:11 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,10 +15,12 @@
 #include "Request.hpp"
 #include <netinet/in.h>
 #include <string>
+#include <fcntl.h>
 
 namespace ServerUtils
 {
 std::string HttpMethodToString(HttpMethod method);
+void SendErrorResponse(const HttpStatus& status, Response* response);
 sockaddr_in GetListenAddr(const ServerConfig &_config);
 void        PrintSocketIP(std::ostream &os, const sockaddr_in &address);
 bool        validateFileLocation(const std::string &location_root, const std::string &fname);

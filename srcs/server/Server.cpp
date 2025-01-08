@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/03 21:40:41 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 03:42:05 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,8 +197,6 @@ fetch_next_response:
     if (bytes_sent != (int)bytes_to_send)
         std::cerr << "Tried to send " << bytes_to_send << " but send() only sent " << bytes_sent
                   << "\nRemainder data will be sent on next call." << std::endl;
-    else
-        std::cout << bytes_sent << " bytes sent to client fd: " << ev.data.fd << std::endl;
     response->ResponseSent(bytes_sent);
     if (response->ResponseCount() == 0)
     {
@@ -238,16 +236,14 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         event.data.ptr    = this;
         _cgi_responses.erase(ev.data.fd);
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
-        return delete response;
+        response->FinishResponse(true);
+        QueueResponse(response->GetClientSocketFd(), response);
     }
     if (bytes < READ_CHUNK)
         buff.erase(buff.begin() + bytes, buff.end());
     std::cout << bytes << " bytes CGI RESPONSE CHUNK QUEUED for pipe_fd: " << ev.data.fd
               << std::endl;
-    Response* response_chunk =
-        new Response(response->GetRequest(), Config::getInstance().getServers().front());
-    response_chunk->AppendContent(buff);
-    QueueResponse(response->GetClientSocketFd(), response_chunk);
+    response->AppendContent(buff);
 }
 void Server::RemoveClient(const epoll_event ev)
 {
