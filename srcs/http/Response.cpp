@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:53:50 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 17:45:26 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ Response& Response::operator=(const Response& response)
     _headers          = response._headers;
     _content          = response._content;
     _content_sent     = response._content_sent;
-    _file_name        = response._file_name;
+    _file_path        = response._file_path;
     _file_extension   = response._file_extension;
     _file_location    = response._file_location;
     _file_stats       = response._file_stats;
@@ -50,13 +50,13 @@ const Request& Response::GetRequest() const
 {
     return _request;
 }
-const std::string& Response::GetFileName() const
+const std::string& Response::GetFilePath() const
 {
-    return _file_name;
+    return _file_path;
 }
-void Response::SetFileName(const std::string& fname)
+void Response::SetFilePath(const std::string& path)
 {
-    _file_name = fname;
+    _file_path = path;
 }
 const std::string& Response::GetFileExtension() const
 {
