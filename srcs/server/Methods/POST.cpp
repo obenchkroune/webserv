@@ -6,54 +6,26 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/09 15:45:33 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "ServerClient.hpp"
 
-void ServerClient::ProcessPOST(const Request &request, Response *response)
+void ServerClient::ProcessPOST(Response* response)
 {
-    std::vector<LocationConfig>::const_iterator file_location =
-        ServerUtils::GetFileLocation(response->GetVirtualServer(), request.getUri());
-    if (file_location == response->GetVirtualServer().locations.end())
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    std::pair<HttpStatus, std::string> file = CheckRequest(request, file_location);
-    if (file.first.code != STATUS_OK)
-        return ServerUtils::SendErrorResponse(file.first, response);
-    struct stat  path_stat;
-    std::string &file_name = file.second;
-    stat(file_name.c_str(), &path_stat);
-
-    if (S_ISDIR(path_stat.st_mode))
-    {
-        std::vector<std::string>::const_iterator index_it = file_location->index.begin();
-        for (; index_it != file_location->index.end(); index_it++)
-        {
-            std::string index_file_name = file_name + '/' + *index_it;
-            if (access(index_file_name.c_str(), F_OK) == 0)
-            {
-                if (access(index_file_name.c_str(), X_OK) == 0)
-                {
-                    file_name = index_file_name;
-                    break;
-                }
-                return ServerUtils::SendErrorResponse(HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), response);
-            }
-        }
-        if (index_it == file_location->index.end())
-            return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response);
-    }
-
     size_t max_sz_limit = response->GetVirtualServer().max_body_size;
-    if (file_location->max_body_size != response->GetVirtualServer().max_body_size)
-        max_sz_limit = file_location->max_body_size;
-    if (request.getBody().size() > max_sz_limit)
+    if (max_sz_limit != response->GetFileLocation()
+                            ->max_body_size) // TODO: this should check if location directive is set
+        max_sz_limit = response->GetFileLocation()->max_body_size;
+    if (response->GetFileStat().st_size > (long)max_sz_limit)
     {
         std::cerr << "POST request too large: " << std::endl;
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-                                 response);
+        return ServerUtils::SendErrorResponse(
+            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
+            response
+        );
     }
     /*
      ** Fork And buffer data to cgi server
@@ -61,5 +33,5 @@ void ServerClient::ProcessPOST(const Request &request, Response *response)
      ** Upload data to upload dir
      */
     response->FinishResponse();
-    _server->QueueResponse(_socket_fd, response);
+    _server->QueueResponse(_client_socket_fd, response);
 }

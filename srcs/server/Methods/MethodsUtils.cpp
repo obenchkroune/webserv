@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/09 15:45:18 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,39 +23,60 @@ void ServerClient::auto_index(Response* response)
     header.value = "text/html";
     response->AppendHeader(header);
 
-    std::string html = DirectoryListing::generate(response->GetFileName(), response->GetRequest().getUri());
+    std::string html =
+        DirectoryListing::generate(response->GetFilePath(), response->GetRequest().getUri());
     std::vector<uint8_t> content(html.begin(), html.end());
     response->AppendContent(content);
     response->FinishResponse();
-    _server->QueueResponse(_socket_fd, response);
+    _server->QueueResponse(_client_socket_fd, response);
 }
 
-std::pair<HttpStatus, std::string> ServerClient::CheckRequest(
-    const Request& request, const LocationsIterator& file_location
-)
+HttpStatus ServerClient::CheckRequest(Response* response)
 {
     if (std::find(
-            file_location->allow_methods.begin(), file_location->allow_methods.end(),
-            request.getMethod()
-        ) == file_location->allow_methods.end())
-        return std::pair<HttpStatus, std::string>(
-            HttpStatus(STATUS_METHOD_NOT_ALLOWED, HTTP_STATUS_METHOD_NOT_ALLOWED), ""
-        );
-
-    std::string file_name =
-        file_location->root + '/' + request.getUri().substr(file_location->path.length());
-    if (ServerUtils::validateFileLocation(file_location->root, file_name) == false)
+            response->GetFileLocation()->allow_methods.begin(),
+            response->GetFileLocation()->allow_methods.end(), response->GetRequest().getMethod()
+        ) == response->GetFileLocation()->allow_methods.end())
+        return HttpStatus(STATUS_METHOD_NOT_ALLOWED, HTTP_STATUS_METHOD_NOT_ALLOWED);
+    std::string file_path =
+        response->GetFileLocation()->root + '/' +
+        response->GetRequest().getUri().substr(response->GetFileLocation()->path.length());
+    if (ServerUtils::validateFileLocation(response->GetFileLocation()->root, file_path) == false)
     {
-        std::cerr << "Client fd: " << _socket_fd << " thinks himself a hacker." << std::endl;
-        std::cerr << "Access for file: " << file_name
+        std::cerr << "Client fd: " << _client_socket_fd << " thinks himself a hacker." << std::endl;
+        std::cerr << "Access for file: " << file_path
                   << " is outside the location root, request is forbidden." << std::endl;
-        return std::pair<HttpStatus, std::string>(
-            HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN), ""
-        );
+        return HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN);
     }
-    if (access(file_name.c_str(), F_OK) != 0) // EXISTENCE ACCESS
-        return std::pair<HttpStatus, std::string>(
-            HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), ""
-        );
-    return std::pair<HttpStatus, std::string>(HttpStatus(STATUS_OK, HTTP_STATUS_OK), file_name);
+    if (access(file_path.c_str(), F_OK) != 0) // EXISTENCE ACCESS
+        return HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND);
+    response->SetFilePath(file_path);
+    stat(response->GetFilePath().c_str(), &response->GetFileStat());
+    if (S_ISDIR(response->GetFileStat().st_mode))
+    {
+        std::vector<std::string>::const_iterator index_it =
+            response->GetFileLocation()->index.begin();
+        for (; index_it != response->GetFileLocation()->index.end(); index_it++)
+        {
+            std::string index_page_fname = response->GetFilePath() + '/' + *index_it;
+            if (access(index_page_fname.c_str(), F_OK) == 0)
+            {
+                response->SetFilePath(index_page_fname);
+                break;
+            }
+        }
+        if (index_it == response->GetFileLocation()->index.end())
+        {
+            if (response->GetFileLocation()->autoindex)
+                return HttpStatus(STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX, "");
+            return HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN);
+        }
+        stat(response->GetFilePath().c_str(), &response->GetFileStat());
+    }
+    if (access(response->GetFilePath().c_str(), R_OK) != 0) // READ ACCESS
+        return HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN);
+    std::string fname = basename(response->GetFilePath().c_str());
+    if (fname.find_last_of(".") != std::string::npos)
+        response->SetFileExtension(fname.substr(fname.find_last_of(".") + 1));
+    return HttpStatus(STATUS_OK, HTTP_STATUS_OK);
 }

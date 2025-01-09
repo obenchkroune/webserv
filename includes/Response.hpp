@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:53:34 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/08 17:44:31 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ protected:
     std::string          _headers;
     std::vector<uint8_t> _content;
     size_t               _content_sent;
-    std::string          _file_name;
+    std::string          _file_path;
     std::string          _file_extension;
     LocationIterator     _file_location;
     struct stat          _file_stats;
@@ -75,15 +75,15 @@ public:
     const int&              GetClientSocketFd() const;
     void                    SetClientSocketFd(const int& fd);
     const Request&          GetRequest() const;
-    const std::string&      GetFileName() const;
-    void                    SetFileName(const std::string& fname);
+    const std::string&      GetFilePath() const;
+    void                    SetFilePath(const std::string& path);
     const std::string&      GetFileExtension() const;
     void                    SetFileExtension(const std::string& ext);
     const LocationIterator& GetFileLocation() const;
     void                    SetFileLocation(const LocationIterator& location);
     struct stat&            GetFileStat();
     Server*                 GetServer() const;
-    size_t            GetContentSize() const;
+    size_t                  GetContentSize() const;
 
 public:
     const ServerConfig& GetVirtualServer() const;
