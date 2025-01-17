@@ -100,9 +100,9 @@ std::string rootDirective(const Directive& directive)
 {
     if (directive.values.size() != 1)
         throw InvalidConfigException(directive.name);
-    // struct stat buffer;
-    // if (stat(directive.values[0].c_str(), &buffer) != 0)
-    //     throw InvalidConfigException();
+    struct stat buffer;
+    if (stat(directive.values[0].c_str(), &buffer) != 0)
+        throw InvalidConfigException(directive.values[0]);
     return directive.values[0];
 }
 

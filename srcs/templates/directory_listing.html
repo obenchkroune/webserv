@@ -1,95 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Directory Listing</title>
-    <style>
-      body {
-        font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
-        line-height: 1.6;
-        margin: 0;
-        padding: 2rem;
-        background: #f5f5f5;
-        color: #333;
-      }
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
-      }
-      h1 {
-        color: #2c3e50;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid #eee;
-        padding-bottom: 0.5rem;
-      }
-      .directory-list {
-        list-style: none;
-        padding: 0;
-      }
-      .directory-list li {
-        border-bottom: 1px solid #eee;
-      }
-      .directory-list a {
-        text-decoration: none;
-        color: #2980b9;
-        display: flex;
-        align-items: center;
-        padding: 0.75rem;
-        transition: background-color 0.2s;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .directory-list a:hover {
-        background-color: #f8f9fa;
-        color: #3498db;
-      }
-      .directory-item {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        justify-content: space-between;
-      }
-      .directory-item.no-info {
-        justify-content: flex-start;
-      }
-      .file-info {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-      }
-      .icon {
-        margin-right: 0.75rem;
-        width: 20px;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .parent-dir {
-        background-color: #f8f9fa;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>Directory Contents</h1>
-      <ul class="directory-list">
-        <li class="parent-dir">
-          <a href="../" class="directory-item no-info">
-            <span class="icon">📁</span>
-            <span>..</span>
-            <span class="file-info">Parent Directory</span>
-          </a>
-        </li>
-        <!-- BEGIN files -->
-      </ul>
-    </div>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://rsms.me/">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+
+  <title>Directory Listing</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, Inter, sans-serif;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      max-width: 1024px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #1a1a1a;
+      font-size: 2.5rem;
+      margin-bottom: 0;
+      letter-spacing: -0.5px;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 2rem;
+    }
+
+    .directory-list {
+      list-style: none;
+      padding: 2rem 0;
+      width: 100%;
+    }
+
+    .directory-list li {
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .directory-list a {
+      text-decoration: none;
+      color: #764ba2;
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+      transition: all 0.2s ease;
+    }
+
+    .directory-list a:hover {
+      background: rgba(118, 75, 162, 0.1);
+      color: #5a3a7e;
+    }
+
+    .directory-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .directory-item.no-info {
+      justify-content: flex-start;
+    }
+
+    .file-info {
+      color: #718096;
+      font-size: 0.875rem;
+      margin-left: auto;
+    }
+
+    .icon {
+      margin-right: 1rem;
+      width: 1.3rem;
+      /* text-align: center; */
+    }
+
+    .parent-dir {
+      background-color: rgba(118, 75, 162, 0.05);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Directory Contents</h1>
+    <ul class="directory-list">
+      <li class="parent-dir">
+        <a href="../" class="directory-item no-info">
+          <span class="icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="size-6">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            </svg>
+          </span>
+          <span>..</span>
+          <span class="file-info">Parent Directory</span>
+        </a>
+      </li>
+      <!-- BEGIN files -->
+    </ul>
+  </div>
+</body>
+
 </html>
