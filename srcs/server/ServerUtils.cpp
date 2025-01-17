@@ -29,25 +29,18 @@ void SendErrorResponse(const HttpStatus& status, Response* response)
     const std::map<uint16_t, std::string>& error_pages =
         error_response->GetVirtualServer().error_pages;
     std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
-    if (it != error_pages.end())
+    struct stat                                     buffer;
+
+    if (it == error_pages.end() || stat(it->second.c_str(), &buffer) != 0)
     {
-        std::vector<LocationConfig>::const_iterator error_page_file_location =
-            ServerUtils::GetFileLocation(error_response->GetVirtualServer(), it->second);
-        if (error_page_file_location != error_response->GetVirtualServer().locations.end())
-        {
-            std::string file_name = error_page_file_location->root + '/' +
-                                    it->second.substr(error_page_file_location->path.length());
-            int error_fd = open(file_name.c_str(), O_RDONLY);
-            if (error_fd >= 0)
-            {
-                error_response->ReadFile(error_fd);
-            }
-            else
-            {
-                std::cerr << "open() failed for error page file: " << file_name << " ignoring."
-                          << std::endl;
-            }
-        }
+        std::cerr << "OK: " << it->second << std::endl;
+        error_response->AppendContent(
+            std::vector<uint8_t>(status.message, status.message + strlen(status.message))
+        );
+    }
+    else
+    {
+        error_response->ReadFile(open(it->second.c_str(), O_RDONLY));
     }
     error_response->FinishResponse();
     error_response->GetServer()->QueueResponse(client_socket_fd, error_response);
