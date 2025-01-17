@@ -30,7 +30,7 @@ public:
     void       appendBody(const std::string& body);
 
     // getters
-    HttpMethod                                getMethod() const;
+    const std::string                         getMethod() const;
     std::string                               getUri() const;
     std::string                               getVersion() const;
     const HttpHeader*                         getHeader(const std::string& key) const;
@@ -41,7 +41,7 @@ public:
     const std::stringstream&                  getRawBuffer() const;
 
     // setters
-    void setMethod(std::string method);
+    void setMethod(const std::string& method);
     void setUri(const std::string& uri);
     void setVersion(const std::string& version);
     void setHeader(const HttpHeader& header);
@@ -51,7 +51,7 @@ private:
     std::stringstream                  _buffer;
     std::map<std::string, std::string> _query_params;
     std::string                        _query_params_string;
-    HttpMethod                         _method;
+    std::string                        _method;
     std::string                        _uri;
     std::string                        _http_version;
     std::string                        _body;

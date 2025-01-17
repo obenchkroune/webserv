@@ -55,9 +55,8 @@ void ServerClient::ProcessCGI(Response* response)
         /*setting up environment*/
         std::vector<char*> envp;
         std::string        env_redirect = "REDIRECT_STATUS=CGI";
-        std::string        env_method =
-            "REQUEST_METHOD=" + ServerUtils::HttpMethodToString(response->GetRequest().getMethod());
-        std::string env_uri   = "REQUEST_URI=" + response->GetRequest().getUri();
+        std::string        env_method   = "REQUEST_METHOD=" + response->GetRequest().getMethod();
+        std::string        env_uri      = "REQUEST_URI=" + response->GetRequest().getUri();
         std::string env_query = "QUERY_STRING=" + response->GetRequest().getQueryParamsString();
         std::string env_script_name = "SCRIPT_FILENAME=";
         env_script_name += response->GetFilePath().c_str();

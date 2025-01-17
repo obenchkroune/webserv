@@ -111,30 +111,30 @@ void ServerClient::ProcessRequest(const Request& request)
         }
     }
     // HTTP response:
-    switch (request.getMethod())
+    const std::string& method = request.getMethod();
+    if (method == "GET")
     {
-    case HTTP_GET: {
-        ProcessGET(response);
-        break;
+        return ProcessGET(response);
     }
-    case HTTP_HEAD: {
-        ProcessHEAD(response);
-        break;
+    else if (method == "HEAD")
+    {
+        return ProcessHEAD(response);
     }
-    case HTTP_POST: {
-        ProcessPOST(response);
-        break;
+    else if (method == "POST")
+    {
+        return ProcessPOST(response);
     }
-    case HTTP_PUT: {
-        ProcessPUT(response);
-        break;
+    else if (method == "PUT")
+    {
+        return ProcessPUT(response);
     }
-    case HTTP_DELETE: {
-        ProcessDELETE(response);
-        break;
+    else if (method == "DELETE")
+    {
+        return ProcessDELETE(response);
     }
-    default:
-        ServerUtils::SendErrorResponse(
+    else
+    {
+        return ServerUtils::SendErrorResponse(
             HttpStatus(STATUS_NOT_IMPLEMENTED, HTTP_STATUS_NOT_IMPLEMENTED), response
         );
     }

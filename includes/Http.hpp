@@ -6,16 +6,6 @@
 #include <stdint.h>
 #include <string>
 
-enum HttpMethod
-{
-    HTTP_GET = 0,
-    HTTP_HEAD,
-    HTTP_POST,
-    HTTP_PUT,
-    HTTP_DELETE,
-    HTTP_PATCH,
-};
-
 #define HTTP_VERSION_TOKEN "HTTP/1.1"
 #define CRLF               "\r\n"
 

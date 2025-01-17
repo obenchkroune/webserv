@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
 #include "ServerUtils.hpp"
+#include "Server.hpp"
 #include "ServerClient.hpp"
 #include <cassert>
 #include <iostream>
@@ -19,33 +19,15 @@
 
 namespace ServerUtils
 {
-std::string HttpMethodToString(HttpMethod method)
-{
-    switch (method)
-    {
-    case HTTP_GET:
-        return "GET";
-    case HTTP_POST:
-        return "POST";
-    case HTTP_DELETE:
-        return "DELETE";
-    case HTTP_PUT:
-        return "PUT";
-    case HTTP_HEAD:
-        return "HEAD";
-    case HTTP_PATCH:
-        return "PATCH";
-    }
-    throw ImpossibleToReach();
-    return "";
-}
 void SendErrorResponse(const HttpStatus& status, Response* response)
 {
-    Response* error_response = new Response(response->GetRequest(),response->GetVirtualServer(), response->GetServer());
+    Response* error_response =
+        new Response(response->GetRequest(), response->GetVirtualServer(), response->GetServer());
     int client_socket_fd = response->GetClientSocketFd();
-    delete  response;
+    delete response;
     error_response->SetStatusHeaders(status.name);
-    const std::map<uint16_t, std::string>& error_pages = error_response->GetVirtualServer().error_pages;
+    const std::map<uint16_t, std::string>& error_pages =
+        error_response->GetVirtualServer().error_pages;
     std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
     if (it != error_pages.end())
     {

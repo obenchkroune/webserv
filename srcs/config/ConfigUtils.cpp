@@ -140,30 +140,9 @@ std::pair<std::string, uint16_t> redirectDirective(const Directive& directive)
     return std::make_pair(directive.values[1], code);
 }
 
-std::vector<HttpMethod> allowMethodsDirective(const Directive& directive)
+std::vector<std::string> allowMethodsDirective(const Directive& directive)
 {
-    std::vector<HttpMethod> res;
-
-    for (std::vector<std::string>::const_iterator it = directive.values.begin();
-         it != directive.values.end(); ++it)
-    {
-        if (*it == "GET")
-            res.push_back(HTTP_GET);
-        else if (*it == "HEAD")
-            res.push_back(HTTP_HEAD);
-        else if (*it == "POST")
-            res.push_back(HTTP_POST);
-        else if (*it == "PUT")
-            res.push_back(HTTP_PUT);
-        else if (*it == "DELETE")
-            res.push_back(HTTP_DELETE);
-        else if (*it == "PATCH")
-            res.push_back(HTTP_PATCH);
-        else
-            throw InvalidConfigException(directive.name);
-    }
-
-    return res;
+    return directive.values;
 }
 
 static inline bool isValidErrorCode(uint16_t code)

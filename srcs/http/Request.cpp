@@ -51,7 +51,7 @@ HttpStatus Request::parse()
     }
 }
 
-HttpMethod Request::getMethod() const
+const std::string Request::getMethod() const
 {
     return _method;
 }
@@ -101,22 +101,9 @@ const std::stringstream& Request::getRawBuffer() const
     return _buffer;
 }
 
-void Request::setMethod(std::string method)
+void Request::setMethod(const std::string& method)
 {
-    if (method == "GET")
-        _method = HTTP_GET;
-    else if (method == "HEAD")
-        _method = HTTP_HEAD;
-    else if (method == "POST")
-        _method = HTTP_POST;
-    else if (method == "DELETE")
-        _method = HTTP_DELETE;
-    else if (method == "PUT")
-        _method = HTTP_PUT;
-    else if (method == "PATCH")
-        _method = HTTP_PATCH;
-    else
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+    _method = method;
 }
 
 void Request::setUri(const std::string& uri)
@@ -244,29 +231,7 @@ void Request::parseHeaders()
 std::ostream& operator<<(std::ostream& os, const Request& request)
 {
     os << "===========================================================\n";
-    os << "Method: ";
-    switch (request.getMethod())
-    {
-    case HTTP_GET:
-        std::cout << "GET";
-        break;
-    case HTTP_POST:
-        std::cout << "POST";
-        break;
-    case HTTP_DELETE:
-        std::cout << "DELETE";
-        break;
-    case HTTP_PUT:
-        std::cout << "PUT";
-        break;
-    case HTTP_HEAD:
-        std::cout << "HEAD";
-        break;
-    case HTTP_PATCH:
-        std::cout << "PATCH";
-        break;
-    }
-    os << '\n';
+    os << "Method: " << request.getMethod() << '\n';
     os << "URI: " << request.getUri() << '\n';
     os << "Query string: " << request.getQueryParamsString() << '\n';
     os << "Query params: " << '\n';
