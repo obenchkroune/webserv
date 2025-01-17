@@ -23,24 +23,23 @@ void ServerClient::ProcessPUT(Response* response)
     {
         std::cerr << "PUT request too large: " << std::endl;
         return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-            response
+            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE), response
         );
     }
     int put_fd = open(response->GetFilePath().c_str(), O_WRONLY);
     if (put_fd == -1)
         return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_FORBIDDEN, HTTP_STATUS_FORBIDDEN),
+            HttpStatus(STATUS_FORBIDDEN),
             response
         ); // TODO: check ngnix behaviour when permission denied
-    int bytes = write(put_fd, response->GetRequest().getBody().c_str(), response->GetRequest().getBody().size());
+    int bytes = write(
+        put_fd, response->GetRequest().getBody().c_str(), response->GetRequest().getBody().size()
+    );
     close(put_fd);
     if (bytes < 0 || (size_t)bytes != response->GetRequest().getBody().size())
     {
         unlink(response->GetFilePath().c_str());
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     response->SetStatusHeaders(HTTP_STATUS_OK);
     response->FinishResponse();

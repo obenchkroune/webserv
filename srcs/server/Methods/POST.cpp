@@ -23,8 +23,7 @@ void ServerClient::ProcessPOST(Response* response)
     {
         std::cerr << "POST request too large: " << std::endl;
         return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-            response
+            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE), response
         );
     }
     /*

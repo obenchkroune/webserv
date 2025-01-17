@@ -39,43 +39,27 @@ int ServerClient::GetClientSocketfd() const
 }
 void ServerClient::ReceiveRequest(const std::string buff)
 {
-    _request_raw += buff;
-    if (_request_raw.find("\r\n\r\n") != std::string::npos)
+    _request += buff;
+
+    if (_request.getStatus().code != STATUS_OK)
     {
-        std::cout << "Client fd: " << _client_socket_fd << " Got the full request:\n";
-        std::cout << _request_raw << "\nParsing request" << std::endl;
-        Request req(_request_raw);
-        _request_raw.clear();
-        HttpStatus status = req.parse();
-        if (status.code != STATUS_OK)
-        {
-            Response* response = new Response(req, _server->GetConfig().front(), _server);
-            std::cerr << "HTTP_Request not accepted due to: " << status.name << std::endl;
-            std::cerr << req;
-            return ServerUtils::SendErrorResponse(status, response);
-        }
-        std::cout << "Request parsed successfuly." << std::endl;
-        std::cout << req.getUri() << std::endl;
+        Response* response = new Response(_request, _server->GetConfig().front(), _server);
+        ServerUtils::SendErrorResponse(_request.getStatus(), response);
+        _request.clear();
+        return;
+    }
+
+    if (_request.isCompleted())
+    {
         try
         {
-            ProcessRequest(req);
+            ProcessRequest(_request);
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Request not handled due to: " << e.what() << std::endl;
-            std::cerr << req;
+            Response* response = new Response(_request, _server->GetConfig().front(), _server);
+            ServerUtils::SendErrorResponse(_request.getStatus(), response);
         }
-    }
-    else if (_request_raw.size() > REQUEST_HEADER_LIMIT)
-    {
-        std::cerr << "Request Headers exceeded the REQUEST_HEADER_LIMIT: " << REQUEST_HEADER_LIMIT
-                  << std::endl;
-        Request req("");
-        _request_raw.clear();
-        Response* response = new Response(req, _server->GetConfig().front(), _server);
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST), response
-        );
     }
 }
 void ServerClient::ProcessRequest(const Request& request)
@@ -88,9 +72,7 @@ void ServerClient::ProcessRequest(const Request& request)
         ServerUtils::GetFileLocation(response->GetVirtualServer(), response->GetRequest().getUri())
     );
     if (response->GetFileLocation() == response->GetVirtualServer().locations.end())
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_NOT_FOUND, HTTP_STATUS_NOT_FOUND), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
         return auto_index(response);
@@ -134,8 +116,6 @@ void ServerClient::ProcessRequest(const Request& request)
     }
     else
     {
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_NOT_IMPLEMENTED, HTTP_STATUS_NOT_IMPLEMENTED), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_IMPLEMENTED), response);
     }
 }

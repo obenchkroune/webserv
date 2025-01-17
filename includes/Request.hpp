@@ -21,11 +21,13 @@ private:
 class Request
 {
 public:
+    Request();
     Request(const std::string& request);
     Request(const Request& other);
-    Request& operator=(const Request& other);
     ~Request();
 
+    Request&   operator=(const Request& other);
+    Request&   operator+=(const std::string& bytes);
     HttpStatus parse();
     void       appendBody(const std::string& body);
 
@@ -39,16 +41,20 @@ public:
     const std::map<std::string, std::string>& getQueryParams() const;
     const std::string&                        getQueryParamsString() const;
     const std::stringstream&                  getRawBuffer() const;
+    const HttpStatus&                         getStatus() const;
+    bool                                      isCompleted() const;
 
     // setters
     void setMethod(const std::string& method);
     void setUri(const std::string& uri);
     void setVersion(const std::string& version);
     void setHeader(const HttpHeader& header);
-    void setBody(const std::string& body);
+
+    void clear();
 
 private:
-    std::stringstream                  _buffer;
+    bool                               _is_completed;
+    std::stringstream                  _stream_buf;
     std::map<std::string, std::string> _query_params;
     std::string                        _query_params_string;
     std::string                        _method;
@@ -56,6 +62,7 @@ private:
     std::string                        _http_version;
     std::string                        _body;
     std::vector<HttpHeader>            _headers;
+    HttpStatus                         _status;
 
     void                               parseRequestLine();
     std::map<std::string, std::string> parseQueryParams(const std::string query);

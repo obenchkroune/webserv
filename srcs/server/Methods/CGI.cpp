@@ -18,18 +18,14 @@ void ServerClient::ProcessCGI(Response* response)
     if (pipe(pipe_fd) == -1)
     {
         std::cerr << "pipe() failed for cgi file: " << response->GetFilePath() << std::endl;
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     int pid = fork();
     if (pid == -1)
     {
         std::cerr << "fork() failed for cgi file: " << response->GetFilePath() << std::endl;
         close(pipe_fd[0]), close(pipe_fd[1]);
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     if (pid)
     {

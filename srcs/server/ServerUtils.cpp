@@ -25,7 +25,7 @@ void SendErrorResponse(const HttpStatus& status, Response* response)
         new Response(response->GetRequest(), response->GetVirtualServer(), response->GetServer());
     int client_socket_fd = response->GetClientSocketFd();
     delete response;
-    error_response->SetStatusHeaders(status.name);
+    error_response->SetStatusHeaders(status.message);
     const std::map<uint16_t, std::string>& error_pages =
         error_response->GetVirtualServer().error_pages;
     std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);

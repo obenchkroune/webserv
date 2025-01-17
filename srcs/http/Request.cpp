@@ -6,7 +6,15 @@
 #include <iostream>
 #include <sstream>
 
-Request::Request(const std::string& request) : _buffer(request) {}
+Request::Request() : _is_completed(false)
+{
+    //
+}
+
+Request::Request(const std::string& request) : _is_completed(false), _stream_buf(request)
+{
+    //
+}
 
 Request::Request(const Request& other)
 {
@@ -17,6 +25,7 @@ Request& Request::operator=(const Request& other)
 {
     if (this == &other)
         return *this;
+    _is_completed        = other._is_completed;
     _body                = other._body;
     _headers             = other._headers;
     _http_version        = other._http_version;
@@ -25,8 +34,27 @@ Request& Request::operator=(const Request& other)
     _query_params_string = other._query_params_string;
     _query_params        = other._query_params;
 
-    _buffer.clear();
-    _buffer << other._buffer.rdbuf();
+    _stream_buf.clear();
+    _stream_buf << other._stream_buf.rdbuf();
+    return *this;
+}
+
+Request& Request::operator+=(const std::string& bytes)
+{
+    const char* end            = CRLF CRLF;
+    size_t                 pos = bytes.find(end);
+    if (pos != std::string::npos)
+    {
+        _stream_buf << bytes.substr(0, pos + strlen(end));
+        _status = parse();
+        _body   = bytes.substr(pos + strlen(end));
+        return *this;
+    }
+    if (_is_completed)
+        _body += bytes;
+    else
+        _stream_buf << bytes;
+
     return *this;
 }
 
@@ -41,9 +69,10 @@ HttpStatus Request::parse()
 {
     try
     {
+        _is_completed = true;
         parseRequestLine();
         parseHeaders();
-        return HttpStatus(STATUS_OK, HTTP_STATUS_OK);
+        return HttpStatus(STATUS_OK);
     }
     catch (const RequestException& e)
     {
@@ -54,6 +83,16 @@ HttpStatus Request::parse()
 const std::string Request::getMethod() const
 {
     return _method;
+}
+
+const HttpStatus& Request::getStatus() const
+{
+    return _status;
+}
+
+bool Request::isCompleted() const
+{
+    return _is_completed;
 }
 
 std::string Request::getUri() const
@@ -98,7 +137,7 @@ const std::string& Request::getQueryParamsString() const
 
 const std::stringstream& Request::getRawBuffer() const
 {
-    return _buffer;
+    return _stream_buf;
 }
 
 void Request::setMethod(const std::string& method)
@@ -109,22 +148,20 @@ void Request::setMethod(const std::string& method)
 void Request::setUri(const std::string& uri)
 {
     if (uri.empty() || uri[0] != '/')
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     _uri = uri;
 }
 
 void Request::setVersion(const std::string& version)
 {
     if (version.substr(0, 5) != "HTTP/")
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
 
     int major, minor;
     if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2)
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     if (major != 1 || minor != 1)
-        throw RequestException(
-            HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED, HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED)
-        );
+        throw RequestException(HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED));
     _http_version = version;
 }
 
@@ -133,26 +170,26 @@ void Request::setHeader(const HttpHeader& header)
     _headers.push_back(header);
 }
 
-void Request::setBody(const std::string& body)
+void Request::clear()
 {
-    _body = body;
+    *this = Request();
 }
 
 std::string Request::getHeaderLine()
 {
     std::string line;
 
-    std::getline(_buffer, line, '\n');
+    std::getline(_stream_buf, line, '\n');
     if (line.empty() || line[line.size() - 1] != '\r')
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     line.erase(line.size() - 1);
 
-    if (std::string(" \t").find(_buffer.peek()) != std::string::npos)
+    if (std::string(" \t").find(_stream_buf.peek()) != std::string::npos)
     {
-        _buffer.ignore();
+        _stream_buf.ignore();
         line += ' ';
-        while (std::string(" \t").find(_buffer.peek()) != std::string::npos)
-            _buffer.ignore();
+        while (std::string(" \t").find(_stream_buf.peek()) != std::string::npos)
+            _stream_buf.ignore();
         line += Request::getHeaderLine();
     }
     return line;
@@ -162,9 +199,9 @@ void Request::parseRequestLine()
 {
     std::string method, uri, version;
 
-    if (!std::getline(_buffer, method, ' ') || !std::getline(_buffer, uri, ' '))
+    if (!std::getline(_stream_buf, method, ' ') || !std::getline(_stream_buf, uri, ' '))
     {
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     }
 
     if (uri.find('?') != std::string::npos)
@@ -174,9 +211,9 @@ void Request::parseRequestLine()
         _query_params        = parseQueryParams(_query_params_string);
     }
 
-    if (!std::getline(_buffer, version, '\n') || version[version.size() - 1] != '\r')
+    if (!std::getline(_stream_buf, version, '\n') || version[version.size() - 1] != '\r')
     {
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     }
 
     version.erase(version.size() - 1);
@@ -214,12 +251,21 @@ std::map<std::string, std::string> Request::parseQueryParams(const std::string q
 
 void Request::parseHeaders()
 {
+    // check the size of the header fields
+    size_t current_pos = _stream_buf.tellg();
+    _stream_buf.seekg(0, std::ios::end);
+    if ((size_t)_stream_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
+    {
+        throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE));
+    }
+    _stream_buf.seekg(current_pos);
+
     std::string line;
     while (!(line = Request::getHeaderLine()).empty())
     {
         size_t pos = line.find(':');
         if (pos == std::string::npos)
-            throw RequestException(HttpStatus(STATUS_BAD_REQUEST, HTTP_STATUS_BAD_REQUEST));
+            throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
         std::string name  = util::strtrim(line.substr(0, pos)),
                     value = util::strtrim(line.substr(pos + 1));
         HttpHeader header(name, value);

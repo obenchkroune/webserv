@@ -16,13 +16,15 @@
 void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
 {
     size_t max_sz_limit = response->GetVirtualServer().max_body_size;
-    if (max_sz_limit != response->GetFileLocation()->max_body_size) // TODO: this should check if location directive is set
+    if (max_sz_limit != response->GetFileLocation()
+                            ->max_body_size) // TODO: this should check if location directive is set
         max_sz_limit = response->GetFileLocation()->max_body_size;
     if (response->GetFileStat().st_size > (long)max_sz_limit)
     {
         std::cerr << "GET request too large: " << std::endl;
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE),
-                                 response);
+        return ServerUtils::SendErrorResponse(
+            HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE), response
+        );
     }
     response->SetStatusHeaders(HTTP_STATUS_OK);
     ResponseHeader header;
@@ -38,9 +40,7 @@ void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
     if (file_fd < 0)
     {
         std::cerr << "open() failed for file: " << response->GetFilePath();
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     if (send_data == false)
     {

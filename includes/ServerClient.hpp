@@ -27,6 +27,7 @@ private:
     const int   _client_socket_fd;
     const int   _address_socket_fd;
     std::string _request_raw;
+    Request     _request;
     Server*     _server;
 
 public:
