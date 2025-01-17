@@ -15,10 +15,7 @@
 
 void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
 {
-    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
-    if (max_sz_limit != response->GetFileLocation()
-                            ->max_body_size) // TODO: this should check if location directive is set
-        max_sz_limit = response->GetFileLocation()->max_body_size;
+    size_t max_sz_limit = response->GetFileLocation()->max_body_size;
     if (response->GetFileStat().st_size > (long)max_sz_limit)
     {
         std::cerr << "GET request too large: " << std::endl;

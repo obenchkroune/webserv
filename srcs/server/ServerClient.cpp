@@ -19,11 +19,13 @@ ServerClient::ServerClient(
     : _client_socket_fd(client_socket_fd), _address_socket_fd(address_socket_fd), _server(server)
 {
 }
+
 ServerClient::ServerClient(const ServerClient& client)
     : _client_socket_fd(client._client_socket_fd), _address_socket_fd(client._address_socket_fd)
 {
     *this = client;
 }
+
 ServerClient& ServerClient::operator=(const ServerClient& client)
 {
     if (this == &client)
@@ -32,25 +34,27 @@ ServerClient& ServerClient::operator=(const ServerClient& client)
     _server      = client._server;
     return *this;
 }
+
 ServerClient::~ServerClient() {}
+
 int ServerClient::GetClientSocketfd() const
 {
     return _client_socket_fd;
 }
+
 void ServerClient::ReceiveRequest(const std::string buff)
 {
     _request += buff;
 
-    if (_request.getStatus().code != STATUS_OK)
-    {
-        Response* response = new Response(_request, _server->GetConfig().front(), _server);
-        ServerUtils::SendErrorResponse(_request.getStatus(), response);
-        _request.clear();
-        return;
-    }
-
     if (_request.isCompleted())
     {
+        if (_request.getStatus().code != STATUS_OK)
+        {
+            Response* response = new Response(_request, _server->GetConfig().front(), _server);
+            _request.clear();
+            return ServerUtils::SendErrorResponse(_request.getStatus(), response);
+        }
+
         try
         {
             ProcessRequest(_request);
@@ -60,8 +64,10 @@ void ServerClient::ReceiveRequest(const std::string buff)
             Response* response = new Response(_request, _server->GetConfig().front(), _server);
             ServerUtils::SendErrorResponse(_request.getStatus(), response);
         }
+        _request.clear();
     }
 }
+
 void ServerClient::ProcessRequest(const Request& request)
 {
     const ServerConfig& virtualServer =
