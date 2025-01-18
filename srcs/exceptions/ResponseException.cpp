@@ -14,7 +14,8 @@
 
 ResponseException::ResponseException(std::string reason) throw()
     : _reason("[ResponseException::ResponseException] [Reason]: " + reason)
-{}
+{
+}
 const char* ResponseException::what() const throw()
 {
     return _reason.c_str();

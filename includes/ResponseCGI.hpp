@@ -12,13 +12,14 @@
 
 #include "Response.hpp"
 #include "ServerUtils.hpp"
-#include <cstring>
 #include <cassert>
+#include <cstring>
 
 class ResponseCGI : public Response
 {
 private:
     ResponseCGI(const Request& request, const ServerConfig& virtual_server, Server* server);
+
 public:
     virtual ~ResponseCGI();
     ResponseCGI(const Response& responseCGI);

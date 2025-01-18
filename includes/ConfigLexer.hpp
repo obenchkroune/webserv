@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-enum TokenType {
+enum TokenType
+{
     T_EOF = 0,
     T_WORD,
     T_BLOCK_START,
@@ -12,15 +13,17 @@ enum TokenType {
     T_SEMICOL,
 };
 
-struct Token {
-    Token(TokenType t) : type(t), line_number(1){};
-    Token(TokenType t, const std::string& v) : type(t), value(v){};
-    Token(TokenType t, const std::string& v, std::size_t l) : type(t), value(v), line_number(l){};
-    Token(TokenType t, char c) : type(t), value(1, c){};
-    Token(TokenType t, const char c, std::size_t l) : type(t), value(1, c), line_number(l){};
-    ~Token(){};
+struct Token
+{
+    Token(TokenType t) : type(t), line_number(1) {};
+    Token(TokenType t, const std::string& v) : type(t), value(v) {};
+    Token(TokenType t, const std::string& v, std::size_t l) : type(t), value(v), line_number(l) {};
+    Token(TokenType t, char c) : type(t), value(1, c) {};
+    Token(TokenType t, const char c, std::size_t l) : type(t), value(1, c), line_number(l) {};
+    ~Token() {};
 
-    bool operator==(const Token& t) {
+    bool operator==(const Token& t)
+    {
         return t.value == this->value && t.type == this->type;
     }
 
@@ -29,7 +32,8 @@ struct Token {
     std::size_t line_number;
 };
 
-class ConfigLexer {
+class ConfigLexer
+{
 public:
     ConfigLexer(const std::string& file);
     ~ConfigLexer();

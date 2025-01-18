@@ -8,7 +8,8 @@
 #include <string>
 #include <vector>
 
-class Config {
+class Config
+{
 public:
     static Config&                   getInstance();
     void                             loadConfig(const std::string& configFile);
@@ -16,9 +17,11 @@ public:
     const std::vector<ServerConfig>& getServers() const;
     const MimeTypes&                 getMimeTypes() const;
 
-    class ServerNotFound : public std::exception {
+    class ServerNotFound : public std::exception
+    {
     public:
-        virtual const char* what() const throw() {
+        virtual const char* what() const throw()
+        {
             return "Server not found";
         }
     };

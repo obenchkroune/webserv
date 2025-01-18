@@ -8,15 +8,18 @@
 #include <sys/stat.h>
 #include <vector>
 
-class DirectoryListing {
+class DirectoryListing
+{
 public:
-    struct Entry {
+    struct Entry
+    {
         std::string name;
         bool        isDirectory;
         size_t      size;
         time_t      modTime;
 
-        static bool compare(const Entry& a, const Entry& b) {
+        static bool compare(const Entry& a, const Entry& b)
+        {
             if (a.isDirectory != b.isDirectory)
                 return a.isDirectory > b.isDirectory;
             return a.name < b.name;
