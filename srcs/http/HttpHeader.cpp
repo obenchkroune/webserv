@@ -201,7 +201,7 @@ void HttpHeader::tokenize()
                 // Check if we hit a space that's not within a comment or quote
                 if (raw_value[pos] == ' ' && !token.empty())
                 {
-                    std::string cleaned = util::strtrim(token);
+                    std::string cleaned = utils::strtrim(token);
                     if (!cleaned.empty())
                     {
                         _tokens.push_back(cleaned);
@@ -215,7 +215,7 @@ void HttpHeader::tokenize()
             }
         }
 
-        token = util::strtrim(token);
+        token = utils::strtrim(token);
         if (!token.empty())
         {
             _tokens.push_back(token);
@@ -237,7 +237,7 @@ std::vector<std::string> HttpHeader::stripParameters(const std::string& str)
     {
         if (*it == ';')
         {
-            std::string tok = util::strtrim(std::string(start, it));
+            std::string tok = utils::strtrim(std::string(start, it));
             if (!tok.empty())
                 tokens.push_back(tok);
             start = it + 1;
@@ -245,7 +245,7 @@ std::vector<std::string> HttpHeader::stripParameters(const std::string& str)
     }
     if (start != str.end())
     {
-        std::string tok = util::strtrim(std::string(start, str.end()));
+        std::string tok = utils::strtrim(std::string(start, str.end()));
         if (!tok.empty())
             tokens.push_back(tok);
     }
@@ -261,8 +261,8 @@ std::pair<std::string, std::string> HttpHeader::parseParameter(const std::string
     {
         if (*it == '=')
         {
-            key   = unquote(util::strtrim(std::string(str.begin(), it)));
-            value = unquote(util::strtrim(std::string(it + 1, str.end())));
+            key   = unquote(utils::strtrim(std::string(str.begin(), it)));
+            value = unquote(utils::strtrim(std::string(it + 1, str.end())));
             break;
         }
     }

@@ -14,7 +14,7 @@
 #include <sstream>
 #include <vector>
 
-namespace util
+namespace utils
 {
 
 std::string strtrim(const std::string& str)
@@ -36,4 +36,4 @@ std::string quoted(const std::string& str, bool double_quotes /* = false */)
     return "'" + str + "'";
 }
 
-} // namespace util
+} // namespace utils

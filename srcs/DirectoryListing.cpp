@@ -84,7 +84,7 @@ std::string DirectoryListing::generateEntryHtml(const Entry& entry, const std::s
 
     std::string fileUrl = requestUri + (requestUri[requestUri.size() - 1] == '/' ? "" : "/") +
                           entry.name + (entry.isDirectory ? "/" : "");
-    html << "<li><a href=" << util::quoted(fileUrl) << " class='directory-item'>"
+    html << "<li><a href=" << utils::quoted(fileUrl) << " class='directory-item'>"
          << "<span class='icon'>";
 
     if (entry.isDirectory)
