@@ -68,6 +68,7 @@ void Request::appendBody(const std::string& body)
 HttpStatus Request::parse()
 {
     _is_completed = true;
+
     try
     {
         parseRequestLine();
@@ -172,6 +173,7 @@ void Request::setHeader(const HttpHeader& header)
 
 void Request::clear()
 {
+    _status       = HttpStatus(STATUS_OK);
     _is_completed = false;
     _body.clear();
     _headers.clear();
@@ -180,7 +182,8 @@ void Request::clear()
     _uri.clear();
     _query_params_string.clear();
     _query_params.clear();
-    _stream_buf.clear();
+    _stream_buf.str("");
+    _stream_buf.seekg(0);
 }
 
 std::string Request::getHeaderLine()
