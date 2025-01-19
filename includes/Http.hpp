@@ -6,16 +6,6 @@
 #include <stdint.h>
 #include <string>
 
-enum HttpMethod
-{
-    HTTP_GET = 0,
-    HTTP_HEAD,
-    HTTP_POST,
-    HTTP_PUT,
-    HTTP_DELETE,
-    HTTP_PATCH,
-};
-
 #define HTTP_VERSION_TOKEN "HTTP/1.1"
 #define CRLF               "\r\n"
 
@@ -43,7 +33,7 @@ enum HttpMethod
 #define HTTP_STATUS_TEMPORARY_REDIRECT "307 Temporary Redirect"
 #define HTTP_STATUS_PERMANENT_REDIRECT "308 Permanent Redirect"
 
-// 400 -> 417
+// 400 -> 418
 #define HTTP_STATUS_BAD_REQUEST                     "400 Bad Request"
 #define HTTP_STATUS_UNAUTHORIZED                    "401 Unauthorized"
 #define HTTP_STATUS_PAYMENT_REQUIRED                "402 Payment Required"
@@ -62,6 +52,20 @@ enum HttpMethod
 #define HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE          "415 Unsupported Media Type"
 #define HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE "416 Requested Range Not Satisfiable"
 #define HTTP_STATUS_EXPECTATION_FAILED              "417 Expectation Failed"
+#define HTTP_STATUS_IM_A_TEAPOT                     "418 I'm a teapot"
+// 421 -> 429
+#define HTTP_STATUS_MISDIRECTED_REQUEST   "421 Misdirected Request"
+#define HTTP_STATUS_UNPROCESSABLE_ENTITY  "422 Unprocessable Entity"
+#define HTTP_STATUS_LOCKED                "423 Locked"
+#define HTTP_STATUS_FAILED_DEPENDENCY     "424 Failed Dependency"
+#define HTTP_STATUS_TOO_EARLY             "425 Too Early"
+#define HTTP_STATUS_UPGRADE_REQUIRED      "426 Upgrade Required"
+#define HTTP_STATUS_PRECONDITION_REQUIRED "428 Precondition Required"
+#define HTTP_STATUS_TOO_MANY_REQUESTS     "429 Too Many Requests"
+
+// 431, 451
+#define HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE "431 Request Header Fields Too Large"
+#define HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS   "451 Unavailable For Legal Reasons"
 
 // 500 -> 505
 #define HTTP_STATUS_INTERNAL_SERVER_ERROR      "500 Internal Server Error"
@@ -71,7 +75,7 @@ enum HttpMethod
 #define HTTP_STATUS_GATEWAY_TIMEOUT            "504 Gateway Timeout"
 #define HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED "505 HTTP Version Not Supported"
 
-enum http_status_code
+enum HttpStatusCode
 {
     // 100 - 102
     STATUS_CONTINUE = 100,
@@ -95,7 +99,7 @@ enum http_status_code
     // 307 - 308
     STATUS_TEMPORARY_REDIRECT = 307,
     STATUS_PERMANENT_REDIRECT,
-    // 400 - 417
+    // 400 - 418
     STATUS_BAD_REQUEST = 400,
     STATUS_UNAUTHORIZED,
     STATUS_PAYMENT_REQUIRED,
@@ -114,6 +118,21 @@ enum http_status_code
     STATUS_UNSUPPORTED_MEDIA_TYPE,
     STATUS_REQUESTED_RANGE_NOT_SATISFIABLE,
     STATUS_EXPECTATION_FAILED,
+    STATUS_IM_A_TEAPOT,
+    // 421 - 429
+    STATUS_MISDIRECTED_REQUEST = 421,
+    STATUS_UNPROCESSABLE_ENTITY,
+    STATUS_LOCKED,
+    STATUS_FAILED_DEPENDENCY,
+    STATUS_TOO_EARLY,
+    STATUS_UPGRADE_REQUIRED,
+    STATUS_PRECONDITION_REQUIRED,
+    STATUS_TOO_MANY_REQUESTS,
+
+    // 431, 451
+    STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE,
+    STATUS_UNAVAILABLE_FOR_LEGAL_REASONS,
+
     // 500 - 505
     STATUS_INTERNAL_SERVER_ERROR = 500,
     STATUS_NOT_IMPLEMENTED,
@@ -127,9 +146,12 @@ enum http_status_code
 
 struct HttpStatus
 {
-    http_status_code code;
-    const char*      name;
-    HttpStatus(const http_status_code& _code, const char* _name) : code(_code), name(_name) {};
-    HttpStatus(const HttpStatus& _status) : code(_status.code), name(_status.name) {};
-    HttpStatus() : code(STATUS_OK), name(HTTP_STATUS_OK) {};
+    HttpStatusCode code;
+    const char*    message;
+
+    HttpStatus();
+    HttpStatus(const HttpStatus& _status);
+    HttpStatus(const HttpStatusCode code);
 };
+
+const char* get_status_message(HttpStatusCode status);

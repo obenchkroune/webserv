@@ -35,13 +35,14 @@ private:
     IOMultiplexer& operator=(const IOMultiplexer& IOM);
     ~IOMultiplexer();
 
-/* getters & setters */
+    /* getters & setters */
 public:
     const int& GetEpollFd() const;
+
 public:
     static IOMultiplexer& GetInstance();
-    void AddEvent(epoll_event ev, int fd);
-    void RemoveEvent(epoll_event ev, int fd);
-    void StartEventLoop();
-    void Terminate();
+    void                  AddEvent(epoll_event ev, int fd);
+    void                  RemoveEvent(epoll_event ev, int fd);
+    void                  StartEventLoop();
+    void                  Terminate();
 };

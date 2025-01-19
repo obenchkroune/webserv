@@ -14,9 +14,11 @@
 #include <sstream>
 #include <vector>
 
-namespace util {
+namespace utils
+{
 
-std::string strtrim(const std::string& str) {
+std::string strtrim(const std::string& str)
+{
     std::string::const_iterator         it  = str.begin();
     std::string::const_reverse_iterator rit = str.rbegin();
 
@@ -27,10 +29,11 @@ std::string strtrim(const std::string& str) {
     return std::string(it, rit.base());
 }
 
-std::string quoted(const std::string& str, bool double_quotes /* = false */) {
+std::string quoted(const std::string& str, bool double_quotes /* = false */)
+{
     if (double_quotes)
         return "\"" + str + "\"";
     return "'" + str + "'";
 }
 
-} // namespace util
+} // namespace utils

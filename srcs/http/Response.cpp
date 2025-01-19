@@ -111,11 +111,11 @@ void Response::SetStatusHeaders(const char* status_string)
     _headers += CRLF;
     _headers += "Server: " PROGNAME "/" PROGVERSION CRLF;
 
-    time_t t_now   = time(0);
-    tm*    now     = gmtime(&t_now);
-    size_t buff_sz = sizeof("aaa, dd bbb YYYY HH:MM:SS GMT");
-    char   time_buff[buff_sz];
-    size_t bytes = std::strftime(time_buff, buff_sz, "%a, %d %b %Y %H:%M:%S GMT", now);
+    time_t       t_now   = time(0);
+    tm*          now     = gmtime(&t_now);
+    const size_t buff_sz = sizeof("aaa, dd bbb YYYY HH:MM:SS GMT");
+    char         time_buff[buff_sz];
+    size_t       bytes = std::strftime(time_buff, buff_sz, "%a, %d %b %Y %H:%M:%S GMT", now);
     if (bytes == 0)
         throw ResponseException("strftime() failed.");
     time_buff[bytes] = 0;

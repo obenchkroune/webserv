@@ -9,3 +9,6 @@ logs
 # object files and dependencies #
 **/*.o
 **/*.d
+
+# other #
+flowchart.png

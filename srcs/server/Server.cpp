@@ -238,8 +238,7 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
         if (response->GetContentSize() == 0)
             return ServerUtils::SendErrorResponse(
-                HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR),
-                response
+                HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
             );
         response->FinishResponse();
         return QueueResponse(response->GetClientSocketFd(), response);

@@ -18,8 +18,8 @@ class AIOEventListener
 private:
 public:
     AIOEventListener();
-    AIOEventListener(const AIOEventListener &event);
-    AIOEventListener &operator=(const AIOEventListener &event);
+    AIOEventListener(const AIOEventListener& event);
+    AIOEventListener& operator=(const AIOEventListener& event);
     virtual ~AIOEventListener();
 
 public:

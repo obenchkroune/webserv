@@ -14,7 +14,7 @@ std::string                      rootDirective(const Directive& directive);
 std::size_t                      maxSizeDirective(const Directive& directive);
 std::vector<std::string>         indexDirective(const Directive& directive);
 bool                             autoindexDirective(const Directive& directive);
-std::vector<HttpMethod>          allowMethodsDirective(const Directive& directive);
+std::vector<std::string>         allowMethodsDirective(const Directive& directive);
 std::pair<uint16_t, std::string> errorPageDirective(const Directive& directive);
 
 } // namespace ConfigUtils
