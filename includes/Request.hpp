@@ -27,7 +27,7 @@ public:
     ~Request();
 
     Request&   operator=(const Request& other);
-    Request&   operator+=(const std::string& bytes);
+    Request&   operator+=(const std::vector<uint8_t>& bytes);
     HttpStatus parse();
     void       appendBody(const std::string& body);
 
@@ -53,14 +53,16 @@ public:
     void clear();
 
 private:
-    bool                               _is_completed;
+    bool                               _is_headers_completed;
+    bool                               _is_body_completed;
+    std::vector<uint8_t>               _raw_buffer;
     std::stringstream                  _stream_buf;
     std::map<std::string, std::string> _query_params;
     std::string                        _query_params_string;
     std::string                        _method;
     std::string                        _uri;
     std::string                        _http_version;
-    std::string                        _body;
+    std::vector<uint8_t>               _body;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
 

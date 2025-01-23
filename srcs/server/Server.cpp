@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:55:10 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/23 17:36:02 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,7 +206,7 @@ fetch_next_response:
 }
 void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
 {
-    char    buff[RECV_CHUNK];
+    uint8_t buff[RECV_CHUNK];
     ssize_t bytes = recv(ev.data.fd, buff, RECV_CHUNK - 1, MSG_DONTWAIT);
     if (bytes < 0)
     {
@@ -217,7 +217,8 @@ void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
     if (bytes == 0)
         return RemoveClient(ev);
     buff[bytes] = 0;
-    client.ReceiveRequest(buff);
+    std::vector<uint8_t> buffer(buff, buff + bytes);
+    client.ReceiveRequest(buffer);
 }
 void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
 {
