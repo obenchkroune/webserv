@@ -25,7 +25,9 @@ Request& Request::operator=(const Request& other)
         return *this;
     _is_headers_completed = other._is_headers_completed;
     _is_body_completed    = other._is_body_completed;
+    _raw_buffer           = other._raw_buffer;
     _body                 = other._body;
+    _body_length          = other._body_length;
     _headers              = other._headers;
     _http_version         = other._http_version;
     _method               = other._method;
@@ -40,6 +42,7 @@ Request& Request::operator=(const Request& other)
 
 Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 {
+
     if (_is_headers_completed == false)
     {
         _raw_buffer.insert(_raw_buffer.end(), bytes.begin(), bytes.end());
@@ -55,21 +58,16 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
                 _body.insert(_body.end(), _raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
                 _raw_buffer.erase(_raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
             }
+            _raw_buffer.insert(_raw_buffer.end(), 0);
             _stream_buf << _raw_buffer.data();
+            _raw_buffer.clear();
             _status = parse();
         }
     }
     else if (_is_body_completed == false)
     {
-        const HttpHeader* lenght_header = getHeader("Content-Length");
-        if (lenght_header == NULL)
-        {
-            _is_body_completed = true;
-            return *this;
-        }
         _body.insert(_body.end(), bytes.begin(), bytes.end());
-        size_t body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10); // TODO: need to be extracted while parsing ..
-        if (_body.size() == body_length)
+        if (_body.size() == _body_length)
         {
             _is_body_completed = true;
         }
@@ -88,11 +86,6 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 
 Request::~Request() {}
 
-void Request::appendBody(const std::string& body)
-{
-    _body += body;
-}
-
 HttpStatus Request::parse()
 {
     _is_headers_completed = true;
@@ -101,6 +94,14 @@ HttpStatus Request::parse()
     {
         parseRequestLine();
         parseHeaders();
+        const HttpHeader* lenght_header = getHeader("Content-Length");
+        if (lenght_header == NULL)
+        {
+            _body_length       = 0;
+            _is_body_completed = true;
+        }
+        else
+            _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
         return HttpStatus(STATUS_OK);
     }
     catch (const RequestException& e)
@@ -150,7 +151,7 @@ const std::vector<HttpHeader>& Request::getHeaders() const
     return _headers;
 }
 
-std::string Request::getBody() const
+const std::vector<uint8_t>& Request::getBody() const
 {
     return _body;
 }
@@ -201,8 +202,9 @@ void Request::setHeader(const HttpHeader& header)
 
 void Request::clear()
 {
-    _status       = HttpStatus(STATUS_OK);
-    _is_completed = false;
+    _status               = HttpStatus(STATUS_OK);
+    _is_headers_completed = false;
+    _is_body_completed    = false;
     _body.clear();
     _headers.clear();
     _http_version.clear();
@@ -344,7 +346,7 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
     if (request.getBody().empty())
         os << "<empty>\n";
     else
-        os << request.getBody() << '\n';
+        os << request.getBody().data() << '\n';
     os << "===========================================================" << std::endl;
     return os;
 }
