@@ -30,7 +30,7 @@ struct LocationConfig
     std::string                     root;
     std::vector<std::string>        index;
     std::size_t                     max_body_size;
-    std::vector<HttpMethod>         allow_methods;
+    std::vector<std::string>        allow_methods;
     bool                            autoindex;
     bool                            redirect;
     uint16_t                        redirect_code;
@@ -53,7 +53,7 @@ struct ServerConfig
     std::string                     root;
     std::vector<std::string>        index;
     std::size_t                     max_body_size;
-    std::vector<HttpMethod>         allow_methods;
+    std::vector<std::string>        allow_methods;
     bool                            autoindex;
     std::vector<LocationConfig>     locations;
     std::map<uint16_t, std::string> error_pages;

@@ -15,7 +15,8 @@
 
 ServerException::ServerException(std::string reason) throw()
     : _reason("[ServerException::ServerException] [Reason]: " + reason)
-{}
+{
+}
 const char* ServerException::what() const throw()
 {
     return _reason.c_str();

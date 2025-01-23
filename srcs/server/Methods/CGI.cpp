@@ -18,18 +18,14 @@ void ServerClient::ProcessCGI(Response* response)
     if (pipe(pipe_fd) == -1)
     {
         std::cerr << "pipe() failed for cgi file: " << response->GetFilePath() << std::endl;
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     int pid = fork();
     if (pid == -1)
     {
         std::cerr << "fork() failed for cgi file: " << response->GetFilePath() << std::endl;
         close(pipe_fd[0]), close(pipe_fd[1]);
-        return ServerUtils::SendErrorResponse(
-            HttpStatus(STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_INTERNAL_SERVER_ERROR), response
-        );
+        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     if (pid)
     {
@@ -55,9 +51,8 @@ void ServerClient::ProcessCGI(Response* response)
         /*setting up environment*/
         std::vector<char*> envp;
         std::string        env_redirect = "REDIRECT_STATUS=CGI";
-        std::string        env_method =
-            "REQUEST_METHOD=" + ServerUtils::HttpMethodToString(response->GetRequest().getMethod());
-        std::string env_uri   = "REQUEST_URI=" + response->GetRequest().getUri();
+        std::string        env_method   = "REQUEST_METHOD=" + response->GetRequest().getMethod();
+        std::string        env_uri      = "REQUEST_URI=" + response->GetRequest().getUri();
         std::string env_query = "QUERY_STRING=" + response->GetRequest().getQueryParamsString();
         std::string env_script_name = "SCRIPT_FILENAME=";
         env_script_name += response->GetFilePath().c_str();

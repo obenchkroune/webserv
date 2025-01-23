@@ -6,34 +6,41 @@
 #include <iostream>
 #include <limits>
 
-ConfigLexer::ConfigLexer(const std::string& file) : _current_line(1) {
+ConfigLexer::ConfigLexer(const std::string& file) : _current_line(1)
+{
     std::ifstream ifs(file.c_str());
     if (!ifs.is_open())
         throw std::runtime_error("could not open config file: " + file);
     _ss << ifs.rdbuf();
 
     std::string::size_type pos = file.find_last_of('/');
-    if (pos != std::string::npos) {
+    if (pos != std::string::npos)
+    {
         _directory = file.substr(0, pos + 1);
-    } else {
+    }
+    else
+    {
         _directory = "./";
     }
 }
 
-ConfigLexer::~ConfigLexer() {
-}
+ConfigLexer::~ConfigLexer() {}
 
-const Token ConfigLexer::peek() {
+const Token ConfigLexer::peek()
+{
     std::ifstream::pos_type pos   = _ss.tellg();
     Token                   token = getNextToken();
     _ss.seekg(pos);
     return token;
 }
 
-const Token ConfigLexer::getNextToken() {
-    while (_ss && !_ss.eof()) {
+const Token ConfigLexer::getNextToken()
+{
+    while (_ss && !_ss.eof())
+    {
         char c = _ss.peek();
-        switch (c) {
+        switch (c)
+        {
         case '#':
             _ss.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             _current_line++;
@@ -58,27 +65,32 @@ const Token ConfigLexer::getNextToken() {
         default:
             std::string reserved("#{};");
             std::string value;
-            while (_ss.good()) {
+            while (_ss.good())
+            {
                 char c = _ss.peek();
                 if (reserved.find(c) != std::string::npos || std::isspace(c))
                     break;
                 value += _ss.get();
             }
-            if (value == "include") {
+            if (value == "include")
+            {
                 std::string path = getNextToken().value;
-                if (path.empty()) {
+                if (path.empty())
+                {
                     throw std::runtime_error(
                         "include directive must have a path." + utils::to_string(_current_line)
                     );
                 }
-                if (peek().type != T_SEMICOL) {
+                if (peek().type != T_SEMICOL)
+                {
                     throw InvalidConfigException(_current_line);
                 }
                 getNextToken();
                 includeFile(path);
                 return getNextToken();
             }
-            if (!value.empty()) {
+            if (!value.empty())
+            {
                 return Token(T_WORD, value);
             }
         }
@@ -86,7 +98,8 @@ const Token ConfigLexer::getNextToken() {
     return Token(T_EOF);
 }
 
-void ConfigLexer::includeFile(const std::string& path) {
+void ConfigLexer::includeFile(const std::string& path)
+{
     std::string file = (path[0] != '/') ? _directory + path : path;
 
     std::ifstream ifs(file.c_str());
@@ -100,20 +113,23 @@ void ConfigLexer::includeFile(const std::string& path) {
     _ss.seekg(current_pos);
 }
 
-const Token ConfigLexer::expect(Token token) {
+const Token ConfigLexer::expect(Token token)
+{
     const Token& tok = this->getNextToken();
     if (token == tok)
         return tok;
     throw InvalidConfigException(*this);
 }
 
-const Token ConfigLexer::expect(TokenType type) {
+const Token ConfigLexer::expect(TokenType type)
+{
     const Token& tok = this->getNextToken();
     if (type == tok.type)
         return tok;
     throw InvalidConfigException(*this);
 }
 
-std::size_t ConfigLexer::getCurrentLine() const {
+std::size_t ConfigLexer::getCurrentLine() const
+{
     return _current_line;
 }

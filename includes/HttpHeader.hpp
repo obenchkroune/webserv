@@ -2,7 +2,8 @@
 
 #include "Http.hpp"
 
-struct HttpHeaderValue {
+struct HttpHeaderValue
+{
     std::string                             value;
     std::multimap<std::string, std::string> parameters;
     float                                   quality_factor;
@@ -16,7 +17,8 @@ struct HttpHeaderValue {
     HttpHeaderValue& operator=(const HttpHeaderValue& other);
 };
 
-struct HttpHeader {
+struct HttpHeader
+{
 public:
     std::string                  name;
     std::string                  raw_value;

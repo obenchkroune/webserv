@@ -15,4 +15,4 @@
 #include <iostream>
 
 struct ServerConfig;
-void printServerConfig(const ServerConfig &config);
+void printServerConfig(const ServerConfig& config);

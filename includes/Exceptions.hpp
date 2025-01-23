@@ -33,7 +33,7 @@ class Server;
 class ServerException : public std::exception
 {
 private:
-    std::string   _reason;
+    std::string _reason;
 
 public:
     ServerException(std::string reason) throw();
@@ -51,7 +51,6 @@ public:
     const char* what() const throw();
     ~IOMultiplexerException() throw();
 };
-
 
 class ServerClientException : public std::exception
 {
