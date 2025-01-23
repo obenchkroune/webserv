@@ -88,13 +88,25 @@
       <h1>Webserv/php-cgi</h1>
       <div class="badge">php cgi is up and running</div>
 <?php
+$name = "";
+
 if (isset($_GET['name']))
 {
-    echo "<div class='status'> <h4> Hello Mr. ". $_GET['name']."</h4></div>";
+    setcookie('name', $_GET['name']);
+    $name = $_GET['name'];
+}
+else if (isset($_COOKIE['name']))
+{
+    $name = $_COOKIE['name'];
+}
+
+if ($name === "")
+{
+  echo "<div class='status'> <h4> Hello Mr. Uknown, kindly provide your name ie. ?name=John<br>This will set a cookie in your system so we know who you are next time.</h4></div>";
 }
 else
 {
-    echo "<div class='status'> <h4> Hello Mr. Uknown, kindly provide your name ie. ?name=John</h4></div>";
+  echo "<div class='status'> <h4> Hello Mr. ".$name."</h4></div>";
 }
 ?>
       <div class="server-info">

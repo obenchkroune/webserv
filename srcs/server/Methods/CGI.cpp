@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/09 15:17:31 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/23 16:55:54 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,13 @@ void ServerClient::ProcessCGI(Response* response)
         std::string env_query = "QUERY_STRING=" + response->GetRequest().getQueryParamsString();
         std::string env_script_name = "SCRIPT_FILENAME=";
         env_script_name += response->GetFilePath().c_str();
+        const HttpHeader* cookies = response->GetRequest().getHeader("Cookie");
+        std::string env_cookies;
+        if (cookies != NULL)
+        {
+            env_cookies = "HTTP_COOKIE=" + cookies->raw_value;
+            envp.insert(envp.end(), (char*)env_cookies.c_str());
+        }
         /*inserting environment*/
         envp.insert(envp.end(), (char*)env_redirect.c_str());
         envp.insert(envp.end(), (char*)env_method.c_str());
