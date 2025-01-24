@@ -7,7 +7,10 @@
 #include <iostream>
 #include <sstream>
 
-Request::Request() : _is_headers_completed(false), _is_body_completed(false) {}
+Request::Request()
+    : _is_headers_completed(false), _is_body_completed(false), _content_type_header(NULL)
+{
+}
 
 Request::Request(const std::string& request)
     : _is_headers_completed(false), _is_body_completed(false), _stream_buf(request)
@@ -28,6 +31,7 @@ Request& Request::operator=(const Request& other)
     _raw_buffer           = other._raw_buffer;
     _body                 = other._body;
     _body_length          = other._body_length;
+    _content_type_header  = other._content_type_header;
     _headers              = other._headers;
     _http_version         = other._http_version;
     _method               = other._method;
@@ -67,8 +71,11 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
     {
         _body.insert(_body.end(), bytes.begin(), bytes.end());
         if (_body.size() == _body_length)
+        {
             _is_body_completed = true;
-        else
+            _status            = ValidateMultipart();
+        }
+        else if (_body.size() > _body_length)
             assert(!"There is some overflow that need to be carried on to next request..");
     }
     else
@@ -89,6 +96,7 @@ HttpStatus Request::parse()
     {
         parseRequestLine();
         parseHeaders();
+        _content_type_header            = getHeader("Content-Type");
         const HttpHeader* lenght_header = getHeader("Content-Length");
         if (lenght_header == NULL)
         {
@@ -98,9 +106,12 @@ HttpStatus Request::parse()
         else
         {
             _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
-            if (_body_length == _body.size())
+            if (_body.size() == _body_length)
+            {
                 _is_body_completed = true;
-            else
+                return ValidateMultipart();
+            }
+            else if (_body.size() > _body_length)
                 assert(!"There is some overflow that need to be carried on to next request..");
         }
         return HttpStatus(STATUS_OK);
@@ -150,6 +161,11 @@ const HttpHeader* Request::getHeader(const std::string& key) const
 const std::vector<HttpHeader>& Request::getHeaders() const
 {
     return _headers;
+}
+
+const HttpHeader* Request::getContentTypeHeader() const
+{
+    return _content_type_header;
 }
 
 const std::vector<uint8_t>& Request::getBody() const
@@ -207,6 +223,7 @@ void Request::clear()
     _is_headers_completed = false;
     _is_body_completed    = false;
     _body.clear();
+    _content_type_header = NULL;
     _headers.clear();
     _http_version.clear();
     _method.clear();
@@ -314,6 +331,17 @@ void Request::parseHeaders()
         setHeader(header);
     }
     // TODO: check for the required host headers (the server instance is needed)
+}
+
+HttpStatus Request::ValidateMultipart()
+{
+    if (_content_type_header != NULL && _content_type_header->values.size() &&
+        _content_type_header->values.front().value == "multipart/form-data")
+    {
+        if (_content_type_header->values.size() < 2)
+            return HttpStatus(STATUS_BAD_REQUEST);
+    }
+    return HttpStatus(STATUS_OK);
 }
 
 std::ostream& operator<<(std::ostream& os, const Request& request)

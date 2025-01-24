@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/24 00:57:39 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/24 21:33:44 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,7 +97,7 @@ void ServerClient::ProcessCGI(Response* response)
             env_cookies = "HTTP_COOKIE=" + cookies->raw_value;
             envp.insert(envp.end(), (char*)env_cookies.c_str());
         }
-        const HttpHeader* content_type = response->GetRequest().getHeader("Content-Type");
+        const HttpHeader* content_type = response->GetRequest().getContentTypeHeader();
         std::string       env_content_type;
         if (content_type != NULL)
         {
