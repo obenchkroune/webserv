@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/24 01:12:53 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/24 11:53:26 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -236,6 +236,7 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         event.data.ptr    = this;
         _cgi_responses.erase(ev.data.fd);
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
+        close(ev.data.fd);
         if (response->GetContentSize() == 0)
             return ServerUtils::SendErrorResponse(
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
@@ -294,6 +295,7 @@ void Server::Terminate()
             ev.events   = EPOLLIN;
             ev.data.ptr = this;
             IOMultiplexer::GetInstance().RemoveEvent(ev, it->first);
+            close(it->first);
         }
     }
 }
