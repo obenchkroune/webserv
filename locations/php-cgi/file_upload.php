@@ -87,36 +87,35 @@
     <div class="container">
       <h1>Webserv/php-cgi</h1>
       <div class="badge">php cgi is up and running</div>
-<?php
-$name = "";
-
-if (isset($_GET['name']))
-{
-    if (!isset($_COOKIE['name']) || $_COOKIE['name'] !== $_GET['name'])
-      setcookie('name', $_GET['name'],time()+60*60*24*30);
-    $name = $_GET['name'];
-}
-else if (isset($_COOKIE['name']))
-{
-    $name = $_COOKIE['name'];
-}
-
-if ($name === "")
-{
-  echo "<div class='status'> <h4> Hello Mr. Uknown, kindly provide your name ie. ?name=John<br>This will set a cookie in your system so we know who you are next time.</h4></div>";
-}
-else
-{
-  echo "<div class='status'> <h4> Hello Mr. ".$name."</h4></div>";
-}
-?>
-      <div class="server-info">
+    <div class='status'> Secret Cookie</div>
+    <?php
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_POST["file_name"]) && isset($_POST["file_description"]) && isset($_POST["file"]))
+            {
+                echo "<div class='status'>Your file was uploaded correctly.</div>";
+                echo "<div class='status'>File name: ".$_POST["file_name"]."</div>";
+                echo "<div class='status'>File description: ".$_POST["file_description"]."</div>";
+                echo "<div class='status'>File content: ".$_POST["file"]."</div>";
+            }
+            else
+            {
+                echo "<div class='status'>Error something went wrong.</div>";
+            }
+        }
+    ?>
+    <div class='status'>Upload your file here:</div>
+    <form action="file_upload.php" method="post" enctype="multipart/form-data">
+        <label for="file_name">File Name:</label>
+        <input type="text" id="file_name" name="file_name"><br><br>
+        <label for="file_description">File Description:</label>
+        <input type="text" id="file_description" name="file_description"><br><br>
+        <label for="file">Select a file:</label>
+        <input type="file" id="file" name="file"><br><br>
+        <input type="submit" value="Submit">
+    </form>
+    <div class="server-info">
         <p>Built with C++98 | HTTP/1.1 Compliant</p>
         <a href="/">main</a>
-        |
-        <a href="/php-cgi/secret.php">Secret Message</a>
-        |
-        <a href="/php-cgi/file_upload.php">File Upload</a>
         |
         <a href="/php-cgi/php_info.php">php_info</a>
         |

@@ -63,6 +63,7 @@ private:
     std::string                        _http_version;
     std::vector<uint8_t>               _body;
     size_t                             _body_length;
+    std::string                        _content_type;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
 

@@ -68,7 +68,7 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
         _body.insert(_body.end(), bytes.begin(), bytes.end());
         if (_body.size() == _body_length)
             _is_body_completed = true;
-        else
+        else if (_body.size() > _body_length)
             assert(!"There is some overflow that need to be carried on to next request..");
     }
     else
@@ -98,10 +98,20 @@ HttpStatus Request::parse()
         else
         {
             _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
-            if (_body_length == _body.size())
+            if ( _body.size() == _body_length)
                 _is_body_completed = true;
-            else
+            else if (_body.size() > _body_length)
                 assert(!"There is some overflow that need to be carried on to next request..");
+        }
+        const HttpHeader* content_type_header = getHeader("Content-Type");
+        _content_type;
+        if (content_type_header != NULL && content_type_header->values.size())
+            _content_type = content_type_header->values.front().value;
+        if (_content_type == "multipart/form-data")
+        {
+            if (content_type_header->values.size() < 2)
+                return HttpStatus(STATUS_BAD_REQUEST);
+            _body.insert(_body.begin(), (content_type_header->values.at(1)).value.begin(), (content_type_header->values.at(1)).value.end());
         }
         return HttpStatus(STATUS_OK);
     }
@@ -207,6 +217,7 @@ void Request::clear()
     _is_headers_completed = false;
     _is_body_completed    = false;
     _body.clear();
+    _content_type.clear();
     _headers.clear();
     _http_version.clear();
     _method.clear();

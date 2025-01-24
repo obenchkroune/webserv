@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/24 00:57:39 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/24 14:41:36 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,19 @@ void ServerClient::ProcessCGI(Response* response)
             return ServerUtils::SendErrorResponse(
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
             );
+        }
+        const HttpHeader* content_type = response->GetRequest().getHeader("Content-Type");
+        std::string       env_content_type;
+        if (content_type == NULL || !content_type->values.size())
+            return ServerUtils::SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST), response);
+        const std::string& type = content_type->values.front().value;
+        if (type == "multipart/form-data")
+        {
+            if (content_type->values.size() < 2)
+                return ServerUtils::SendErrorResponse(HttpStatus(STATUS_BAD_REQUEST), response);
+            const std::string& boundary = (content_type->values.at(1)).value;
+            write(cgi_input_fd, boundary.c_str(), boundary.size());
+            write(cgi_input_fd, "\n", 1);
         }
         ssize_t bytes = write(
             cgi_input_fd, response->GetRequest().getBody().data(),
@@ -101,8 +114,10 @@ void ServerClient::ProcessCGI(Response* response)
         std::string       env_content_type;
         if (content_type != NULL)
         {
-            env_content_type = "CONTENT_TYPE=" + content_type->raw_value;
+
+            env_content_type = "CONTENT_TYPE=" + content_type->values.front().value;
             envp.insert(envp.end(), (char*)env_content_type.c_str());
+            std::cerr << "====> " << env_content_type << std::endl;
         }
         std::stringstream content_lenght;
         content_lenght << "CONTENT_LENGTH=" << response->GetRequest().getBody().size();
