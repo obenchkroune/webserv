@@ -2,18 +2,16 @@
 #include "Http.hpp"
 #include "Utils.hpp"
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <sstream>
 
-Request::Request() : _is_completed(false)
-{
-    //
-}
+Request::Request() : _is_headers_completed(false), _is_body_completed(false) {}
 
-Request::Request(const std::string& request) : _is_completed(false), _stream_buf(request)
+Request::Request(const std::string& request)
+    : _is_headers_completed(false), _is_body_completed(false), _stream_buf(request)
 {
-    //
 }
 
 Request::Request(const Request& other)
@@ -25,54 +23,86 @@ Request& Request::operator=(const Request& other)
 {
     if (this == &other)
         return *this;
-    _is_completed        = other._is_completed;
-    _body                = other._body;
-    _headers             = other._headers;
-    _http_version        = other._http_version;
-    _method              = other._method;
-    _uri                 = other._uri;
-    _query_params_string = other._query_params_string;
-    _query_params        = other._query_params;
+    _is_headers_completed = other._is_headers_completed;
+    _is_body_completed    = other._is_body_completed;
+    _raw_buffer           = other._raw_buffer;
+    _body                 = other._body;
+    _body_length          = other._body_length;
+    _headers              = other._headers;
+    _http_version         = other._http_version;
+    _method               = other._method;
+    _uri                  = other._uri;
+    _query_params_string  = other._query_params_string;
+    _query_params         = other._query_params;
 
     _stream_buf.clear();
     _stream_buf << other._stream_buf.rdbuf();
     return *this;
 }
 
-Request& Request::operator+=(const std::string& bytes)
+Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 {
-    const char* end            = CRLF CRLF;
-    size_t                 pos = bytes.find(end);
-    if (pos != std::string::npos)
+    if (_is_headers_completed == false)
     {
-        _stream_buf << bytes.substr(0, pos + strlen(end));
-        _status = parse();
-        _body   = bytes.substr(pos + strlen(end));
-        return *this;
+        _raw_buffer.insert(_raw_buffer.end(), bytes.begin(), bytes.end());
+        const char* headers_end = CRLF CRLF;
+        const char* found       = std::strstr((const char*)_raw_buffer.data(), headers_end);
+
+        if (found != NULL)
+        {
+            size_t headers_end_pos =
+                (found - (const char*)_raw_buffer.data()) + strlen(headers_end);
+            if (headers_end_pos < _raw_buffer.size())
+            {
+                _body.insert(_body.end(), _raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
+                _raw_buffer.erase(_raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
+            }
+            _raw_buffer.insert(_raw_buffer.end(), 0);
+            _stream_buf << _raw_buffer.data();
+            _raw_buffer.clear();
+            _status = parse();
+        }
     }
-    if (_is_completed)
-        _body += bytes;
+    else if (_is_body_completed == false)
+    {
+        _body.insert(_body.end(), bytes.begin(), bytes.end());
+        if (_body.size() == _body_length)
+            _is_body_completed = true;
+        else
+            assert(!"There is some overflow that need to be carried on to next request..");
+    }
     else
-        _stream_buf << bytes;
+    {
+        assert(!"IMPOSSIBLE TO REACH!");
+    }
 
     return *this;
 }
 
 Request::~Request() {}
 
-void Request::appendBody(const std::string& body)
-{
-    _body += body;
-}
-
 HttpStatus Request::parse()
 {
-    _is_completed = true;
+    _is_headers_completed = true;
 
     try
     {
         parseRequestLine();
         parseHeaders();
+        const HttpHeader* lenght_header = getHeader("Content-Length");
+        if (lenght_header == NULL)
+        {
+            _body_length       = 0;
+            _is_body_completed = true;
+        }
+        else
+        {
+            _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
+            if (_body_length == _body.size())
+                _is_body_completed = true;
+            else
+                assert(!"There is some overflow that need to be carried on to next request..");
+        }
         return HttpStatus(STATUS_OK);
     }
     catch (const RequestException& e)
@@ -93,7 +123,7 @@ const HttpStatus& Request::getStatus() const
 
 bool Request::isCompleted() const
 {
-    return _is_completed;
+    return _is_headers_completed && _is_body_completed;
 }
 
 std::string Request::getUri() const
@@ -122,7 +152,7 @@ const std::vector<HttpHeader>& Request::getHeaders() const
     return _headers;
 }
 
-std::string Request::getBody() const
+const std::vector<uint8_t>& Request::getBody() const
 {
     return _body;
 }
@@ -173,8 +203,9 @@ void Request::setHeader(const HttpHeader& header)
 
 void Request::clear()
 {
-    _status       = HttpStatus(STATUS_OK);
-    _is_completed = false;
+    _status               = HttpStatus(STATUS_OK);
+    _is_headers_completed = false;
+    _is_body_completed    = false;
     _body.clear();
     _headers.clear();
     _http_version.clear();
@@ -316,7 +347,7 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
     if (request.getBody().empty())
         os << "<empty>\n";
     else
-        os << request.getBody() << '\n';
+        os << request.getBody().data() << '\n';
     os << "===========================================================" << std::endl;
     return os;
 }

@@ -27,9 +27,8 @@ public:
     ~Request();
 
     Request&   operator=(const Request& other);
-    Request&   operator+=(const std::string& bytes);
+    Request&   operator+=(const std::vector<uint8_t>& bytes);
     HttpStatus parse();
-    void       appendBody(const std::string& body);
 
     // getters
     const std::string                         getMethod() const;
@@ -37,7 +36,7 @@ public:
     std::string                               getVersion() const;
     const HttpHeader*                         getHeader(const std::string& key) const;
     const std::vector<HttpHeader>&            getHeaders() const;
-    std::string                               getBody() const;
+    const std::vector<uint8_t>&               getBody() const;
     const std::map<std::string, std::string>& getQueryParams() const;
     const std::string&                        getQueryParamsString() const;
     const std::stringstream&                  getRawBuffer() const;
@@ -53,14 +52,17 @@ public:
     void clear();
 
 private:
-    bool                               _is_completed;
+    bool                               _is_headers_completed;
+    bool                               _is_body_completed;
+    std::vector<uint8_t>               _raw_buffer;
     std::stringstream                  _stream_buf;
     std::map<std::string, std::string> _query_params;
     std::string                        _query_params_string;
     std::string                        _method;
     std::string                        _uri;
     std::string                        _http_version;
-    std::string                        _body;
+    std::vector<uint8_t>               _body;
+    size_t                             _body_length;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
 

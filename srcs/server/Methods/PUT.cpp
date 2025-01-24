@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   PUT.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:32:02 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/09 15:46:03 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/23 18:47:45 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ void ServerClient::ProcessPUT(Response* response)
             response
         ); // TODO: check ngnix behaviour when permission denied
     int bytes = write(
-        put_fd, response->GetRequest().getBody().c_str(), response->GetRequest().getBody().size()
+        put_fd, response->GetRequest().getBody().data(), response->GetRequest().getBody().size()
     );
     close(put_fd);
     if (bytes < 0 || (size_t)bytes != response->GetRequest().getBody().size())

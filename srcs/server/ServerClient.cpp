@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/23 16:42:07 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/23 18:50:19 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ int ServerClient::GetClientSocketfd() const
     return _client_socket_fd;
 }
 
-void ServerClient::ReceiveRequest(const std::string buff)
+void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
 {
     _request += buff;
 

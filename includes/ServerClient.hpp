@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/09 15:44:22 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/23 17:35:01 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ private:
     ServerClient& operator=(const ServerClient& client);
 
 public:
-    void ReceiveRequest(const std::string request);
+    void ReceiveRequest(const std::vector<uint8_t>& buff);
     int  GetClientSocketfd() const;
 
 private:

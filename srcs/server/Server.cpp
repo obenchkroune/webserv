@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:55:10 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/24 11:53:26 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,8 @@ void Server::QueueCGIResponse(int pipe_fd, Response* response)
     peer_ev.events   = EPOLLIN;
     peer_ev.data.ptr = this;
     IOMultiplexer::GetInstance().AddEvent(peer_ev, pipe_fd);
-    std::cout << "CGI Response queued for pipe fd: " << pipe_fd << std::endl;
+    std::cout << "CGI listening on pipe fd: " << pipe_fd
+              << " for client fd: " << response->GetClientSocketFd() << std::endl;
 }
 void Server::ConsumeEvent(const epoll_event ev)
 {
@@ -206,7 +207,7 @@ fetch_next_response:
 }
 void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
 {
-    char    buff[RECV_CHUNK];
+    uint8_t buff[RECV_CHUNK];
     ssize_t bytes = recv(ev.data.fd, buff, RECV_CHUNK - 1, MSG_DONTWAIT);
     if (bytes < 0)
     {
@@ -217,11 +218,11 @@ void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
     if (bytes == 0)
         return RemoveClient(ev);
     buff[bytes] = 0;
-    client.ReceiveRequest(buff);
+    std::vector<uint8_t> buffer(buff, buff + bytes);
+    client.ReceiveRequest(buffer);
 }
 void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
 {
-    std::cout << "CGI RESPONSE reading from pipe_fd: " << ev.data.fd << std::endl;
     std::map<int, ServerClient>::iterator clients_it = _clients.find(response->GetClientSocketFd());
     if (clients_it == _clients.end())
         throw ServerException("HandleCGIEPOLLIN(): Client not found.");
@@ -231,11 +232,11 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         throw ServerException("HandleCGIEPOLLIN(): read() failed.");
     if (bytes == 0)
     {
-        std::cout << "CGI RESPONSE reading ended for pipe_fd: " << ev.data.fd << std::endl;
         epoll_event event = ev;
         event.data.ptr    = this;
         _cgi_responses.erase(ev.data.fd);
         IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
+        close(ev.data.fd);
         if (response->GetContentSize() == 0)
             return ServerUtils::SendErrorResponse(
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
@@ -294,6 +295,7 @@ void Server::Terminate()
             ev.events   = EPOLLIN;
             ev.data.ptr = this;
             IOMultiplexer::GetInstance().RemoveEvent(ev, it->first);
+            close(it->first);
         }
     }
 }
