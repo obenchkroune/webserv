@@ -36,6 +36,7 @@ public:
     std::string                               getVersion() const;
     const HttpHeader*                         getHeader(const std::string& key) const;
     const std::vector<HttpHeader>&            getHeaders() const;
+    const HttpHeader*                         getContentTypeHeader() const;
     const std::vector<uint8_t>&               getBody() const;
     const std::map<std::string, std::string>& getQueryParams() const;
     const std::string&                        getQueryParamsString() const;
@@ -63,7 +64,7 @@ private:
     std::string                        _http_version;
     std::vector<uint8_t>               _body;
     size_t                             _body_length;
-    std::string                        _content_type;
+    const HttpHeader*                  _content_type_header;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
 
@@ -71,6 +72,7 @@ private:
     std::map<std::string, std::string> parseQueryParams(const std::string query);
     std::string                        getHeaderLine();
     void                               parseHeaders();
+    HttpStatus                         ValidateMultipart();
 };
 
 std::ostream& operator<<(std::ostream& os, const Request& request);
