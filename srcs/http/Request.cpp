@@ -42,7 +42,6 @@ Request& Request::operator=(const Request& other)
 
 Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 {
-
     if (_is_headers_completed == false)
     {
         _raw_buffer.insert(_raw_buffer.end(), bytes.begin(), bytes.end());
@@ -68,13 +67,9 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
     {
         _body.insert(_body.end(), bytes.begin(), bytes.end());
         if (_body.size() == _body_length)
-        {
             _is_body_completed = true;
-        }
         else
-        {
             assert(!"There is some overflow that need to be carried on to next request..");
-        }
     }
     else
     {
@@ -101,7 +96,13 @@ HttpStatus Request::parse()
             _is_body_completed = true;
         }
         else
+        {
             _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
+            if (_body_length == _body.size())
+                _is_body_completed = true;
+            else
+                assert(!"There is some overflow that need to be carried on to next request..");
+        }
         return HttpStatus(STATUS_OK);
     }
     catch (const RequestException& e)

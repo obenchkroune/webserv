@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/09 15:45:18 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/24 01:16:22 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ HttpStatus ServerClient::CheckRequest(Response* response)
         ) == response->GetFileLocation()->allow_methods.end())
         return HttpStatus(STATUS_METHOD_NOT_ALLOWED);
     std::string file_path =
-        response->GetFileLocation()->root + '/' +
+        response->GetFileLocation()->root +
         response->GetRequest().getUri().substr(response->GetFileLocation()->path.length());
     if (ServerUtils::validateFileLocation(response->GetFileLocation()->root, file_path) == false)
     {

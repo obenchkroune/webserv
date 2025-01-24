@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/23 17:36:02 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/24 01:12:53 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,7 +113,8 @@ void Server::QueueCGIResponse(int pipe_fd, Response* response)
     peer_ev.events   = EPOLLIN;
     peer_ev.data.ptr = this;
     IOMultiplexer::GetInstance().AddEvent(peer_ev, pipe_fd);
-    std::cout << "CGI Response queued for pipe fd: " << pipe_fd << std::endl;
+    std::cout << "CGI listening on pipe fd: " << pipe_fd
+              << " for client fd: " << response->GetClientSocketFd() << std::endl;
 }
 void Server::ConsumeEvent(const epoll_event ev)
 {
@@ -222,7 +223,6 @@ void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
 }
 void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
 {
-    std::cout << "CGI RESPONSE reading from pipe_fd: " << ev.data.fd << std::endl;
     std::map<int, ServerClient>::iterator clients_it = _clients.find(response->GetClientSocketFd());
     if (clients_it == _clients.end())
         throw ServerException("HandleCGIEPOLLIN(): Client not found.");
@@ -232,7 +232,6 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         throw ServerException("HandleCGIEPOLLIN(): read() failed.");
     if (bytes == 0)
     {
-        std::cout << "CGI RESPONSE reading ended for pipe_fd: " << ev.data.fd << std::endl;
         epoll_event event = ev;
         event.data.ptr    = this;
         _cgi_responses.erase(ev.data.fd);

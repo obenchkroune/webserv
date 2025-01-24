@@ -87,34 +87,43 @@
     <div class="container">
       <h1>Webserv/php-cgi</h1>
       <div class="badge">php cgi is up and running</div>
-<?php
-$name = "";
-
-if (isset($_GET['name']))
-{
-    if (!isset($_COOKIE['name']) || $_COOKIE['name'] !== $_GET['name'])
-      setcookie('name', $_GET['name'],time()+60*60*24*30);
-    $name = $_GET['name'];
-}
-else if (isset($_COOKIE['name']))
-{
-    $name = $_COOKIE['name'];
-}
-
-if ($name === "")
-{
-  echo "<div class='status'> <h4> Hello Mr. Uknown, kindly provide your name ie. ?name=John<br>This will set a cookie in your system so we know who you are next time.</h4></div>";
-}
-else
-{
-  echo "<div class='status'> <h4> Hello Mr. ".$name."</h4></div>";
-}
-?>
-      <div class="server-info">
+    <div class='status'> Secret Cookie</div>
+    <?php
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_POST["secret_name"]) && isset($_POST["secret"]))
+            {
+                setcookie("secret_name", $_POST["secret_name"]);
+                setcookie("secret", $_POST["secret"]);
+                $_COOKIE['secret_name'] = $_POST["secret_name"];
+                $_COOKIE['secret'] = $_POST["secret"];
+                echo "<div class='status'>Your secret is saved until you close the browser.</div>";
+            }
+            else
+            {
+                echo "<div class='status'>Error secret not saved.</div>";
+            }
+        }
+        if (isset($_COOKIE['secret_name']) && isset($_COOKIE['secret']))
+        {
+            echo "<h3>Hello mr. ". $_COOKIE['secret_name']."</h3>";
+            echo "<h3>Your secret message is:<br>". $_COOKIE['secret']."</h3>";
+        }
+        else
+        {
+            echo "<h3>Fill the secret form bellow to save your secret.</h3>";
+        }
+    ?>
+    <div class='status'>Change your secret message:</div>
+    <form action="secret.php" method="post">
+        <label for="secret_name">Secret Name:</label>
+        <input type="text" id="secret_name" name="secret_name"><br><br>
+        <label for="secret">Secret:</label>
+        <input type="text" id="secret" name="secret"><br><br>
+        <input type="submit" value="Submit">
+    </form>
+    <div class="server-info">
         <p>Built with C++98 | HTTP/1.1 Compliant</p>
         <a href="/">main</a>
-        |
-        <a href="/php-cgi/secret.php">secret message</a>
         |
         <a href="/php-cgi/php_info.php">php_info</a>
         |
