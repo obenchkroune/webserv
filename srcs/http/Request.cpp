@@ -25,9 +25,12 @@ Request& Request::operator=(const Request& other)
     _is_headers_completed     = other._is_headers_completed;
     _is_body_completed        = other._is_body_completed;
     _is_chunked               = other._is_chunked;
+    _chunk_size               = other._chunk_size;
     _raw_buffer               = other._raw_buffer;
     _body                     = other._body;
     _body_length              = other._body_length;
+    _body_written_bytes       = other._body_written_bytes;
+    _body_fd                  = other._body_fd;
     _content_type_header      = other._content_type_header;
     _transfer_encoding_header = other._transfer_encoding_header;
     _headers                  = other._headers;
@@ -68,7 +71,11 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
     else if (_is_body_completed == false)
     {
         _body.insert(_body.end(), bytes.begin(), bytes.end());
-        if (_body.size() == _body_length)
+        if (_is_chunked)
+        {
+            writeChunked();
+        }
+        else if (_body.size() == _body_length)
         {
             _is_body_completed = true;
             _status            = ValidateMultipart();
@@ -86,6 +93,73 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 
 Request::~Request() {}
 
+void Request::writeChunked()
+{
+    size_t offset = 0;
+    if (_chunk_size)
+    {
+        size_t to_write = std::min(_chunk_size, _body.size() - offset);
+        if (to_write)
+        {
+            ssize_t bytes_written = write(_body_fd, _body.data() + offset, to_write);
+            if (bytes_written < 0 || to_write != (size_t)bytes_written)
+            {
+                std::cerr << "Error writing received request body." << std::endl;
+                close(_body_fd);
+                throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR));
+            }
+            offset += bytes_written;
+            _body_written_bytes += bytes_written;
+            if (to_write < _chunk_size)
+            {
+                _chunk_size -= bytes_written;
+                return;
+            }
+        }
+    }
+    const char* chunk_size_ln = std::strstr((const char*)(_body.data() + offset), CRLF);
+    if (chunk_size_ln)
+    {
+        _chunk_size = std::strtoul((const char*)(_body.data() + offset), NULL, 16);
+        offset      = (chunk_size_ln + 2) - ((const char*)_body.data());
+        for (; offset < _body.size() && chunk_size_ln && _chunk_size;)
+        {
+            size_t to_write = std::min(_chunk_size, _body.size() - offset);
+            if (to_write)
+            {
+                ssize_t bytes_written = write(_body_fd, _body.data() + offset, to_write);
+                if (bytes_written < 0 || to_write != (size_t)bytes_written)
+                {
+                    std::cerr << "Error writing received request body." << std::endl;
+                    close(_body_fd);
+                    throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR));
+                }
+                offset += bytes_written;
+                _body_written_bytes += bytes_written;
+                if (to_write < _chunk_size)
+                    _chunk_size -= bytes_written;
+            }
+            chunk_size_ln = std::strstr((const char*)(_body.data() + offset), CRLF);
+            if (chunk_size_ln)
+            {
+                _chunk_size = std::strtoul((const char*)(_body.data() + offset), NULL, 16);
+                offset      = (chunk_size_ln + 2) - ((const char*)_body.data());
+            }
+        }
+        if (offset)
+        {
+            if (offset == _body.size())
+                _body.clear();
+            else
+                _body.erase(_body.begin(), _body.begin() + offset);
+        }
+        if (_chunk_size == 0)
+        {
+            _is_body_completed = true;
+        }
+    }
+}
+
 HttpStatus Request::parse()
 {
     _is_headers_completed = true;
@@ -100,6 +174,12 @@ HttpStatus Request::parse()
                                                      "chunked") // this should be case insensitive
         {
             _is_chunked = true;
+            std::stringstream fname;
+            fname << "/tmp/webserv_tmp_" << time(0);
+            _body_fd =
+                open(fname.str().c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP);
+            if (_body.size())
+                writeChunked();
         }
         else
         {
@@ -141,7 +221,7 @@ const HttpStatus& Request::getStatus() const
 
 bool Request::isCompleted() const
 {
-    return _is_headers_completed && _is_body_completed;
+    return _status.code != STATUS_OK || (_is_headers_completed && _is_body_completed);
 }
 
 std::string Request::getUri() const
@@ -230,8 +310,11 @@ void Request::clear()
     _is_headers_completed     = false;
     _is_body_completed        = false;
     _is_chunked               = false;
+    _chunk_size               = 0;
     _content_type_header      = NULL;
     _transfer_encoding_header = NULL;
+    _body_fd                  = -1;
+    _body_written_bytes       = 0;
     _body.clear();
     _headers.clear();
     _http_version.clear();
