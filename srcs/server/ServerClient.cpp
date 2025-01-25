@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/24 21:35:55 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/25 15:59:22 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
             _request.clear();
             return ServerUtils::SendErrorResponse(_request.getStatus(), response);
         }
-        std::cerr << ">> Request uri: " << _request.getUri() << " Request status after parsing: " << _request.getStatus().message << std::endl;
+        std::cerr << "<<< Request uri: " << _request.getUri() << " | Request status after parsing: " << _request.getStatus().message << std::endl;
         try
         {
             ProcessRequest(_request);
@@ -80,6 +80,7 @@ void ServerClient::ProcessRequest(const Request& request)
     if (response->GetFileLocation() == response->GetVirtualServer().locations.end())
         return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
+    std::cerr << "URI FOUND location: " << response->GetFileLocation()->root <<  "check: " << check.message <<std::endl;
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
         return auto_index(response);
     if (check.code != STATUS_OK)

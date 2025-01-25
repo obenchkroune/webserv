@@ -119,6 +119,8 @@
         <p>Built with C++98 | HTTP/1.1 Compliant</p>
         <a href="/">main</a>
         |
+        <a href="/php-cgi/uploaded-files">Uploaded Files</a>
+        |
         <a href="/php-cgi/php_info.php">php_info</a>
         |
         <a href="https://github.com/obenchkroune/webserv" target="_blank">

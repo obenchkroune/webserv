@@ -8,13 +8,8 @@
 #include <sstream>
 
 Request::Request()
-    : _is_headers_completed(false), _is_body_completed(false), _content_type_header(NULL),
-      _transfer_encoding_header(NULL)
-{
-}
-
-Request::Request(const std::string& request)
-    : _is_headers_completed(false), _is_body_completed(false), _stream_buf(request)
+    : _is_headers_completed(false), _is_body_completed(false), _is_chunked(false),
+      _content_type_header(NULL), _transfer_encoding_header(NULL)
 {
 }
 
@@ -29,6 +24,7 @@ Request& Request::operator=(const Request& other)
         return *this;
     _is_headers_completed     = other._is_headers_completed;
     _is_body_completed        = other._is_body_completed;
+    _is_chunked               = other._is_chunked;
     _raw_buffer               = other._raw_buffer;
     _body                     = other._body;
     _body_length              = other._body_length;
@@ -100,9 +96,10 @@ HttpStatus Request::parse()
         parseHeaders();
         _content_type_header      = getHeader("Content-Type");
         _transfer_encoding_header = getHeader("Transfer-Encoding");
-        if (_transfer_encoding_header != NULL &&
-            _transfer_encoding_header->values.front().value == "chunked") // this should be case insensitive
+        if (_transfer_encoding_header != NULL && _transfer_encoding_header->values.front().value ==
+                                                     "chunked") // this should be case insensitive
         {
+            _is_chunked = true;
         }
         else
         {
@@ -229,12 +226,13 @@ void Request::setHeader(const HttpHeader& header)
 
 void Request::clear()
 {
-    _status               = HttpStatus(STATUS_OK);
-    _is_headers_completed = false;
-    _is_body_completed    = false;
-    _body.clear();
+    _status                   = HttpStatus(STATUS_OK);
+    _is_headers_completed     = false;
+    _is_body_completed        = false;
+    _is_chunked               = false;
     _content_type_header      = NULL;
     _transfer_encoding_header = NULL;
+    _body.clear();
     _headers.clear();
     _http_version.clear();
     _method.clear();

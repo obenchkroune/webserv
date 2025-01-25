@@ -22,7 +22,6 @@ class Request
 {
 public:
     Request();
-    Request(const std::string& request);
     Request(const Request& other);
     ~Request();
 
@@ -55,6 +54,7 @@ public:
 private:
     bool                               _is_headers_completed;
     bool                               _is_body_completed;
+    bool                               _is_chunked;
     std::vector<uint8_t>               _raw_buffer;
     std::stringstream                  _stream_buf;
     std::map<std::string, std::string> _query_params;
