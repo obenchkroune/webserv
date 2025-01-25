@@ -90,16 +90,15 @@
     <div class='status'>File Upload</div>
     <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_POST["file_description"]) && isset($_FILES["file"]))
+            if (isset($_FILES["file"]) && $_FILES["file"]['error'] === 0)
             {
+                move_uploaded_file($_FILES["file"]['tmp_name'], "./uploaded-files/".$_FILES["file"]['name']);
                 echo "<div class='status'>Your file was uploaded correctly.</div>";
-                echo "<div class='status'>File description: ".$_POST["file_description"]."</div>";
                 echo "<div class='status'>File name: ".$_FILES["file"]['name']."</div>";
                 echo "<div class='status'>File full path: ".$_FILES["file"]['full_path']."</div>";
                 echo "<div class='status'>File size: ".$_FILES["file"]['size']."</div>";
                 echo "<div class='status'>File error code: ".$_FILES["file"]['error']."</div>";
                 echo "<div class='status'>File tmp name: ".$_FILES["file"]['tmp_name']."</div>";
-                move_uploaded_file($_FILES["file"]['tmp_name'], "./uploaded-files/".$_FILES["file"]['name']);
             }
             else
             {
@@ -109,8 +108,6 @@
     ?>
     <div class='status'>Upload your file here:</div>
     <form action="file_upload.php" method="post" enctype="multipart/form-data">
-        <label for="file_description">File Description:</label>
-        <input type="text" id="file_description" name="file_description"><br><br>
         <label for="file">Select a file:</label>
         <input type="file" id="file" name="file"><br><br>
         <input type="submit" value="Submit">
@@ -118,6 +115,8 @@
     <div class="server-info">
         <p>Built with C++98 | HTTP/1.1 Compliant</p>
         <a href="/">main</a>
+        |
+        <a href="/php-cgi/uploaded-files">Uploaded Files</a>
         |
         <a href="/php-cgi/php_info.php">php_info</a>
         |

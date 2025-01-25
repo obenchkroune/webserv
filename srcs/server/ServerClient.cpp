@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/24 21:35:55 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/25 21:32:42 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
             _request.clear();
             return ServerUtils::SendErrorResponse(_request.getStatus(), response);
         }
-        std::cerr << ">> Request uri: " << _request.getUri() << " Request status after parsing: " << _request.getStatus().message << std::endl;
+        std::cerr << "<<< Request uri: " << _request.getUri() << " | Request status after parsing: " << _request.getStatus().message << std::endl;
         try
         {
             ProcessRequest(_request);
