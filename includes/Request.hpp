@@ -65,6 +65,7 @@ private:
     std::vector<uint8_t>               _body;
     size_t                             _body_length;
     const HttpHeader*                  _content_type_header;
+    const HttpHeader*                  _transfer_encoding_header;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
 

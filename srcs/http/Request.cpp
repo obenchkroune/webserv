@@ -8,7 +8,8 @@
 #include <sstream>
 
 Request::Request()
-    : _is_headers_completed(false), _is_body_completed(false), _content_type_header(NULL)
+    : _is_headers_completed(false), _is_body_completed(false), _content_type_header(NULL),
+      _transfer_encoding_header(NULL)
 {
 }
 
@@ -26,18 +27,19 @@ Request& Request::operator=(const Request& other)
 {
     if (this == &other)
         return *this;
-    _is_headers_completed = other._is_headers_completed;
-    _is_body_completed    = other._is_body_completed;
-    _raw_buffer           = other._raw_buffer;
-    _body                 = other._body;
-    _body_length          = other._body_length;
-    _content_type_header  = other._content_type_header;
-    _headers              = other._headers;
-    _http_version         = other._http_version;
-    _method               = other._method;
-    _uri                  = other._uri;
-    _query_params_string  = other._query_params_string;
-    _query_params         = other._query_params;
+    _is_headers_completed     = other._is_headers_completed;
+    _is_body_completed        = other._is_body_completed;
+    _raw_buffer               = other._raw_buffer;
+    _body                     = other._body;
+    _body_length              = other._body_length;
+    _content_type_header      = other._content_type_header;
+    _transfer_encoding_header = other._transfer_encoding_header;
+    _headers                  = other._headers;
+    _http_version             = other._http_version;
+    _method                   = other._method;
+    _uri                      = other._uri;
+    _query_params_string      = other._query_params_string;
+    _query_params             = other._query_params;
 
     _stream_buf.clear();
     _stream_buf << other._stream_buf.rdbuf();
@@ -96,23 +98,31 @@ HttpStatus Request::parse()
     {
         parseRequestLine();
         parseHeaders();
-        _content_type_header            = getHeader("Content-Type");
-        const HttpHeader* lenght_header = getHeader("Content-Length");
-        if (lenght_header == NULL)
+        _content_type_header      = getHeader("Content-Type");
+        _transfer_encoding_header = getHeader("Transfer-Encoding");
+        if (_transfer_encoding_header != NULL &&
+            _transfer_encoding_header->values.front().value == "chunked") // this should be case insensitive
         {
-            _body_length       = 0;
-            _is_body_completed = true;
         }
         else
         {
-            _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
-            if (_body.size() == _body_length)
+            const HttpHeader* lenght_header = getHeader("Content-Length");
+            if (lenght_header == NULL)
             {
+                _body_length       = 0;
                 _is_body_completed = true;
-                return ValidateMultipart();
             }
-            else if (_body.size() > _body_length)
-                assert(!"There is some overflow that need to be carried on to next request..");
+            else
+            {
+                _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
+                if (_body.size() == _body_length)
+                {
+                    _is_body_completed = true;
+                    return ValidateMultipart();
+                }
+                else if (_body.size() > _body_length)
+                    assert(!"There is some overflow that need to be carried on to next request..");
+            }
         }
         return HttpStatus(STATUS_OK);
     }
@@ -223,7 +233,8 @@ void Request::clear()
     _is_headers_completed = false;
     _is_body_completed    = false;
     _body.clear();
-    _content_type_header = NULL;
+    _content_type_header      = NULL;
+    _transfer_encoding_header = NULL;
     _headers.clear();
     _http_version.clear();
     _method.clear();
