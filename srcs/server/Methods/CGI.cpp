@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/24 21:33:44 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/25 22:11:17 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ void ServerClient::ProcessCGI(Response* response)
                   << std::endl;
         return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
-    if (response->GetRequest().getBody().size())
+    if (!response->GetRequest().isChunked() && response->GetRequest().getBody().size())
     {
         std::stringstream fname;
         fname << "/tmp/cgi_input_" << time(0);
@@ -42,6 +42,17 @@ void ServerClient::ProcessCGI(Response* response)
         );
         if (bytes != (ssize_t)response->GetRequest().getBody().size() ||
             lseek(cgi_input_fd, 0, SEEK_SET) == -1)
+        {
+            close(pipe_fd[0]), close(pipe_fd[1]), close(cgi_input_fd);
+            return ServerUtils::SendErrorResponse(
+                HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
+            );
+        }
+    }
+    if (response->GetRequest().isChunked())
+    {
+        cgi_input_fd = response->GetRequest().getBodyFd();
+        if (lseek(cgi_input_fd, 0, SEEK_SET) == -1)
         {
             close(pipe_fd[0]), close(pipe_fd[1]), close(cgi_input_fd);
             return ServerUtils::SendErrorResponse(
@@ -105,7 +116,10 @@ void ServerClient::ProcessCGI(Response* response)
             envp.insert(envp.end(), (char*)env_content_type.c_str());
         }
         std::stringstream content_lenght;
-        content_lenght << "CONTENT_LENGTH=" << response->GetRequest().getBody().size();
+        if (response->GetRequest().isChunked())
+            content_lenght << "CONTENT_LENGTH=" << response->GetRequest().getBodySize();
+        else
+            content_lenght << "CONTENT_LENGTH=" << response->GetRequest().getBody().size();
         std::string env_content_lenght = content_lenght.str();
         /*inserting environment*/
         envp.insert(envp.end(), (char*)env_redirect.c_str());

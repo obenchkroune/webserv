@@ -23,5 +23,6 @@ namespace utils
 
 std::string strtrim(const std::string& str);
 std::string quoted(const std::string& str, bool double_quotes = false);
+char	*strnstr(const char *big, const char *little, size_t len);
 
 } // namespace utils

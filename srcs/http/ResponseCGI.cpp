@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 01:37:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/08 16:47:03 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/25 22:28:09 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,26 +28,38 @@ void ResponseCGI::FinishResponse(bool append_content_length /* = true*/)
 {
     char*       header_line_start = (char*)_content.data();
     const char* header_line_delim = CRLF;
-    if (std::strstr(header_line_start, CRLF) == NULL)
+    if (utils::strnstr(header_line_start, CRLF, _content.size()) == NULL)
         header_line_delim = "\n";
     int   header_line_delim_len = std::strlen(header_line_delim);
-    char* header_line_end       = std::strstr(header_line_start, header_line_delim);
+    char* header_line_end       = utils::strnstr(
+        header_line_start, header_line_delim,
+        _content.size() - (header_line_start - (char*)_content.data())
+    );
     if (std::strncmp(header_line_start, "HTTP/", std::strlen("HTTP/")))
     {
         std::string status_header(HTTP_VERSION_TOKEN " " HTTP_STATUS_OK);
         status_header += header_line_delim;
         _content.insert(_content.begin(), status_header.begin(), status_header.end());
         header_line_start = (char*)_content.data() + status_header.size();
-        header_line_start = std::strstr(header_line_start, header_line_delim);
+        header_line_start = utils::strnstr(
+            header_line_start, header_line_delim,
+            _content.size() - (header_line_start - (char*)_content.data())
+        );
         if (header_line_start != NULL)
         {
             header_line_start += header_line_delim_len;
-            header_line_end = std::strstr(header_line_start, header_line_delim);
+            header_line_end = utils::strnstr(
+                header_line_start, header_line_delim,
+                _content.size() - (header_line_start - (char*)_content.data())
+            );
         }
     }
     for (; header_line_end != NULL && header_line_end != header_line_start;
          header_line_start = header_line_end + header_line_delim_len,
-         header_line_end   = std::strstr(header_line_start, header_line_delim))
+         header_line_end   = utils::strnstr(
+             header_line_start, header_line_delim,
+             _content.size() - (header_line_start - (char*)_content.data())
+         ))
     {
         char* header_name = std::strchr(header_line_start, ':');
         assert(header_name != NULL);
