@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:32:02 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/26 17:34:35 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 18:21:07 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 void ServerClient::ProcessPUT(Response* response)
 {
-    size_t max_sz_limit = response->GetVirtualServer().max_body_size;
+    size_t max_sz_limit = response->GetVirtualServer()->max_body_size;
     if (max_sz_limit != response->GetFileLocation()
                             ->max_body_size) // TODO: this should check if location directive is set
         max_sz_limit = response->GetFileLocation()->max_body_size;

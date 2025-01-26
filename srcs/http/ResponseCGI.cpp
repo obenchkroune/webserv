@@ -3,27 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   ResponseCGI.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 01:37:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/25 22:28:09 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 18:18:16 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ResponseCGI.hpp"
 
-ResponseCGI::ResponseCGI(const Request& request, const ServerConfig& virtual_server, Server* server)
-    : Response(request, virtual_server, server)
-{
-}
 ResponseCGI::~ResponseCGI() {}
-ResponseCGI::ResponseCGI(const Response& responseCGI) : Response(responseCGI) {}
-ResponseCGI& ResponseCGI::operator=(const ResponseCGI& responseCGI)
-{
-    if (this == &responseCGI)
-        return *this;
-    return *this;
-}
+ResponseCGI::ResponseCGI(const Response& response) : Response(response) {}
 void ResponseCGI::FinishResponse(bool append_content_length /* = true*/)
 {
     char*       header_line_start = (char*)_content.data();

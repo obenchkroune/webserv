@@ -6,16 +6,13 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/26 17:25:25 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 20:12:55 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(Server* server)
-    : _content_sent(0), _server(server)
-{
-} // Temporary Response
+Response::Response(Server* server) : _content_sent(0), _server(server) {} // Temporary Response
 
 Response::Response(const Request& request, Server* server)
     : _content_sent(0), _request(request), _server(server)
@@ -174,8 +171,11 @@ void Response::FinishResponse(bool append_content_length /* = true*/)
     std::cerr << _headers << std::endl;
     std::cerr << "[End Response headers] ============" << std::endl;
     std::cerr << "[Response body]     ============" << std::endl;
-    // dprintf(2,"%.*s\n", (int)(_content.size() - _headers.size()), (char*)_content.data() +
-    // _headers.size());
+    int snippet_size = std::min(100, (int)(_content.size() - _headers.size()));
+    dprintf(
+        2, "First %d bytes from body:\n%.*s\n", snippet_size, snippet_size,
+        (char*)_content.data() + _headers.size()
+    );
     std::cerr << "[End Response body] ============" << std::endl;
     _headers.erase();
 }

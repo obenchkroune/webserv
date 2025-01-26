@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ResponseCGI.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 00:58:15 by simo              #+#    #+#             */
-/*   Updated: 2025/01/08 16:41:14 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 18:17:45 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,14 +17,12 @@
 
 class ResponseCGI : public Response
 {
-private:
-    ResponseCGI(const Request& request, const ServerConfig& virtual_server, Server* server);
-
 public:
     virtual ~ResponseCGI();
-    ResponseCGI(const Response& responseCGI);
+    ResponseCGI(const Response& response);
 
 private:
+    ResponseCGI(const ResponseCGI& responseCGI);
     ResponseCGI& operator=(const ResponseCGI& responseCGI);
 
 public:
