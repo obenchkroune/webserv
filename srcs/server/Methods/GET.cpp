@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GET.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/09 15:45:43 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:33:31 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,15 @@
 
 void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
 {
-    size_t max_sz_limit = response->GetFileLocation()->max_body_size;
-    if (response->GetFileStat().st_size > (long)max_sz_limit)
+    // This shouldn't be checked for:
+    //size_t max_sz_limit = response->GetFileLocation()->max_body_size;
+    /*if (response->GetFileStat().st_size > (long)max_sz_limit)
     {
         std::cerr << "GET request too large: " << std::endl;
         return ServerUtils::SendErrorResponse(
             HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE), response
         );
-    }
+    }*/
     response->SetStatusHeaders(HTTP_STATUS_OK);
     ResponseHeader header;
     header.name = "Content-Type";
@@ -54,7 +55,7 @@ void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
         response->ReadFile(file_fd);
         response->FinishResponse();
     }
-    _server->QueueResponse(_client_socket_fd, response);
+    _server->QueueResponse(response);
 }
 
 void ServerClient::ProcessHEAD(Response* response)

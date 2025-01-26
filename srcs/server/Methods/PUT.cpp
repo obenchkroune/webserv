@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:32:02 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/23 18:47:45 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 17:34:35 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,5 +43,5 @@ void ServerClient::ProcessPUT(Response* response)
     }
     response->SetStatusHeaders(HTTP_STATUS_OK);
     response->FinishResponse();
-    _server->QueueResponse(_client_socket_fd, response);
+    _server->QueueResponse(response);
 }

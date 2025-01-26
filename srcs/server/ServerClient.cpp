@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/25 21:32:42 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:27:21 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,36 +48,40 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
 
     if (_request.isCompleted())
     {
-        if (_request.getStatus().code != STATUS_OK)
+        HttpStatus status = _request.getStatus();
+        if (status.code != STATUS_OK)
         {
-            Response* response = new Response(_request, _server->GetConfig().front(), _server);
+            Response* response = new Response(_server);
+            response->SetClientSocketFd(_client_socket_fd);
+            response->SetVirtualServer(&_server->GetConfig().front());
             _request.clear();
-            return ServerUtils::SendErrorResponse(_request.getStatus(), response);
+            return ServerUtils::SendErrorResponse(status, response);
         }
-        std::cerr << "<<< Request uri: " << _request.getUri() << " | Request status after parsing: " << _request.getStatus().message << std::endl;
+        std::cerr << "<<< Request uri: " << _request.getUri()
+                  << " | Request status after parsing: " << status.message << std::endl;
+        Response* response = new Response(_request, _server);
+        response->SetClientSocketFd(_client_socket_fd);
+        response->SetVirtualServer(ServerUtils::GetRequestVirtualServer(
+            _address_socket_fd, response->GetRequest(), _server->GetConfig()
+        ));
+        _request.clear();
         try
         {
-            ProcessRequest(_request);
+            ProcessRequest(response);
         }
         catch (const std::exception& e)
         {
-            Response* response = new Response(_request, _server->GetConfig().front(), _server);
-            ServerUtils::SendErrorResponse(_request.getStatus(), response);
+            ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
         }
-        _request.clear();
     }
 }
 
-void ServerClient::ProcessRequest(const Request& request)
+void ServerClient::ProcessRequest(Response* response)
 {
-    const ServerConfig& virtualServer =
-        ServerUtils::GetRequestVirtualServer(_address_socket_fd, request, _server->GetConfig());
-    Response* response = new Response(request, virtualServer, _server);
-    response->SetClientSocketFd(_client_socket_fd);
     response->SetFileLocation(
-        ServerUtils::GetFileLocation(response->GetVirtualServer(), response->GetRequest().getUri())
+        ServerUtils::GetFileLocation(*response->GetVirtualServer(), response->GetRequest().getUri())
     );
-    if (response->GetFileLocation() == response->GetVirtualServer().locations.end())
+    if (response->GetFileLocation() == response->GetVirtualServer()->locations.end())
         return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
@@ -99,7 +103,7 @@ void ServerClient::ProcessRequest(const Request& request)
         }
     }
     // HTTP response:
-    const std::string& method = request.getMethod();
+    const std::string& method = response->GetRequest().getMethod();
     if (method == "GET")
     {
         return ProcessGET(response);

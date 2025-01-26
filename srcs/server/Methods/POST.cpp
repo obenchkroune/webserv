@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   POST.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/05 15:54:42 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/09 15:45:33 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:34:31 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,5 +32,5 @@ void ServerClient::ProcessPOST(Response* response)
      ** Upload data to upload dir
      */
     response->FinishResponse();
-    _server->QueueResponse(_client_socket_fd, response);
+    _server->QueueResponse(response);
 }

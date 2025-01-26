@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/24 11:53:26 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 17:33:02 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,10 +101,10 @@ void Server::Start()
         }
     }
 }
-void Server::QueueResponse(int socket_fd, Response* response)
+void Server::QueueResponse(Response* response)
 {
-    _clients_responses[socket_fd].push(response);
-    std::cout << "Response queued for client socket fd: " << socket_fd << std::endl;
+    _clients_responses[response->GetClientSocketFd()].push(response);
+    std::cout << "Response queued for client socket fd: " << response->GetClientSocketFd() << std::endl;
 }
 void Server::QueueCGIResponse(int pipe_fd, Response* response)
 {
@@ -242,7 +242,7 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
             );
         response->FinishResponse();
-        return QueueResponse(response->GetClientSocketFd(), response);
+        return QueueResponse(response);
     }
     if (bytes < READ_CHUNK)
         buff.erase(buff.begin() + bytes, buff.end());

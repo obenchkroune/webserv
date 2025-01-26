@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:39:18 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,29 +21,35 @@ namespace ServerUtils
 {
 void SendErrorResponse(const HttpStatus& status, Response* response)
 {
-    Response* error_response =
-        new Response(response->GetRequest(), response->GetVirtualServer(), response->GetServer());
-    int client_socket_fd = response->GetClientSocketFd();
+    Response* error_response = new Response(response->GetServer());
+    error_response->SetClientSocketFd(response->GetClientSocketFd());
+    error_response->SetVirtualServer(response->GetVirtualServer());
     delete response;
     error_response->SetStatusHeaders(status.message);
     const std::map<uint16_t, std::string>& error_pages =
-        error_response->GetVirtualServer().error_pages;
+        error_response->GetVirtualServer()->error_pages;
     std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
     struct stat                                     buffer;
 
     if (it == error_pages.end() || stat(it->second.c_str(), &buffer) != 0)
     {
-        std::cerr << "OK: " << it->second << std::endl;
+        std::cerr << "Error page not found for status: " << status.message << std::endl;
         error_response->AppendContent(
             std::vector<uint8_t>(status.message, status.message + strlen(status.message))
         );
     }
     else
     {
-        error_response->ReadFile(open(it->second.c_str(), O_RDONLY));
+        int error_page_fd = open(it->second.c_str(), O_RDONLY);
+        if (error_page_fd > 0)
+            error_response->ReadFile(error_page_fd);
+        else
+            error_response->AppendContent(
+                std::vector<uint8_t>(status.message, status.message + strlen(status.message))
+            );
     }
     error_response->FinishResponse();
-    error_response->GetServer()->QueueResponse(client_socket_fd, error_response);
+    error_response->GetServer()->QueueResponse(error_response);
 }
 sockaddr_in GetListenAddr(const ServerConfig& _config)
 {
@@ -91,6 +97,7 @@ void PrintSocketIP(std::ostream& os, const sockaddr_in& address)
 }
 bool validateFileLocation(const std::string& location_root, const std::string& fname)
 {
+    std::cerr << "location_root: " << location_root << " fname: " << fname << std::endl;
     if (fname.find("/..") == std::string::npos)
         return true;
     int curr_directory_relative_to_root = 0;
@@ -147,7 +154,7 @@ std::vector<LocationConfig>::const_iterator GetFileLocation(
     }
     return matched_location;
 }
-const ServerConfig& GetRequestVirtualServer(
+const ServerConfig* GetRequestVirtualServer(
     const int& address_fd, const Request& request, const std::vector<ServerConfig>& config
 )
 {
@@ -160,10 +167,10 @@ const ServerConfig& GetRequestVirtualServer(
     }
     assert(matched_servers.size() > 0 && "IMPOSSIBLE");
     if (matched_servers.size() == 1)
-        return *matched_servers.front();
+        return matched_servers.front();
     const HttpHeader* host_header = request.getHeader("Host");
     if (host_header == NULL)
-        return *matched_servers.front();
+        return matched_servers.front();
     std::vector<const ServerConfig*>::const_iterator matched_servers_it = matched_servers.begin();
     for (; matched_servers_it != matched_servers.end(); matched_servers_it++)
     {
@@ -171,9 +178,9 @@ const ServerConfig& GetRequestVirtualServer(
             (*matched_servers_it)->server_names.begin();
         for (; names_it != (*matched_servers_it)->server_names.end(); names_it++)
             if (*names_it == host_header->values.front().value)
-                return **matched_servers_it;
+                return &(**matched_servers_it);
     }
-    return *matched_servers.front();
+    return matched_servers.front();
 }
 
 } // namespace ServerUtils

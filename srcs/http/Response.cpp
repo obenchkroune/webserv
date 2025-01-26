@@ -3,17 +3,22 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 17:45:26 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:25:25 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 
-Response::Response(const Request& request, const ServerConfig& virtual_server, Server* server)
-    : _content_sent(0), _request(request), _virtual_server(virtual_server), _server(server)
+Response::Response(Server* server)
+    : _content_sent(0), _server(server)
+{
+} // Temporary Response
+
+Response::Response(const Request& request, Server* server)
+    : _content_sent(0), _request(request), _server(server)
 {
 }
 Response::Response(const Response& response)
@@ -78,9 +83,13 @@ struct stat& Response::GetFileStat()
 {
     return _file_stats;
 }
-const ServerConfig& Response::GetVirtualServer() const
+const ServerConfig* Response::GetVirtualServer() const
 {
     return _virtual_server;
+}
+void Response::SetVirtualServer(const ServerConfig* virtual_server)
+{
+    _virtual_server = virtual_server;
 }
 Server* Response::GetServer() const
 {
@@ -161,8 +170,12 @@ void Response::FinishResponse(bool append_content_length /* = true*/)
     AppendHeader(header);
     _headers += CRLF;
     _content.insert(_content.begin(), _headers.begin(), _headers.end());
-    std::cout << "[Response headers]     ============" << std::endl;
-    std::cout << _headers << std::endl;
-    std::cout << "[End Response headers] ============" << std::endl;
+    std::cerr << "[Response headers]     ============" << std::endl;
+    std::cerr << _headers << std::endl;
+    std::cerr << "[End Response headers] ============" << std::endl;
+    std::cerr << "[Response body]     ============" << std::endl;
+    // dprintf(2,"%.*s\n", (int)(_content.size() - _headers.size()), (char*)_content.data() +
+    // _headers.size());
+    std::cerr << "[End Response body] ============" << std::endl;
     _headers.erase();
 }

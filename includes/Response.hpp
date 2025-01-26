@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 17:44:31 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:24:46 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <iostream>
 #include <ranges>
 #include <sstream>
+#include <stdio.h>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -58,11 +59,12 @@ protected:
     LocationIterator     _file_location;
     struct stat          _file_stats;
     const Request        _request;
-    const ServerConfig&  _virtual_server;
+    const ServerConfig*  _virtual_server;
     Server*              _server;
 
 public:
-    Response(const Request& request, const ServerConfig& virtual_server, Server* server);
+    Response(Server* server); // Tmp error response
+    Response(const Request& request, Server* server);
     virtual ~Response();
     Response(const Response& response);
 
@@ -75,6 +77,7 @@ public:
     const int&              GetClientSocketFd() const;
     void                    SetClientSocketFd(const int& fd);
     const Request&          GetRequest() const;
+    void                    SetRequest(const Request&);
     const std::string&      GetFilePath() const;
     void                    SetFilePath(const std::string& path);
     const std::string&      GetFileExtension() const;
@@ -84,10 +87,9 @@ public:
     struct stat&            GetFileStat();
     Server*                 GetServer() const;
     size_t                  GetContentSize() const;
-
-public:
-    const ServerConfig& GetVirtualServer() const;
-    const uint8_t*      GetResponseBuff() const;
+    const ServerConfig*     GetVirtualServer() const;
+    void                    SetVirtualServer(const ServerConfig* virtual_server);
+    const uint8_t*          GetResponseBuff() const;
 
 public:
     void   ResponseSent(const size_t n);

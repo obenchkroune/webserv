@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/23 17:35:01 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 16:54:27 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ public:
     int  GetClientSocketfd() const;
 
 private:
-    void ProcessRequest(const Request& request);
+    void ProcessRequest(Response* response);
 
 private:
     void       auto_index(Response* response);

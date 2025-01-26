@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/03 21:40:50 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/26 17:32:06 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ private:
 
 public:
     void Start();
-    void QueueResponse(int socket_fd, Response* response);
+    void QueueResponse(Response* response);
     void QueueCGIResponse(int pipe_fd, Response* response);
 
     /* Getters & Setters */

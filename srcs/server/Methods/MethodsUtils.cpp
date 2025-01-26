@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/25 16:00:25 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 17:34:26 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ void ServerClient::auto_index(Response* response)
     std::vector<uint8_t> content(html.begin(), html.end());
     response->AppendContent(content);
     response->FinishResponse();
-    _server->QueueResponse(_client_socket_fd, response);
+    _server->QueueResponse(response);
 }
 
 HttpStatus ServerClient::CheckRequest(Response* response)
