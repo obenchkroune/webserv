@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/26 17:33:02 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 23:06:23 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,11 +101,14 @@ void Server::Start()
         }
     }
 }
+/*
 void Server::QueueResponse(Response* response)
 {
     _clients_responses[response->GetClientSocketFd()].push(response);
-    std::cout << "Response queued for client socket fd: " << response->GetClientSocketFd() << std::endl;
+    std::cout << "Response queued for client socket fd: " << response->GetClientSocketFd()
+              << std::endl;
 }
+*/
 void Server::QueueCGIResponse(int pipe_fd, Response* response)
 {
     _cgi_responses.insert(std::pair<int, Response*>(pipe_fd, response));
@@ -123,16 +126,6 @@ void Server::ConsumeEvent(const epoll_event ev)
         std::find(_listen_socket_fds.begin(), _listen_socket_fds.end(), ev.data.fd);
     if (listen_socket_it != _listen_socket_fds.end())
         return AcceptNewPeerOnSocket(ev.data.fd);
-    // peer I/O ready:
-    std::map<int, ServerClient>::iterator clients_it = _clients.find(ev.data.fd);
-    if (clients_it != _clients.end())
-    {
-        if (ev.events & EPOLLIN)
-            HandlePeerEPOLLIN(ev, clients_it->second);
-        if (ev.events & EPOLLOUT)
-            HandlePeerEPOLLOUT(ev, clients_it->second);
-        return;
-    }
     // CGI pipe I/O ready:
     std::map<int, Response*>::iterator cgi_it = _cgi_responses.find(ev.data.fd);
     assert(cgi_it != _cgi_responses.end());
@@ -149,77 +142,14 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
         std::cerr << "accept(): failed to accept new peer connection." << std::endl;
         return;
     }
-    std::map<int, ServerClient>::iterator it = _clients.find(peer_fd);
-    assert(it == _clients.end());
-    _clients.insert(std::pair<int, ServerClient>(peer_fd, ServerClient(peer_fd, socket_fd, this)));
-    epoll_event peer_ev;
-    peer_ev.events   = EPOLLIN | EPOLLOUT;
-    peer_ev.data.ptr = this;
-    try
-    {
-        IOMultiplexer::GetInstance().AddEvent(peer_ev, peer_fd);
-    }
-    catch (const std::exception& e)
-    {
-        close(peer_fd);
-        std::cerr << "_IOmltplx->AddEvent() failed to add new peer fd.\n" << e.what() << std::endl;
-        return;
-    }
-    std::cout << "New peer accepted on fd " << peer_fd << ".\n";
-}
-void Server::HandlePeerEPOLLOUT(const epoll_event& ev, ServerClient& client)
-{
-    (void)client;
-    std::map<int, Responses_queue>::iterator res_it = _clients_responses.find(ev.data.fd);
-    if (res_it == _clients_responses.end() || res_it->second.size() == 0)
-        return;
-fetch_next_response:
-    Response* response = res_it->second.front();
-    if (response->ResponseCount() == 0)
-    {
-        delete response;
-        res_it->second.pop();
-        if (res_it->second.size())
-            goto fetch_next_response;
-        else
-            return;
-    }
-    const uint8_t* buff          = response->GetResponseBuff();
-    size_t         bytes_to_send = response->ResponseCount();
-    if (bytes_to_send > SEND_CHUNK)
-        bytes_to_send = SEND_CHUNK;
-    int bytes_sent = send(ev.data.fd, buff, bytes_to_send, MSG_DONTWAIT);
-    if (bytes_sent < 0)
-    {
-        std::cerr << "send() failed. for client fd: " << ev.data.fd << '\n';
-        std::cerr << "Client will be kicked out." << std::endl;
-        return RemoveClient(ev);
-    }
-    if (bytes_sent != (int)bytes_to_send)
-        std::cerr << "Tried to send " << bytes_to_send << " but send() only sent " << bytes_sent
-                  << "\nRemainder data will be sent on next call." << std::endl;
-    response->ResponseSent(bytes_sent);
-    if (response->ResponseCount() == 0)
-    {
-        delete response;
-        res_it->second.pop();
-    }
-}
-void Server::HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client)
-{
-    uint8_t buff[RECV_CHUNK];
-    ssize_t bytes = recv(ev.data.fd, buff, RECV_CHUNK - 1, MSG_DONTWAIT);
-    if (bytes < 0)
-    {
-        std::cerr << "recv() failed. for client fd: " << ev.data.fd << '\n';
-        std::cerr << "Client will be kicked out." << std::endl;
-        return RemoveClient(ev);
-    }
-    if (bytes == 0)
-        return RemoveClient(ev);
-    buff[bytes] = 0;
-    std::vector<uint8_t> buffer(buff, buff + bytes);
-    client.ReceiveRequest(buffer);
+    std::vector<ServerClient>::iterator client = _clients_pool.begin();
+    for (; client != _clients_pool.end() && client->isStarted(); client++)
+        ;
+    if (client == _clients_pool.end())
+        client = _clients_pool.insert(client, ServerClient(peer_fd, socket_fd, this));
+    else
+        client->SetClientSocketfd(peer_fd), client->SetAddressSocketfd(socket_fd);
+    client->BindToClientSocket();
 }
 void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
 {
@@ -248,19 +178,6 @@ void Server::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
         buff.erase(buff.begin() + bytes, buff.end());
     response->AppendContent(buff);
 }
-void Server::RemoveClient(const epoll_event ev)
-{
-    _clients.erase(ev.data.fd);
-    std::map<int, Responses_queue>::iterator it = _clients_responses.find(ev.data.fd);
-    if (it != _clients_responses.end())
-    {
-        for (; it->second.size(); it->second.pop())
-            delete it->second.front();
-    }
-    IOMultiplexer::GetInstance().RemoveEvent(ev, ev.data.fd);
-    close(ev.data.fd);
-    std::cout << "Client fd: " << ev.data.fd << " disconnected." << std::endl;
-}
 void Server::Terminate()
 {
     if (_is_started == false)
@@ -273,17 +190,6 @@ void Server::Terminate()
         {
             IOMultiplexer::GetInstance().RemoveEvent(_listen_socket_ev, *it);
             close(*it);
-        }
-    }
-    // closing clients socket fd
-    {
-        std::map<int, ServerClient>::iterator it = _clients.begin();
-        for (; it != _clients.end(); it = _clients.begin())
-        {
-            epoll_event ev;
-            ev.events  = EPOLLIN | EPOLLOUT;
-            ev.data.fd = it->first;
-            RemoveClient(ev);
         }
     }
     // closing clients socket fd

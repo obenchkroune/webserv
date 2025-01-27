@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/26 17:32:06 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/26 23:06:11 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,13 +36,10 @@
 
 class Server : public AIOEventListener
 {
-public:
-    typedef std::queue<Response*> Responses_queue;
 
 private:
     const char**                   _environ;
-    std::map<int, ServerClient>    _clients;
-    std::map<int, Responses_queue> _clients_responses;
+    std::vector<ServerClient>      _clients_pool;
     std::map<int, Response*>       _cgi_responses;
     std::vector<ServerConfig>      _config;
     bool                           _is_started;
@@ -60,7 +57,6 @@ private:
 
 public:
     void Start();
-    void QueueResponse(Response* response);
     void QueueCGIResponse(int pipe_fd, Response* response);
 
     /* Getters & Setters */
@@ -80,8 +76,6 @@ public:
 private:
     void listen_on_addr(const sockaddr_in& _listen_addr);
     void AcceptNewPeerOnSocket(int socket_fd);
-    void HandlePeerEPOLLIN(const epoll_event& ev, ServerClient& client);
     void HandlePeerEPOLLOUT(const epoll_event& ev, ServerClient& client);
     void HandleCGIEPOLLIN(const epoll_event& ev, Response* response);
-    void RemoveClient(const epoll_event ev);
 };

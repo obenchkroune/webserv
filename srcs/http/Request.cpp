@@ -8,10 +8,8 @@
 #include <sstream>
 
 Request::Request()
-    : _is_headers_completed(false), _is_body_completed(false), _is_chunked(false),
-      _remove_chunk_data_trailing_crlf(false), _remaining_chunk_size(0), _body_size(0),
-      _content_type_header(NULL), _transfer_encoding_header(NULL)
 {
+    clear();
 }
 
 Request::Request(const Request& other)
@@ -43,10 +41,37 @@ Request& Request::operator=(const Request& other)
     _query_params_string             = other._query_params_string;
     _query_params                    = other._query_params;
 
+    _stream_buf.str(std::string());
     _stream_buf.clear();
     _stream_buf << other._stream_buf.rdbuf();
     return *this;
 }
+
+void Request::clear()
+{
+    _status                          = HttpStatus(STATUS_OK);
+    _is_headers_completed            = false;
+    _is_body_completed               = false;
+    _is_chunked                      = false;
+    _remove_chunk_data_trailing_crlf = false;
+    _chunk_size                      = 0;
+    _remaining_chunk_size            = 0;
+    _content_type_header             = NULL;
+    _transfer_encoding_header        = NULL;
+    _body_fd                         = -1;
+    _body_size                       = 0;
+    _body.clear();
+    _headers.clear();
+    _http_version.clear();
+    _method.clear();
+    _uri.clear();
+    _query_params_string.clear();
+    _query_params.clear();
+    _stream_buf.str(std::string());
+    _stream_buf.clear();
+}
+
+Request::~Request() {}
 
 Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 {
@@ -95,7 +120,6 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
     return *this;
 }
 
-Request::~Request() {}
 void Request::writeChunkToFile(size_t& offset)
 {
     size_t to_write = std::min(_remaining_chunk_size, _body.size() - offset);
@@ -229,30 +253,6 @@ HttpStatus Request::parse()
     {
         return e.getErrorCode();
     }
-}
-
-void Request::clear()
-{
-    _status                          = HttpStatus(STATUS_OK);
-    _is_headers_completed            = false;
-    _is_body_completed               = false;
-    _is_chunked                      = false;
-    _remove_chunk_data_trailing_crlf = false;
-    _chunk_size                      = 0;
-    _remaining_chunk_size            = 0;
-    _content_type_header             = NULL;
-    _transfer_encoding_header        = NULL;
-    _body_fd                         = -1;
-    _body_size                       = 0;
-    _body.clear();
-    _headers.clear();
-    _http_version.clear();
-    _method.clear();
-    _uri.clear();
-    _query_params_string.clear();
-    _query_params.clear();
-    _stream_buf.str("");
-    _stream_buf.seekg(0);
 }
 
 const std::string Request::getMethod() const

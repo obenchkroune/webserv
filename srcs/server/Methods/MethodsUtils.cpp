@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   MethodsUtils.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/26 17:34:26 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/27 03:51:21 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ HttpStatus ServerClient::CheckRequest(Response* response)
     if (access(file_path.c_str(), F_OK) != 0) // EXISTENCE ACCESS
         return HttpStatus(STATUS_NOT_FOUND);
     response->SetFilePath(file_path);
-    stat(response->GetFilePath().c_str(), &response->GetFileStat());
+    stat(response->GetFilePath().c_str(), &response->GetRequestFileStat());
     if (S_ISDIR(response->GetFileStat().st_mode))
     {
         std::vector<std::string>::const_iterator index_it =
