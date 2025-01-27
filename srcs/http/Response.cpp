@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/27 20:45:20 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/28 00:49:09 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,7 +117,8 @@ const uint8_t* Response::GetResponseBuff() const
             if (remaining_bytes && _response_buff.size() < SEND_CHUNK)
             {
                 size_t read_size = std::min(remaining_bytes, SEND_CHUNK);
-                _response_buff.insert(_response_buff.end(), read_size, 0);
+                const uint8_t tmp = 0;
+                _response_buff.insert(_response_buff.end(),read_size, tmp);
                 ssize_t bytes_read = read(
                     _request_file_fd, (uint8_t*)(_response_buff.data() + _response_buff.size()),
                     read_size
@@ -183,10 +184,9 @@ void Response::AppendToResponseBuff(const std::vector<uint8_t>& content)
     _response_buff.insert(_response_buff.end(), content.begin(), content.end());
     _content_lenght += content.size();
 }
-void Response::FinishResponse(bool append_content_length /* = true*/)
+void Response::FinishResponse()
 {
     ResponseHeader header;
-    if (append_content_length)
     {
         std::ostringstream content_length;
         content_length << _content_lenght;
@@ -204,5 +204,4 @@ void Response::FinishResponse(bool append_content_length /* = true*/)
     std::cerr << "[Response body]     ============" << std::endl;
     std::cerr << _content_lenght << " Bytes of content will be sent to client." << std::endl;
     std::cerr << "[End Response body] ============" << std::endl;
-    _headers.erase();
 }

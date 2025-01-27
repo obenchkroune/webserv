@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/27 20:10:01 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/28 00:16:33 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -185,10 +185,10 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
 
 void ServerClient::ProcessRequest(Response* response)
 {
-    response->SetFileLocation(
+    response->SetRequestFileLocation(
         ServerUtils::GetFileLocation(*response->GetVirtualServer(), response->GetRequest().getUri())
     );
-    if (response->GetFileLocation() == response->GetVirtualServer()->locations.end())
+    if (response->GetRequestFileLocation() == response->GetVirtualServer()->locations.end())
         return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
@@ -197,13 +197,14 @@ void ServerClient::ProcessRequest(Response* response)
         return ServerUtils::SendErrorResponse(check, response);
     const std::string& method = response->GetRequest().getMethod();
     // HTTP CGI response:
-    if (response->GetFileLocation()->cgi_path != "")
+    if (response->GetRequestFileLocation()->cgi_path != "")
     {
         std::vector<std::string>::const_iterator it = std::find(
-            response->GetFileLocation()->cgi_extensions.begin(),
-            response->GetFileLocation()->cgi_extensions.end(), response->GetFileExtension()
+            response->GetRequestFileLocation()->cgi_extensions.begin(),
+            response->GetRequestFileLocation()->cgi_extensions.end(),
+            response->GetRequestFileExtension()
         );
-        if (it != response->GetFileLocation()->cgi_extensions.end())
+        if (it != response->GetRequestFileLocation()->cgi_extensions.end())
         {
             if (method != "POST" && method != "GET" && method != "HEAD")
                 return ServerUtils::SendErrorResponse(
