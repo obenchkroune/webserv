@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/27 03:38:36 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/27 20:10:01 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ void ServerClient::ConsumeEvent(const epoll_event ev)
 void ServerClient::HandleEPOLLIN()
 {
     std::vector<uint8_t> buffer(RECV_CHUNK, 0);
-    ssize_t bytes = recv(_client_socket_fd, buffer.data(), RECV_CHUNK, MSG_DONTWAIT);
+    ssize_t              bytes = recv(_client_socket_fd, buffer.data(), RECV_CHUNK, MSG_DONTWAIT);
     if (bytes < 0)
     {
         std::cerr << "recv() failed. for client fd: " << _client_socket_fd << '\n';
@@ -88,7 +88,7 @@ void ServerClient::HandleEPOLLOUT()
 {
 fetch_next_response:
     Response* response = _responses_queue.front();
-    if (response->ResponseCount() == 0)
+    if (response->GetResponseBuffCount() == 0)
     {
         delete response;
         _responses_queue.pop();
@@ -97,8 +97,18 @@ fetch_next_response:
         else
             return;
     }
-    const uint8_t* buff          = response->GetResponseBuff();
-    size_t         bytes_to_send = response->ResponseCount();
+    const uint8_t* buff;
+    try
+    {
+        buff = response->GetResponseBuff();
+    }
+    catch (const std::exception& e)
+    {
+        assert(!"NOT IMPLEMENTED");
+        std::cerr << e.what() << '\n';
+        return;
+    }
+    size_t bytes_to_send = response->GetResponseBuffCount();
     if (bytes_to_send > SEND_CHUNK)
         bytes_to_send = SEND_CHUNK;
     ssize_t bytes_sent = send(_client_socket_fd, buff, bytes_to_send, MSG_DONTWAIT);
@@ -110,9 +120,9 @@ fetch_next_response:
     }
     if ((size_t)bytes_sent != bytes_to_send)
         std::cerr << "Tried to send " << bytes_to_send << " but send() only sent " << bytes_sent
-                  << "\nRemainder data will be sent on next call." << std::endl;
-    response->ResponseSent(bytes_sent);
-    if (response->ResponseCount() == 0)
+                  << "\nRemainder data will be sent on next epoll event call." << std::endl;
+    response->IncrementResponseBuffBytesSent(bytes_sent);
+    if (response->GetResponseBuffCount() == 0)
     {
         delete response;
         _responses_queue.pop();

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/27 03:58:22 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/27 20:42:59 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,19 +50,19 @@ typedef std::vector<LocationConfig>::const_iterator LocationIterator;
 class Response
 {
 protected:
-    int                 _client_socket_fd;
-    std::string         _headers;
-    bool                _are_headers_sent;
-    size_t              _content_lenght;
-    size_t              _content_sent;
-    std::string         _request_file_path;
-    std::string         _request_file_extension;
-    LocationIterator    _request_file_location;
-    int                 _request_file_fd;
-    struct stat         _request_file_stats;
-    const Request       _request;
-    const ServerConfig* _virtual_server;
-    Server*             _server; // TODO: check if we can remove this?
+    int                  _client_socket_fd;
+    std::string          _headers;
+    size_t               _bytes_sent_to_client;
+    size_t               _content_lenght;
+    std::string          _request_file_path;
+    std::string          _request_file_extension;
+    LocationIterator     _request_file_location;
+    int                  _request_file_fd;
+    struct stat          _request_file_stats;
+    const Request        _request;
+    std::vector<uint8_t> _response_buff;
+    const ServerConfig*  _virtual_server;
+    Server*              _server; // TODO: check if we can remove this?
 
 public:
     Response(Server* server); // Tmp error response
@@ -95,14 +95,14 @@ public:
     const ServerConfig*     GetVirtualServer() const;
     void                    SetVirtualServer(const ServerConfig* virtual_server);
     const uint8_t*          GetResponseBuff() const;
+    size_t                  GetResponseBuffCount() const;
 
 public:
-    void ResponseSent(const size_t n);
+    void IncrementResponseBuffBytesSent(const size_t n);
 
 public:
     void         SetStatusHeaders(const char* status_string);
     void         AppendHeader(const ResponseHeader& header);
-    void         ReadFile(const int fd);
+    void         AppendToResponseBuff(const std::vector<uint8_t>& content);
     virtual void FinishResponse(bool append_content_length = true);
-    void         AppendContent(const std::vector<uint8_t>& content);
 };
