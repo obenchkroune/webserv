@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/26 23:06:23 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 15:19:09 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Server::Server(const std::vector<ServerConfig>& config, const char** environ)
-    : _environ(environ), _config(config), _is_started(false)
+Server::Server(const std::vector<ServerConfig>& config)
+    : _config(config), _is_started(false)
 {
     _listen_socket_ev.events   = EPOLLIN;
     _listen_socket_ev.data.ptr = this;
@@ -39,17 +39,9 @@ const std::vector<ServerConfig>& Server::GetConfig() const
 {
     return _config;
 }
-const std::map<int, ServerClient>& Server::GetClients() const
-{
-    return _clients;
-}
 const std::vector<int>& Server::GetListenSockets() const
 {
     return _listen_socket_fds;
-}
-const char** Server::GetEnviron() const
-{
-    return _environ;
 }
 
 void Server::listen_on_addr(const sockaddr_in& _listen_addr)

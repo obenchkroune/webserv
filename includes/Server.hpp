@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/26 23:06:11 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 15:18:08 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,6 @@ class Server : public AIOEventListener
 {
 
 private:
-    const char**                   _environ;
     std::vector<ServerClient>      _clients_pool;
     std::map<int, Response*>       _cgi_responses;
     std::vector<ServerConfig>      _config;
@@ -48,7 +47,7 @@ private:
     epoll_event                    _listen_socket_ev;
 
 public:
-    Server(const std::vector<ServerConfig>& config, const char** environ);
+    Server(const std::vector<ServerConfig>& config);
     ~Server();
 
 private:
@@ -63,9 +62,7 @@ public:
 public:
     bool                               is_started() const;
     const std::vector<ServerConfig>&   GetConfig() const;
-    const std::map<int, ServerClient>& GetClients() const;
     const std::vector<int>&            GetListenSockets() const;
-    const char**                       GetEnviron() const;
 
     /* Interface */
 public:

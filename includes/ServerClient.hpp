@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/27 03:26:16 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 15:58:03 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,7 @@ private:
 private:
     void       auto_index(Response* response);
     HttpStatus CheckRequest(Response* response);
+    void       SendErrorResponse(const HttpStatus& status, Response* response);
 
 private:
     void ProcessCGI(Response* response);

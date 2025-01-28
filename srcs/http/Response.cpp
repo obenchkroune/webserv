@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 02:06:32 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 16:02:10 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,7 @@ Response::Response(const Request& request, Server* server)
       _server(server)
 {
 }
-Response::Response(const Response& response)
-    : _request(response._request)
+Response::Response(const Response& response) : _request(response._request)
 {
     *this = response;
 }
@@ -32,7 +31,7 @@ Response& Response::operator=(const Response& response)
 {
     if (this == &response)
         return *this;
-    _client_socket_fd       = response._client_socket_fd;
+    //_client_socket_fd       = response._client_socket_fd;
     _headers                = response._headers;
     _bytes_sent_to_client   = response._bytes_sent_to_client;
     _content_lenght         = response._content_lenght;
@@ -48,6 +47,7 @@ Response& Response::operator=(const Response& response)
 }
 Response::~Response() {}
 /* getters & setters*/
+/*
 int Response::GetClientSocketFd() const
 {
     return _client_socket_fd;
@@ -56,6 +56,7 @@ void Response::SetClientSocketFd(const int& fd)
 {
     _client_socket_fd = fd;
 }
+*/
 const Request& Response::GetRequest() const
 {
     return _request;
@@ -116,9 +117,9 @@ const uint8_t* Response::GetResponseBuff() const
             size_t remaining_bytes = _content_lenght - (_bytes_sent_to_client - _headers.size());
             if (remaining_bytes && _response_buff.size() < SEND_CHUNK)
             {
-                size_t read_size = std::min(remaining_bytes, SEND_CHUNK);
-                const uint8_t tmp = 0;
-                _response_buff.insert(_response_buff.end(),read_size, tmp);
+                size_t        read_size = std::min(remaining_bytes, SEND_CHUNK);
+                const uint8_t tmp       = 0;
+                _response_buff.insert(_response_buff.end(), read_size, tmp);
                 ssize_t bytes_read = read(
                     _request_file_fd, (uint8_t*)(_response_buff.data() + _response_buff.size()),
                     read_size

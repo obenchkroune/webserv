@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/28 00:16:33 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 16:05:06 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,15 +159,15 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
         if (status.code != STATUS_OK)
         {
             Response* response = new Response(_server);
-            response->SetClientSocketFd(_client_socket_fd);
+            // response->SetClientSocketFd(_client_socket_fd);
             response->SetVirtualServer(&_server->GetConfig().front());
             _request.clear();
-            return ServerUtils::SendErrorResponse(status, response);
+            return SendErrorResponse(status, response);
         }
         std::cerr << "<<< Request uri: " << _request.getUri()
                   << " | Request status after parsing: " << status.message << std::endl;
         Response* response = new Response(_request, _server);
-        response->SetClientSocketFd(_client_socket_fd);
+        // response->SetClientSocketFd(_client_socket_fd);
         response->SetVirtualServer(ServerUtils::GetRequestVirtualServer(
             _address_socket_fd, response->GetRequest(), _server->GetConfig()
         ));
@@ -178,7 +178,7 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
         }
         catch (const std::exception& e)
         {
-            ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
+            SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
         }
     }
 }
@@ -189,12 +189,12 @@ void ServerClient::ProcessRequest(Response* response)
         ServerUtils::GetFileLocation(*response->GetVirtualServer(), response->GetRequest().getUri())
     );
     if (response->GetRequestFileLocation() == response->GetVirtualServer()->locations.end())
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
+        return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
         return auto_index(response);
     if (check.code != STATUS_OK)
-        return ServerUtils::SendErrorResponse(check, response);
+        return SendErrorResponse(check, response);
     const std::string& method = response->GetRequest().getMethod();
     // HTTP CGI response:
     if (response->GetRequestFileLocation()->cgi_path != "")
@@ -207,7 +207,7 @@ void ServerClient::ProcessRequest(Response* response)
         if (it != response->GetRequestFileLocation()->cgi_extensions.end())
         {
             if (method != "POST" && method != "GET" && method != "HEAD")
-                return ServerUtils::SendErrorResponse(
+                return SendErrorResponse(
                     HttpStatus(STATUS_METHOD_NOT_ALLOWED), response
                 );
             Response* CGIresponse = new ResponseCGI(*response);
@@ -230,8 +230,44 @@ void ServerClient::ProcessRequest(Response* response)
     }
     else
     {
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED), response);
+        return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED), response);
     }
+}
+
+void ServerClient::SendErrorResponse(const HttpStatus& status, Response* response)
+{
+    Response* error_response = new Response(response->GetServer());
+    //error_response->SetClientSocketFd(_client_socket_fd);
+    error_response->SetVirtualServer(response->GetVirtualServer());
+    delete response;
+    error_response->SetStatusHeaders(status.message);
+    const std::map<uint16_t, std::string>& error_pages =
+        error_response->GetVirtualServer()->error_pages;
+    std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
+    struct stat                                     error_file_stat;
+
+    if (it == error_pages.end() || stat(it->second.c_str(), &error_file_stat) != 0)
+    {
+        std::cerr << "Error page not found for status: " << status.message << std::endl;
+        error_response->AppendToResponseBuff(
+            std::vector<uint8_t>(status.message, status.message + strlen(status.message))
+        );
+    }
+    else
+    {
+        int error_page_fd = open(it->second.c_str(), O_RDONLY);
+        if (error_page_fd >= 0)
+        {
+            error_response->SetRequestFileFd(error_page_fd);
+            error_response->SetRequestFileStat(error_file_stat);
+        }
+        else
+            error_response->AppendToResponseBuff(
+                std::vector<uint8_t>(status.message, status.message + strlen(status.message))
+            );
+    }
+    error_response->FinishResponse();
+    _responses_queue.push(error_response);
 }
 
 /*Getters & Setters*/

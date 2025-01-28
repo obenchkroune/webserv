@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   GET.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/04 13:33:03 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 00:47:56 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 16:07:25 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
     if (file_fd < 0)
     {
         std::cerr << "open() failed for file: " << response->GetRequestFilePath();
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
+        return SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     {
         std::ostringstream content_length;
@@ -60,7 +60,7 @@ void ServerClient::ProcessGET(Response* response, bool send_data /* = true*/)
         response->SetRequestFileFd(file_fd);
         response->FinishResponse();
     }
-    _server->QueueResponse(response);
+    _responses_queue.push(response);
 }
 
 void ServerClient::ProcessHEAD(Response* response)

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ResponseCGI.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 01:37:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/28 03:33:23 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 15:27:32 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,7 @@ ResponseCGI::ResponseCGI(const Response& response) : Response(response)
 }
 void ResponseCGI::AppendToResponseBuff(const std::vector<uint8_t>& content)
 {
-    if (_cgi_is_reading_body)
-    {
-        _content_lenght += content.size();
-        _response_buff.insert(_response_buff.end(), content.begin(), content.end());
-    }
-    else
+    if (_cgi_is_reading_body == false)
     {
         _headers.insert(_headers.end(), content.begin(), content.end());
         char* headers_end = utils::strnstr(_headers.c_str(), CRLF CRLF, _headers.size());
@@ -42,7 +37,7 @@ void ResponseCGI::AppendToResponseBuff(const std::vector<uint8_t>& content)
         if (headers_end)
         {
             size_t headers_length =
-                (headers_end - _headers.c_str()) + std::strlen(_cgi_line_delimiter);
+                (headers_end - _headers.c_str()) + 2 * std::strlen(_cgi_line_delimiter);
             if (headers_length < _headers.size())
             {
                 _content_lenght = _headers.size() - headers_length;
@@ -53,6 +48,11 @@ void ResponseCGI::AppendToResponseBuff(const std::vector<uint8_t>& content)
             }
             _cgi_is_reading_body = true;
         }
+    }
+    else
+    {
+        _content_lenght += content.size();
+        _response_buff.insert(_response_buff.end(), content.begin(), content.end());
     }
 }
 void ResponseCGI::FinishResponse()

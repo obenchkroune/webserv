@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   MethodsUtils.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/28 00:36:42 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 15:23:08 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ void ServerClient::auto_index(Response* response)
     std::vector<uint8_t> content(html.begin(), html.end());
     response->AppendToResponseBuff(content);
     response->FinishResponse();
-    _server->QueueResponse(response);
+    _responses_queue.push(response);
 }
 
 HttpStatus ServerClient::CheckRequest(Response* response)
