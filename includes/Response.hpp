@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 00:43:09 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 02:29:39 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,6 +103,6 @@ public:
 public:
     void         SetStatusHeaders(const char* status_string);
     void         AppendHeader(const ResponseHeader& header);
-    void         AppendToResponseBuff(const std::vector<uint8_t>& content);
-    virtual void FinishResponse();
+    virtual void AppendToResponseBuff(const std::vector<uint8_t>& content);
+    virtual void         FinishResponse();
 };
