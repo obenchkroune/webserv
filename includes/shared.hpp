@@ -3,18 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   shared.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/01 21:09:07 by msitni1337        #+#    #+#             */
-/*   Updated: 2024/12/10 17:08:49 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 02:22:23 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
-#define PROGVERSION          "0.1"
+#define PROGVERSION          "0.2"
 #define PROGNAME             "webserv"
-#define READ_CHUNK           1024 * 4
-#define RECV_CHUNK           1024
-#define SEND_CHUNK           1024
+#define READ_CHUNK           1024 * 4UL
+#define RECV_CHUNK           1024UL
+#define SEND_CHUNK           1024UL
 #define REQUEST_HEADER_LIMIT RECV_CHUNK * 100UL

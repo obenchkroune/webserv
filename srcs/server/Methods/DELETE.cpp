@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   DELETE.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 17:31:57 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/09 15:44:57 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/28 16:05:54 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,12 @@
 
 void ServerClient::ProcessDELETE(Response* response)
 {
-    if (unlink(response->GetFilePath().c_str()) == -1)
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
+    if (unlink(response->GetRequestFilePath().c_str()) == -1)
+        return SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     response->SetStatusHeaders(HTTP_STATUS_OK);
+    std::string message = "File: " + response->GetRequest().getUri() + " Deleted successfuly.";
+    std::vector<uint8_t> buff(message.begin(), message.end());
+    response->AppendToResponseBuff(buff);
     response->FinishResponse();
-    _server->QueueResponse(_client_socket_fd, response);
+    _responses_queue.push(response);
 }

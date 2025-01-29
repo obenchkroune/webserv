@@ -6,19 +6,24 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 17:45:26 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 06:12:51 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
+#include <cassert>
 
-Response::Response(const Request& request, const ServerConfig& virtual_server, Server* server)
-    : _content_sent(0), _request(request), _virtual_server(virtual_server), _server(server)
+Response::Response(Server* server)
+    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _server(server)
+{
+} // Temporary Response
+
+Response::Response(const Request& request, Server* server)
+    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _request(request),
+      _server(server)
 {
 }
-Response::Response(const Response& response)
-    : _request(response._request), _virtual_server(response._virtual_server),
-      _server(response._server)
+Response::Response(const Response& response) : _request(response._request)
 {
     *this = response;
 }
@@ -26,19 +31,24 @@ Response& Response::operator=(const Response& response)
 {
     if (this == &response)
         return *this;
-    _client_socket_fd = response._client_socket_fd;
-    _headers          = response._headers;
-    _content          = response._content;
-    _content_sent     = response._content_sent;
-    _file_path        = response._file_path;
-    _file_extension   = response._file_extension;
-    _file_location    = response._file_location;
-    _file_stats       = response._file_stats;
+    //_client_socket_fd       = response._client_socket_fd;
+    _headers                = response._headers;
+    _bytes_sent_to_client   = response._bytes_sent_to_client;
+    _content_lenght         = response._content_lenght;
+    _request_file_path      = response._request_file_path;
+    _request_file_extension = response._request_file_extension;
+    _request_file_location  = response._request_file_location;
+    _request_file_fd        = response._request_file_fd;
+    _request_file_stats     = response._request_file_stats;
+    _response_buff          = response._response_buff;
+    _virtual_server         = response._virtual_server;
+    _server                 = response._server;
     return *this;
 }
 Response::~Response() {}
 /* getters & setters*/
-const int& Response::GetClientSocketFd() const
+/*
+int Response::GetClientSocketFd() const
 {
     return _client_socket_fd;
 }
@@ -46,63 +56,113 @@ void Response::SetClientSocketFd(const int& fd)
 {
     _client_socket_fd = fd;
 }
+*/
 const Request& Response::GetRequest() const
 {
     return _request;
 }
-const std::string& Response::GetFilePath() const
+const std::string& Response::GetRequestFilePath() const
 {
-    return _file_path;
+    return _request_file_path;
 }
-void Response::SetFilePath(const std::string& path)
+void Response::SetRequestFilePath(const std::string& path)
 {
-    _file_path = path;
+    _request_file_path = path;
 }
-const std::string& Response::GetFileExtension() const
+const std::string& Response::GetRequestFileExtension() const
 {
-    return _file_extension;
+    return _request_file_extension;
 }
-void Response::SetFileExtension(const std::string& ext)
+void Response::SetRequestFileExtension(const std::string& ext)
 {
-    _file_extension = ext;
+    _request_file_extension = ext;
 }
-const LocationIterator& Response::GetFileLocation() const
+const LocationIterator& Response::GetRequestFileLocation() const
 {
-    return _file_location;
+    return _request_file_location;
 }
-void Response::SetFileLocation(const LocationIterator& location)
+void Response::SetRequestFileLocation(const LocationIterator& location)
 {
-    _file_location = location;
+    _request_file_location = location;
 }
-struct stat& Response::GetFileStat()
+int Response::GetRequestFileFd() const
 {
-    return _file_stats;
+    return _request_file_fd;
 }
-const ServerConfig& Response::GetVirtualServer() const
+void Response::SetRequestFileFd(const int& file_fd)
+{
+    _request_file_fd = file_fd;
+}
+struct stat Response::GetRequestFileStat() const
+{
+    return _request_file_stats;
+}
+void Response::SetRequestFileStat(struct stat& stat)
+{
+    _request_file_stats = stat;
+    _content_lenght     = stat.st_size;
+}
+const ServerConfig* Response::GetVirtualServer() const
 {
     return _virtual_server;
+}
+void Response::SetVirtualServer(const ServerConfig* virtual_server)
+{
+    _virtual_server = virtual_server;
 }
 Server* Response::GetServer() const
 {
     return _server;
 }
-size_t Response::GetContentSize() const
+const uint8_t* Response::GetResponseBuff()
 {
-    return _content.size();
+    if (_bytes_sent_to_client < _headers.size())
+        return (const uint8_t*)_headers.c_str() + _bytes_sent_to_client;
+    if (_bytes_sent_to_client - _headers.size() < _content_lenght)
+    {
+        if (_request_file_fd != -1)
+        {
+            size_t remaining_bytes = _content_lenght - (_bytes_sent_to_client - _headers.size());
+            if (remaining_bytes && _response_buff.size() < SEND_CHUNK)
+            {
+                size_t read_size = std::min(remaining_bytes, SEND_CHUNK);
+                _response_buff.insert(_response_buff.end(), read_size, 0);
+                ssize_t bytes_read = read(
+                    _request_file_fd, (uint8_t*)(_response_buff.data() + _response_buff.size() - read_size),
+                    read_size
+                );
+                if (bytes_read < 0 || (size_t)bytes_read != read_size)
+                {
+                    close(_request_file_fd);
+                    throw ResponseException("Read() failed.");
+                }
+            }
+        }
+        return _response_buff.data();
+    }
+    assert(!"IMPOSSIBLE");
+    return NULL;
 }
-const uint8_t* Response::GetResponseBuff() const
+void Response::IncrementResponseBuffBytesSent(const size_t n)
 {
-    return (uint8_t*)&_content[_content_sent];
+    _bytes_sent_to_client += n;
+    if (_response_buff.size() && _bytes_sent_to_client > _headers.size())
+        _response_buff.erase(_response_buff.begin(), _response_buff.begin() + n);
+    if (_bytes_sent_to_client >= _headers.size() + _content_lenght)
+    {
+        // Todo: move to a clear() method..
+        if (_request_file_fd != -1)
+            close(_request_file_fd);
+        _request_file_fd = -1;
+    }
 }
-void Response::ResponseSent(const size_t n)
+size_t Response::GetResponseBuffCount() const
 {
-    _content_sent += n;
-}
-size_t Response::ResponseCount() const
-{
-    if (_content_sent >= _content.size())
-        return 0;
-    return _content.size() - _content_sent;
+    if (_bytes_sent_to_client < _headers.size())
+        return _headers.size() - _bytes_sent_to_client;
+    if (_bytes_sent_to_client - _headers.size() < _content_lenght)
+        return _content_lenght - (_bytes_sent_to_client - _headers.size());
+    return 0;
 }
 void Response::SetStatusHeaders(const char* status_string)
 {
@@ -127,31 +187,17 @@ void Response::AppendHeader(const ResponseHeader& header)
 {
     _headers += header.name + ": " + header.value + CRLF;
 }
-void Response::AppendContent(const std::vector<uint8_t>& content)
+void Response::AppendToResponseBuff(const std::vector<uint8_t>& content)
 {
-    _content.insert(_content.end(), content.begin(), content.end());
+    _response_buff.insert(_response_buff.end(), content.begin(), content.end());
+    _content_lenght += content.size();
 }
-void Response::ReadFile(const int fd)
-{
-    for (;;)
-    {
-        uint8_t buff[READ_CHUNK];
-        int     bytes = read(fd, buff, READ_CHUNK);
-        if (bytes < 0)
-            throw ResponseException("read() failed for given fd.");
-        if (bytes == 0)
-            break;
-        _content.insert(_content.end(), buff, (buff + bytes));
-    }
-    close(fd);
-}
-void Response::FinishResponse(bool append_content_length /* = true*/)
+void Response::FinishResponse()
 {
     ResponseHeader header;
-    if (append_content_length)
     {
         std::ostringstream content_length;
-        content_length << _content.size();
+        content_length << _content_lenght;
         header.name  = "Content-Length";
         header.value = content_length.str();
         AppendHeader(header);
@@ -160,9 +206,14 @@ void Response::FinishResponse(bool append_content_length /* = true*/)
     header.value = "keep-alive";
     AppendHeader(header);
     _headers += CRLF;
-    _content.insert(_content.begin(), _headers.begin(), _headers.end());
-    std::cout << "[Response headers]     ============" << std::endl;
-    std::cout << _headers << std::endl;
-    std::cout << "[End Response headers] ============" << std::endl;
-    _headers.erase();
+    std::cerr << "============================" << std::endl;
+    std::cerr << ">>>> [Response headers]" << std::endl;
+    std::cerr << _headers << std::endl;
+    std::cerr << ">>>> [End Response headers]" << std::endl;
+    std::cerr << "==========      ============" << std::endl;
+    std::cerr << ">>>> [Response body]" << std::endl;
+    std::cerr << "Requested file name: " << _request_file_path << std::endl;
+    std::cerr << _content_lenght << " Bytes of content will be sent to client." << std::endl;
+    std::cerr << ">>>> [End Response body]" << std::endl;
+    std::cerr << "============================" << std::endl;
 }

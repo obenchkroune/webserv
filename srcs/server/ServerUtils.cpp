@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 16:17:06 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 08:43:26 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,37 +14,12 @@
 #include "Server.hpp"
 #include "ServerClient.hpp"
 #include <cassert>
+#include <climits>
 #include <iostream>
 #include <libgen.h>
 
 namespace ServerUtils
 {
-void SendErrorResponse(const HttpStatus& status, Response* response)
-{
-    Response* error_response =
-        new Response(response->GetRequest(), response->GetVirtualServer(), response->GetServer());
-    int client_socket_fd = response->GetClientSocketFd();
-    delete response;
-    error_response->SetStatusHeaders(status.message);
-    const std::map<uint16_t, std::string>& error_pages =
-        error_response->GetVirtualServer().error_pages;
-    std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
-    struct stat                                     buffer;
-
-    if (it == error_pages.end() || stat(it->second.c_str(), &buffer) != 0)
-    {
-        std::cerr << "OK: " << it->second << std::endl;
-        error_response->AppendContent(
-            std::vector<uint8_t>(status.message, status.message + strlen(status.message))
-        );
-    }
-    else
-    {
-        error_response->ReadFile(open(it->second.c_str(), O_RDONLY));
-    }
-    error_response->FinishResponse();
-    error_response->GetServer()->QueueResponse(client_socket_fd, error_response);
-}
 sockaddr_in GetListenAddr(const ServerConfig& _config)
 {
     sockaddr_in address;
@@ -89,32 +64,18 @@ void PrintSocketIP(std::ostream& os, const sockaddr_in& address)
     os << +IP[0] << '.' << +IP[1] << '.' << +IP[2] << '.' << +IP[3] << ':'
        << ntohs(address.sin_port) << std::endl;
 }
-bool validateFileLocation(const std::string& location_root, const std::string& fname)
+bool validateFileLocation(const std::string& location_root, const std::string& file_path)
 {
-    if (fname.find("/..") == std::string::npos)
-        return true;
-    int curr_directory_relative_to_root = 0;
-    int directory_name_len              = 0;
-    int dots_count                      = 0;
-    for (size_t i = location_root.length() + 1; i < fname.length(); i++)
+    char buff[PATH_MAX];
+    realpath(file_path.c_str(), buff);
+    std::cerr << "location_root: " << location_root << " file_path: " << file_path
+              << "realpath: " << buff << std::endl;
+    if (std::strncmp(location_root.c_str(), buff, std::strlen(location_root.c_str())) == 0)
     {
-        if (i + 1 >= fname.length() || fname[i] == '/')
-        {
-            if (dots_count == 2 && directory_name_len == 0)
-                curr_directory_relative_to_root--;
-            else if (directory_name_len > 0)
-                curr_directory_relative_to_root++;
-            dots_count         = 0;
-            directory_name_len = 0;
-        }
-        else if (fname[i] == '.')
-            dots_count++;
-        else
-            directory_name_len++;
-        if (curr_directory_relative_to_root < 0)
-            return false;
+        const char last_char = buff[std::strlen(location_root.c_str())];
+        return last_char == '\0' || last_char == '/';
     }
-    return true;
+    return false;
 }
 std::vector<LocationConfig>::const_iterator GetFileLocation(
     const ServerConfig& config, const std::string& fname
@@ -147,7 +108,7 @@ std::vector<LocationConfig>::const_iterator GetFileLocation(
     }
     return matched_location;
 }
-const ServerConfig& GetRequestVirtualServer(
+const ServerConfig* GetRequestVirtualServer(
     const int& address_fd, const Request& request, const std::vector<ServerConfig>& config
 )
 {
@@ -160,10 +121,10 @@ const ServerConfig& GetRequestVirtualServer(
     }
     assert(matched_servers.size() > 0 && "IMPOSSIBLE");
     if (matched_servers.size() == 1)
-        return *matched_servers.front();
+        return matched_servers.front();
     const HttpHeader* host_header = request.getHeader("Host");
     if (host_header == NULL)
-        return *matched_servers.front();
+        return matched_servers.front();
     std::vector<const ServerConfig*>::const_iterator matched_servers_it = matched_servers.begin();
     for (; matched_servers_it != matched_servers.end(); matched_servers_it++)
     {
@@ -171,9 +132,9 @@ const ServerConfig& GetRequestVirtualServer(
             (*matched_servers_it)->server_names.begin();
         for (; names_it != (*matched_servers_it)->server_names.end(); names_it++)
             if (*names_it == host_header->values.front().value)
-                return **matched_servers_it;
+                return &(**matched_servers_it);
     }
-    return *matched_servers.front();
+    return matched_servers.front();
 }
 
 } // namespace ServerUtils

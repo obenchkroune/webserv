@@ -8,10 +8,8 @@
 #include <sstream>
 
 Request::Request()
-    : _is_headers_completed(false), _is_body_completed(false), _is_chunked(false),
-      _remove_chunk_data_trailing_crlf(false), _remaining_chunk_size(0), _body_size(0),
-      _content_type_header(NULL), _transfer_encoding_header(NULL)
 {
+    clear();
 }
 
 Request::Request(const Request& other)
@@ -30,23 +28,47 @@ Request& Request::operator=(const Request& other)
     _chunk_size                      = other._chunk_size;
     _remaining_chunk_size            = other._remaining_chunk_size;
     _raw_buffer                      = other._raw_buffer;
-    _body                            = other._body;
-    _body_length                     = other._body_length;
-    _body_size                       = other._body_size;
-    _body_fd                         = other._body_fd;
-    _content_type_header             = other._content_type_header;
-    _transfer_encoding_header        = other._transfer_encoding_header;
-    _headers                         = other._headers;
-    _http_version                    = other._http_version;
+    _query_params                    = other._query_params;
+    _query_params_string             = other._query_params_string;
     _method                          = other._method;
     _uri                             = other._uri;
-    _query_params_string             = other._query_params_string;
-    _query_params                    = other._query_params;
+    _http_version                    = other._http_version;
+    _body_fd                         = other._body_fd;
+    _body_size                       = other._body_size;
+    _body                            = other._body;
+    _body_length                     = other._body_length;
+    _headers                         = other._headers;
+    _status                          = other._status;
 
-    _stream_buf.clear();
-    _stream_buf << other._stream_buf.rdbuf();
+    _headers_raw_buf.str(std::string());
+    _headers_raw_buf.clear();
+    _headers_raw_buf << other._headers_raw_buf.rdbuf();
     return *this;
 }
+
+void Request::clear()
+{
+    _status                          = HttpStatus(STATUS_OK);
+    _is_headers_completed            = false;
+    _is_body_completed               = false;
+    _is_chunked                      = false;
+    _remove_chunk_data_trailing_crlf = false;
+    _chunk_size                      = 0;
+    _remaining_chunk_size            = 0;
+    _body_fd                         = -1;
+    _body_size                       = 0;
+    _body.clear();
+    _headers.clear();
+    _http_version.clear();
+    _method.clear();
+    _uri.clear();
+    _query_params_string.clear();
+    _query_params.clear();
+    _headers_raw_buf.str(std::string());
+    _headers_raw_buf.clear();
+}
+
+Request::~Request() {}
 
 Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 {
@@ -67,9 +89,10 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
                 _raw_buffer.erase(_raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
             }
             _raw_buffer.insert(_raw_buffer.end(), 0);
-            _stream_buf << _raw_buffer.data();
+            _headers_raw_buf.clear();
+            _headers_raw_buf.str((char*)_raw_buffer.data());
             _raw_buffer.clear();
-            _status = parse();
+            parse();
         }
     }
     else if (_is_body_completed == false)
@@ -95,7 +118,6 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
     return *this;
 }
 
-Request::~Request() {}
 void Request::writeChunkToFile(size_t& offset)
 {
     size_t to_write = std::min(_remaining_chunk_size, _body.size() - offset);
@@ -142,7 +164,7 @@ void Request::writeChunked()
             utils::strnstr((const char*)(_body.data() + offset), CRLF, _body.size() - offset);
         if (chunk_size_ln)
         {
-            _chunk_size = std::strtoul((const char*)(_body.data() + offset), NULL, 16);
+            _chunk_size           = std::strtoul((const char*)(_body.data() + offset), NULL, 16);
             _remaining_chunk_size = _chunk_size;
             offset                = (chunk_size_ln + 2) - ((const char*)_body.data());
             for (; offset < _body.size() && chunk_size_ln && _chunk_size;)
@@ -174,35 +196,40 @@ void Request::writeChunked()
     {
         if (offset == _body.size())
             _body.clear();
-        else
+        else if (offset < _body.size())
             _body.erase(_body.begin(), _body.begin() + offset);
+        else
+            assert(!"IMPOSSIBLE");
     }
     if (_chunk_size == 0)
     {
         _is_body_completed = true;
+        if (lseek(_body_fd, 0, SEEK_SET) == -1)
+        {
+            close(_body_fd);
+            _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+        }
     }
 }
 
-HttpStatus Request::parse()
+void Request::parse()
 {
     _is_headers_completed = true;
-
     try
     {
+
         parseRequestLine();
         parseHeaders();
-        _content_type_header      = getHeader("Content-Type");
-        _transfer_encoding_header = getHeader("Transfer-Encoding");
-        if (_transfer_encoding_header != NULL && _transfer_encoding_header->values.front().value ==
-                                                     "chunked") // this should be case insensitive
+        const HttpHeader* transfer_encoding_header = getHeader("Transfer-Encoding");
+        if (transfer_encoding_header != NULL &&
+            transfer_encoding_header->values.front().value ==
+                "chunked") // TODO: this should be case insensitive and check through all header
+                           // values
         {
             _is_chunked = true;
-            std::stringstream fname;
-            fname << "/tmp/webserv_tmp_" << time(0);
-            _body_fd =
-                open(fname.str().c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP);
+            _body_fd    = open("/tmp/", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
             if (_body_fd < 0)
-                return HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+                _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
             if (_body.size())
                 writeChunked();
         }
@@ -220,17 +247,17 @@ HttpStatus Request::parse()
                 if (_body.size() == _body_length)
                 {
                     _is_body_completed = true;
-                    return ValidateMultipart();
+                    _status            = ValidateMultipart();
                 }
                 else if (_body.size() > _body_length)
                     assert(!"There is some overflow that need to be carried on to next request..");
             }
         }
-        return HttpStatus(STATUS_OK);
     }
     catch (const RequestException& e)
     {
-        return e.getErrorCode();
+        std::cerr << "finished parsing request status: " << e.what() << std::endl;
+        _status = e.getErrorCode();
     }
 }
 
@@ -279,11 +306,6 @@ const std::vector<HttpHeader>& Request::getHeaders() const
     return _headers;
 }
 
-const HttpHeader* Request::getContentTypeHeader() const
-{
-    return _content_type_header;
-}
-
 const std::vector<uint8_t>& Request::getBody() const
 {
     return _body;
@@ -307,7 +329,7 @@ const std::string& Request::getQueryParamsString() const
 
 const std::stringstream& Request::getRawBuffer() const
 {
-    return _stream_buf;
+    return _headers_raw_buf;
 }
 
 void Request::setMethod(const std::string& method)
@@ -340,45 +362,21 @@ void Request::setHeader(const HttpHeader& header)
     _headers.push_back(header);
 }
 
-void Request::clear()
-{
-    _status                          = HttpStatus(STATUS_OK);
-    _is_headers_completed            = false;
-    _is_body_completed               = false;
-    _is_chunked                      = false;
-    _remove_chunk_data_trailing_crlf = false;
-    _chunk_size                      = 0;
-    _remaining_chunk_size            = 0;
-    _content_type_header             = NULL;
-    _transfer_encoding_header        = NULL;
-    _body_fd                         = -1;
-    _body_size                       = 0;
-    _body.clear();
-    _headers.clear();
-    _http_version.clear();
-    _method.clear();
-    _uri.clear();
-    _query_params_string.clear();
-    _query_params.clear();
-    _stream_buf.str("");
-    _stream_buf.seekg(0);
-}
-
 std::string Request::getHeaderLine()
 {
     std::string line;
 
-    std::getline(_stream_buf, line, '\n');
+    std::getline(_headers_raw_buf, line, '\n');
     if (line.empty() || line[line.size() - 1] != '\r')
         throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     line.erase(line.size() - 1);
 
-    if (std::string(" \t").find(_stream_buf.peek()) != std::string::npos)
+    if (std::string(" \t").find(_headers_raw_buf.peek()) != std::string::npos)
     {
-        _stream_buf.ignore();
+        _headers_raw_buf.ignore();
         line += ' ';
-        while (std::string(" \t").find(_stream_buf.peek()) != std::string::npos)
-            _stream_buf.ignore();
+        while (std::string(" \t").find(_headers_raw_buf.peek()) != std::string::npos)
+            _headers_raw_buf.ignore();
         line += Request::getHeaderLine();
     }
     return line;
@@ -388,7 +386,7 @@ void Request::parseRequestLine()
 {
     std::string method, uri, version;
 
-    if (!std::getline(_stream_buf, method, ' ') || !std::getline(_stream_buf, uri, ' '))
+    if (!std::getline(_headers_raw_buf, method, ' ') || !std::getline(_headers_raw_buf, uri, ' '))
     {
         throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     }
@@ -400,7 +398,7 @@ void Request::parseRequestLine()
         _query_params        = parseQueryParams(_query_params_string);
     }
 
-    if (!std::getline(_stream_buf, version, '\n') || version[version.size() - 1] != '\r')
+    if (!std::getline(_headers_raw_buf, version, '\n') || version[version.size() - 1] != '\r')
     {
         throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     }
@@ -441,13 +439,13 @@ std::map<std::string, std::string> Request::parseQueryParams(const std::string q
 void Request::parseHeaders()
 {
     // check the size of the header fields
-    size_t current_pos = _stream_buf.tellg();
-    _stream_buf.seekg(0, std::ios::end);
-    if ((size_t)_stream_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
+    size_t current_pos = _headers_raw_buf.tellg();
+    _headers_raw_buf.seekg(0, std::ios::end);
+    if ((size_t)_headers_raw_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
     {
         throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE));
     }
-    _stream_buf.seekg(current_pos);
+    _headers_raw_buf.seekg(current_pos);
 
     std::string line;
     while (!(line = Request::getHeaderLine()).empty())
@@ -465,10 +463,11 @@ void Request::parseHeaders()
 
 HttpStatus Request::ValidateMultipart()
 {
-    if (_content_type_header != NULL && _content_type_header->values.size() &&
-        _content_type_header->values.front().value == "multipart/form-data")
+    const HttpHeader* content_type_header = getHeader("Content-Type");
+    if (content_type_header != NULL && content_type_header->values.size() &&
+        content_type_header->values.front().value == "multipart/form-data")
     {
-        if (_content_type_header->values.size() < 2)
+        if (content_type_header->values.size() < 2)
             return HttpStatus(STATUS_BAD_REQUEST);
     }
     return HttpStatus(STATUS_OK);

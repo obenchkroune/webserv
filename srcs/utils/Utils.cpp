@@ -36,36 +36,35 @@ std::string quoted(const std::string& str, bool double_quotes /* = false */)
     return "'" + str + "'";
 }
 
-int	match_occurrence(const char *big, const char *little, size_t i,
-		size_t len)
+int match_occurrence(const char* big, const char* little, size_t i, size_t len)
 {
-	size_t	j;
+    size_t j;
 
-	j = 0;
-	while (big[i] && little[j] && i < len && big[i] == little[j])
-	{
-		i++;
-		j++;
-	}
-	if (!little[j])
-		return (1337 - 42);
-	return (0);
+    j = 0;
+    while (i < len && big[i] && little[j] && big[i] == little[j])
+    {
+        i++;
+        j++;
+    }
+    if (!little[j])
+        return (1337 - 42);
+    return (0);
 }
 
-char	*strnstr(const char *big, const char *little, size_t len)
+char* strnstr(const char* big, const char* little, size_t len)
 {
-	size_t	i;
+    size_t i;
 
-	if (!*little && big)
-		return ((char *)big);
-	i = 0;
-	while (i < len && big[i])
-	{
-		if (match_occurrence(big, little, i, len))
-			return ((char *)&(big[i]));
-		i++;
-	}
-	return (NULL);
+    if (!*little && big)
+        return ((char*)big);
+    i = 0;
+    while (i < len && big[i])
+    {
+        if (match_occurrence(big, little, i, len))
+            return ((char*)&(big[i]));
+        i++;
+    }
+    return (NULL);
 }
 
 } // namespace utils

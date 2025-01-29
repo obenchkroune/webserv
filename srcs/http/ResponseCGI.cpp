@@ -6,79 +6,87 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 01:37:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/25 22:28:09 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 00:46:33 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ResponseCGI.hpp"
+#include <cstdlib>
 
-ResponseCGI::ResponseCGI(const Request& request, const ServerConfig& virtual_server, Server* server)
-    : Response(request, virtual_server, server)
-{
-}
 ResponseCGI::~ResponseCGI() {}
-ResponseCGI::ResponseCGI(const Response& responseCGI) : Response(responseCGI) {}
-ResponseCGI& ResponseCGI::operator=(const ResponseCGI& responseCGI)
+ResponseCGI::ResponseCGI(const Response& response) : Response(response)
 {
-    if (this == &responseCGI)
-        return *this;
-    return *this;
+    assert(_request_file_fd == -1);
+    assert(_headers.size() == 0);
+    assert(_response_buff.size() == 0);
+    _content_lenght      = 0; // resetting from previous call to Response::SetRequestFilestat()
+    _cgi_line_delimiter  = CRLF;
+    _cgi_is_reading_body = false;
 }
-void ResponseCGI::FinishResponse(bool append_content_length /* = true*/)
+void ResponseCGI::AppendToResponseBuff(const std::vector<uint8_t>& content)
 {
-    char*       header_line_start = (char*)_content.data();
-    const char* header_line_delim = CRLF;
-    if (utils::strnstr(header_line_start, CRLF, _content.size()) == NULL)
-        header_line_delim = "\n";
-    int   header_line_delim_len = std::strlen(header_line_delim);
-    char* header_line_end       = utils::strnstr(
-        header_line_start, header_line_delim,
-        _content.size() - (header_line_start - (char*)_content.data())
-    );
-    if (std::strncmp(header_line_start, "HTTP/", std::strlen("HTTP/")))
+    if (_cgi_is_reading_body == false)
     {
-        std::string status_header(HTTP_VERSION_TOKEN " " HTTP_STATUS_OK);
-        status_header += header_line_delim;
-        _content.insert(_content.begin(), status_header.begin(), status_header.end());
-        header_line_start = (char*)_content.data() + status_header.size();
-        header_line_start = utils::strnstr(
-            header_line_start, header_line_delim,
-            _content.size() - (header_line_start - (char*)_content.data())
-        );
-        if (header_line_start != NULL)
+        _headers.insert(_headers.end(), content.begin(), content.end());
+        char* headers_end = utils::strnstr(_headers.c_str(), CRLF CRLF, _headers.size());
+        if (headers_end == NULL)
         {
-            header_line_start += header_line_delim_len;
-            header_line_end = utils::strnstr(
-                header_line_start, header_line_delim,
-                _content.size() - (header_line_start - (char*)_content.data())
-            );
+            headers_end = utils::strnstr(_headers.c_str(), "\n\n", _headers.size());
+            if (headers_end)
+                _cgi_line_delimiter = "\n";
+        }
+        if (headers_end)
+        {
+            size_t headers_length =
+                (headers_end - _headers.c_str()) + 2 * std::strlen(_cgi_line_delimiter);
+            if (headers_length < _headers.size())
+            {
+                _content_lenght = _headers.size() - headers_length;
+                _response_buff.insert(
+                    _response_buff.end(), _headers.begin() + headers_length, _headers.end()
+                );
+                _headers.erase(headers_length);
+            }
+            _cgi_is_reading_body = true;
         }
     }
-    for (; header_line_end != NULL && header_line_end != header_line_start;
-         header_line_start = header_line_end + header_line_delim_len,
-         header_line_end   = utils::strnstr(
-             header_line_start, header_line_delim,
-             _content.size() - (header_line_start - (char*)_content.data())
-         ))
+    else
     {
-        char* header_name = std::strchr(header_line_start, ':');
-        assert(header_name != NULL);
-        if (!std::strncmp(header_line_start, "Content-Length", std::strlen("Content-Length")))
-            append_content_length = false;
+        _content_lenght += content.size();
+        _response_buff.insert(_response_buff.end(), content.begin(), content.end());
     }
-    assert(header_line_end != NULL);
-    if (append_content_length)
+}
+void ResponseCGI::FinishResponse()
+{
+    // Inserting proper HTTP status line:
     {
-        size_t content_length = 0;
-        if (header_line_end != NULL)
-            content_length = _content.size() -
-                             ((header_line_end + header_line_delim_len) - (char*)_content.data());
-        std::stringstream content_length_header;
-        content_length_header << "Content-Length: " << content_length << header_line_delim;
-        std::string content_length_header_str = content_length_header.str();
-        _content.insert(
-            _content.end() - (content_length + header_line_delim_len),
-            content_length_header_str.begin(), content_length_header_str.end()
-        );
+        size_t status_found = _headers.find("Status:");
+        if (status_found != std::string::npos)
+        {
+            int status_code = (int)std::strtol(_headers.c_str() + status_found, NULL, 10);
+            _cgi_status     = HttpStatus((HttpStatusCode)status_code);
+        }
+        {
+            std::string status_line = HTTP_VERSION_TOKEN " ";
+            status_line += _cgi_status.message;
+            status_line += _cgi_line_delimiter;
+            _headers.insert(_headers.begin(), status_line.begin(), status_line.end());
+        }
+    }
+    // Inserting content length:
+    {
+        size_t content_length_found = _headers.find("Content-Length:");
+        if (content_length_found == std::string::npos)
+        {
+            std::string        content_length_line = "Content-Length: ";
+            std::ostringstream content_length;
+            content_length << _content_lenght;
+            content_length_line += content_length.str();
+            content_length_line += _cgi_line_delimiter;
+            _headers.insert(
+                _headers.end() - std::strlen(_cgi_line_delimiter), content_length_line.begin(),
+                content_length_line.end()
+            );
+        }
     }
 }

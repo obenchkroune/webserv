@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/08 17:44:31 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 00:44:06 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <iostream>
 #include <ranges>
 #include <sstream>
+#include <stdio.h>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -49,20 +50,23 @@ typedef std::vector<LocationConfig>::const_iterator LocationIterator;
 class Response
 {
 protected:
-    int                  _client_socket_fd;
+    //int                  _client_socket_fd;
     std::string          _headers;
-    std::vector<uint8_t> _content;
-    size_t               _content_sent;
-    std::string          _file_path;
-    std::string          _file_extension;
-    LocationIterator     _file_location;
-    struct stat          _file_stats;
+    size_t               _bytes_sent_to_client;
+    size_t               _content_lenght;
+    std::string          _request_file_path;
+    std::string          _request_file_extension;
+    LocationIterator     _request_file_location;
+    int                  _request_file_fd;
+    struct stat          _request_file_stats;
     const Request        _request;
-    const ServerConfig&  _virtual_server;
-    Server*              _server;
+    std::vector<uint8_t> _response_buff;
+    const ServerConfig*  _virtual_server;
+    Server*              _server; // TODO: check if we can remove this?
 
 public:
-    Response(const Request& request, const ServerConfig& virtual_server, Server* server);
+    Response(Server* server); // Tmp error response
+    Response(const Request& request, Server* server);
     virtual ~Response();
     Response(const Response& response);
 
@@ -72,31 +76,33 @@ private:
      * getters & setters
      */
 public:
-    const int&              GetClientSocketFd() const;
-    void                    SetClientSocketFd(const int& fd);
+    //int                     GetClientSocketFd() const;
+    //void                    SetClientSocketFd(const int& fd);
     const Request&          GetRequest() const;
-    const std::string&      GetFilePath() const;
-    void                    SetFilePath(const std::string& path);
-    const std::string&      GetFileExtension() const;
-    void                    SetFileExtension(const std::string& ext);
-    const LocationIterator& GetFileLocation() const;
-    void                    SetFileLocation(const LocationIterator& location);
-    struct stat&            GetFileStat();
+    void                    SetRequest(const Request&);
+    const std::string&      GetRequestFilePath() const;
+    void                    SetRequestFilePath(const std::string& path);
+    const std::string&      GetRequestFileExtension() const;
+    void                    SetRequestFileExtension(const std::string& ext);
+    const LocationIterator& GetRequestFileLocation() const;
+    void                    SetRequestFileLocation(const LocationIterator& location);
+    int                     GetRequestFileFd() const;
+    void                    SetRequestFileFd(const int& file_fd);
+    struct stat             GetRequestFileStat() const;
+    void                    SetRequestFileStat(struct stat& stat);
     Server*                 GetServer() const;
-    size_t                  GetContentSize() const;
+    size_t                  GetContentLength() const;
+    const ServerConfig*     GetVirtualServer() const;
+    void                    SetVirtualServer(const ServerConfig* virtual_server);
+    const uint8_t*          GetResponseBuff();
+    size_t                  GetResponseBuffCount() const;
 
 public:
-    const ServerConfig& GetVirtualServer() const;
-    const uint8_t*      GetResponseBuff() const;
-
-public:
-    void   ResponseSent(const size_t n);
-    size_t ResponseCount() const;
+    void IncrementResponseBuffBytesSent(const size_t n);
 
 public:
     void         SetStatusHeaders(const char* status_string);
     void         AppendHeader(const ResponseHeader& header);
-    void         ReadFile(const int fd);
-    virtual void FinishResponse(bool append_content_length = true);
-    void         AppendContent(const std::vector<uint8_t>& content);
+    virtual void AppendToResponseBuff(const std::vector<uint8_t>& content);
+    virtual void         FinishResponse();
 };
