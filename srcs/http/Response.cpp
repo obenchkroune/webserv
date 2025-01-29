@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 16:02:10 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 01:22:52 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,12 @@
 #include <cassert>
 
 Response::Response(Server* server)
-    : _content_lenght(0), _bytes_sent_to_client(0), _request_file_fd(-1), _server(server)
+    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _server(server)
 {
 } // Temporary Response
 
 Response::Response(const Request& request, Server* server)
-    : _content_lenght(0), _bytes_sent_to_client(0), _request_file_fd(-1), _request(request),
+    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _request(request),
       _server(server)
 {
 }
@@ -85,6 +85,14 @@ void Response::SetRequestFileLocation(const LocationIterator& location)
 {
     _request_file_location = location;
 }
+int Response::GetRequestFileFd() const
+{
+    return _request_file_fd;
+}
+void Response::SetRequestFileFd(const int& file_fd)
+{
+    _request_file_fd = file_fd;
+}
 struct stat Response::GetRequestFileStat() const
 {
     return _request_file_stats;
@@ -106,7 +114,7 @@ Server* Response::GetServer() const
 {
     return _server;
 }
-const uint8_t* Response::GetResponseBuff() const
+const uint8_t* Response::GetResponseBuff()
 {
     if (_bytes_sent_to_client < _headers.size())
         return (const uint8_t*)_headers.c_str() + _bytes_sent_to_client;
@@ -117,14 +125,13 @@ const uint8_t* Response::GetResponseBuff() const
             size_t remaining_bytes = _content_lenght - (_bytes_sent_to_client - _headers.size());
             if (remaining_bytes && _response_buff.size() < SEND_CHUNK)
             {
-                size_t        read_size = std::min(remaining_bytes, SEND_CHUNK);
-                const uint8_t tmp       = 0;
-                _response_buff.insert(_response_buff.end(), read_size, tmp);
+                size_t read_size = std::min(remaining_bytes, SEND_CHUNK);
+                _response_buff.insert(_response_buff.end(), read_size, 0);
                 ssize_t bytes_read = read(
-                    _request_file_fd, (uint8_t*)(_response_buff.data() + _response_buff.size()),
+                    _request_file_fd, (uint8_t*)(_response_buff.data() + _response_buff.size() - read_size),
                     read_size
                 );
-                if (bytes_read < 0 || bytes_read != read_size)
+                if (bytes_read < 0 || (size_t)bytes_read != read_size)
                 {
                     close(_request_file_fd);
                     throw ResponseException("Read() failed.");
@@ -203,6 +210,7 @@ void Response::FinishResponse()
     std::cerr << _headers << std::endl;
     std::cerr << "[End Response headers] ============" << std::endl;
     std::cerr << "[Response body]     ============" << std::endl;
+    std::cerr << "Requested file name: " << _request_file_path << std::endl;
     std::cerr << _content_lenght << " Bytes of content will be sent to client." << std::endl;
     std::cerr << "[End Response body] ============" << std::endl;
 }

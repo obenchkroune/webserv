@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   MethodsUtils.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/28 15:23:08 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 01:27:53 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,7 +74,11 @@ HttpStatus ServerClient::CheckRequest(Response* response)
         if (index_it == response->GetRequestFileLocation()->index.end())
         {
             if (response->GetRequestFileLocation()->autoindex)
+            {
+                response->SetRequestFilePath(file_path);
+                auto_index(response);
                 return HttpStatus(STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX);
+            }
             return HttpStatus(STATUS_FORBIDDEN);
         }
         if (stat(file_path.c_str(), &file_stat) == -1)

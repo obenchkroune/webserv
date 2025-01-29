@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/28 15:58:03 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 00:32:24 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <queue>
 
 typedef std::vector<LocationConfig>::const_iterator LocationsIterator;
 
@@ -25,21 +26,22 @@ class ServerClient : AIOEventListener
 {
 
 private:
-    bool                  _is_started;
-    int                   _client_socket_fd;
-    int                   _address_socket_fd;
-    epoll_event           _epoll_ev;
-    Server*               _server;
-    Request               _request;
-    std::queue<Response*> _responses_queue;
+    bool                     _is_started;
+    int                      _client_socket_fd;
+    int                      _address_socket_fd;
+    epoll_event              _epoll_ev;
+    Server*                  _server;
+    Request                  _request;
+    std::queue<Response*>    _responses_queue;
+    std::map<int, Response*> _cgi_responses;
 
 public:
     ServerClient(const int& client_socket_fd, const int& address_socket_fd, Server* server);
     ServerClient(const ServerClient& client);
+    ServerClient& operator=(const ServerClient& client);
     ~ServerClient();
 
 private:
-    ServerClient& operator=(const ServerClient& client);
 
 public:
     void BindToClientSocket();
@@ -74,4 +76,6 @@ public:
 private:
     void HandleEPOLLOUT();
     void HandleEPOLLIN();
+    void HandleCGIEPOLLIN(const epoll_event& ev, Response* response);
+    void QueueCGIResponse(int output_pipe_fd, Response* response);
 };

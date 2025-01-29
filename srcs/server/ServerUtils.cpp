@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 15:56:55 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 02:16:34 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,6 @@ void PrintSocketIP(std::ostream& os, const sockaddr_in& address)
 }
 bool validateFileLocation(const std::string& location_root, const std::string& fname)
 {
-    std::cerr << "location_root: " << location_root << " fname: " << fname << std::endl;
     if (fname.find("/..") == std::string::npos)
         return true;
     int curr_directory_relative_to_root = 0;

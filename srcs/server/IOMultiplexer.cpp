@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/03 18:31:26 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 02:19:50 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,9 +52,9 @@ void IOMultiplexer::RemoveEvent(epoll_event ev, int fd)
     if (it == _listeners.end())
         throw IOMultiplexerException("RemoveEvent() : Event listener not found.");
     ev.data.fd = fd;
+    _listeners.erase(fd);
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, &ev) == -1)
         throw IOMultiplexerException("epoll_ctl() failed.");
-    _listeners.erase(fd);
 }
 void IOMultiplexer::StartEventLoop()
 {
@@ -66,7 +66,7 @@ void IOMultiplexer::StartEventLoop()
         return;
     }
     _is_started = true;
-    std::cout << "IOMultiplexer loop started." << std::endl;
+    std::cout << ">>>> IOMultiplexer loop started." << std::endl;
     while (_is_started)
     {
         int events_count = epoll_wait(_epoll_fd, _events, EPOLL_EVENTS_MAX, -1);

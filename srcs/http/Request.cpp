@@ -41,9 +41,9 @@ Request& Request::operator=(const Request& other)
     _query_params_string             = other._query_params_string;
     _query_params                    = other._query_params;
 
-    _stream_buf.str(std::string());
-    _stream_buf.clear();
-    _stream_buf << other._stream_buf.rdbuf();
+    _headers_raw_buf.str(std::string());
+    _headers_raw_buf.clear();
+    _headers_raw_buf << other._headers_raw_buf.rdbuf();
     return *this;
 }
 
@@ -67,8 +67,8 @@ void Request::clear()
     _uri.clear();
     _query_params_string.clear();
     _query_params.clear();
-    _stream_buf.str(std::string());
-    _stream_buf.clear();
+    _headers_raw_buf.str(std::string());
+    _headers_raw_buf.clear();
 }
 
 Request::~Request() {}
@@ -92,7 +92,8 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
                 _raw_buffer.erase(_raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
             }
             _raw_buffer.insert(_raw_buffer.end(), 0);
-            _stream_buf << _raw_buffer.data();
+            _headers_raw_buf.clear();
+            _headers_raw_buf.str((char*)_raw_buffer.data());
             _raw_buffer.clear();
             _status = parse();
         }
@@ -130,7 +131,7 @@ void Request::writeChunkToFile(size_t& offset)
         {
             std::cerr << "Error writing received request body." << std::endl;
             close(_body_fd);
-            throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR));
+            throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), "10");
         }
         offset += bytes_written;
         _body_size += bytes_written;
@@ -210,9 +211,9 @@ void Request::writeChunked()
 HttpStatus Request::parse()
 {
     _is_headers_completed = true;
-
     try
     {
+
         parseRequestLine();
         parseHeaders();
         _content_type_header      = getHeader("Content-Type");
@@ -251,6 +252,7 @@ HttpStatus Request::parse()
     }
     catch (const RequestException& e)
     {
+        std::cerr << "finished parsing request status: " << e.what() << std::endl;
         return e.getErrorCode();
     }
 }
@@ -328,7 +330,7 @@ const std::string& Request::getQueryParamsString() const
 
 const std::stringstream& Request::getRawBuffer() const
 {
-    return _stream_buf;
+    return _headers_raw_buf;
 }
 
 void Request::setMethod(const std::string& method)
@@ -339,20 +341,20 @@ void Request::setMethod(const std::string& method)
 void Request::setUri(const std::string& uri)
 {
     if (uri.empty() || uri[0] != '/')
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "7");
     _uri = uri;
 }
 
 void Request::setVersion(const std::string& version)
 {
     if (version.substr(0, 5) != "HTTP/")
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "1");
 
     int major, minor;
     if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2)
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "2");
     if (major != 1 || minor != 1)
-        throw RequestException(HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED));
+        throw RequestException(HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED), "3");
     _http_version = version;
 }
 
@@ -365,17 +367,17 @@ std::string Request::getHeaderLine()
 {
     std::string line;
 
-    std::getline(_stream_buf, line, '\n');
+    std::getline(_headers_raw_buf, line, '\n');
     if (line.empty() || line[line.size() - 1] != '\r')
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "4");
     line.erase(line.size() - 1);
 
-    if (std::string(" \t").find(_stream_buf.peek()) != std::string::npos)
+    if (std::string(" \t").find(_headers_raw_buf.peek()) != std::string::npos)
     {
-        _stream_buf.ignore();
+        _headers_raw_buf.ignore();
         line += ' ';
-        while (std::string(" \t").find(_stream_buf.peek()) != std::string::npos)
-            _stream_buf.ignore();
+        while (std::string(" \t").find(_headers_raw_buf.peek()) != std::string::npos)
+            _headers_raw_buf.ignore();
         line += Request::getHeaderLine();
     }
     return line;
@@ -385,9 +387,9 @@ void Request::parseRequestLine()
 {
     std::string method, uri, version;
 
-    if (!std::getline(_stream_buf, method, ' ') || !std::getline(_stream_buf, uri, ' '))
+    if (!std::getline(_headers_raw_buf, method, ' ') || !std::getline(_headers_raw_buf, uri, ' '))
     {
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "5");
     }
 
     if (uri.find('?') != std::string::npos)
@@ -397,9 +399,9 @@ void Request::parseRequestLine()
         _query_params        = parseQueryParams(_query_params_string);
     }
 
-    if (!std::getline(_stream_buf, version, '\n') || version[version.size() - 1] != '\r')
+    if (!std::getline(_headers_raw_buf, version, '\n') || version[version.size() - 1] != '\r')
     {
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "6");
     }
 
     version.erase(version.size() - 1);
@@ -438,20 +440,20 @@ std::map<std::string, std::string> Request::parseQueryParams(const std::string q
 void Request::parseHeaders()
 {
     // check the size of the header fields
-    size_t current_pos = _stream_buf.tellg();
-    _stream_buf.seekg(0, std::ios::end);
-    if ((size_t)_stream_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
+    size_t current_pos = _headers_raw_buf.tellg();
+    _headers_raw_buf.seekg(0, std::ios::end);
+    if ((size_t)_headers_raw_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
     {
-        throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE));
+        throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE), "8");
     }
-    _stream_buf.seekg(current_pos);
+    _headers_raw_buf.seekg(current_pos);
 
     std::string line;
     while (!(line = Request::getHeaderLine()).empty())
     {
         size_t pos = line.find(':');
         if (pos == std::string::npos)
-            throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
+            throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "9");
         std::string name  = utils::strtrim(line.substr(0, pos)),
                     value = utils::strtrim(line.substr(pos + 1));
         HttpHeader header(name, value);

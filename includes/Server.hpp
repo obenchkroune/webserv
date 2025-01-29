@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 15:18:08 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/28 23:57:23 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,6 @@ private:
 
 public:
     void Start();
-    void QueueCGIResponse(int pipe_fd, Response* response);
 
     /* Getters & Setters */
 public:
@@ -74,5 +73,4 @@ private:
     void listen_on_addr(const sockaddr_in& _listen_addr);
     void AcceptNewPeerOnSocket(int socket_fd);
     void HandlePeerEPOLLOUT(const epoll_event& ev, ServerClient& client);
-    void HandleCGIEPOLLIN(const epoll_event& ev, Response* response);
 };

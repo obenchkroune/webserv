@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/28 16:05:06 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 02:21:03 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ ServerClient::ServerClient(
 {
 }
 
-ServerClient::ServerClient(const ServerClient& client)
+ServerClient::ServerClient(const ServerClient& client) : AIOEventListener(client)
 {
     *this = client;
 }
@@ -37,6 +37,7 @@ ServerClient& ServerClient::operator=(const ServerClient& client)
     _server            = client._server;
     _request           = client._request;
     _responses_queue   = client._responses_queue;
+    _cgi_responses     = client._cgi_responses;
     return *this;
 }
 
@@ -50,7 +51,7 @@ void ServerClient::BindToClientSocket()
     try
     {
         IOMultiplexer::GetInstance().AddEvent(_epoll_ev, _client_socket_fd);
-        std::cout << "New peer accepted on fd " << _client_socket_fd << ".\n";
+        std::cout << "<<<< New peer accepted on fd " << _client_socket_fd << ".\n";
         _is_started = true;
     }
     catch (const std::exception& e)
@@ -62,10 +63,17 @@ void ServerClient::BindToClientSocket()
 }
 void ServerClient::ConsumeEvent(const epoll_event ev)
 {
-    assert(ev.data.fd == _client_socket_fd);
+    // CGI pipe I/O:
+    std::map<int, Response*>::iterator cgi_it = _cgi_responses.find(ev.data.fd);
+    if (cgi_it != _cgi_responses.end())
+    {
+        HandleCGIEPOLLIN(ev, cgi_it->second);
+        return;
+    }
+    // Client Requests:
     if (ev.events & EPOLLIN)
         HandleEPOLLIN();
-    if (ev.events & EPOLLOUT)
+    if (_responses_queue.size() && ev.events & EPOLLOUT)
         HandleEPOLLOUT();
 }
 void ServerClient::HandleEPOLLIN()
@@ -80,7 +88,7 @@ void ServerClient::HandleEPOLLIN()
     }
     if (bytes == 0)
         return Terminate();
-    if (bytes < READ_CHUNK)
+    if ((size_t)bytes < READ_CHUNK)
         buffer.erase(buffer.begin() + bytes, buffer.end());
     ReceiveRequest(buffer);
 }
@@ -128,6 +136,48 @@ fetch_next_response:
         _responses_queue.pop();
     }
 }
+void ServerClient::QueueCGIResponse(int output_pipe_fd, Response* response)
+{
+    epoll_event ev;
+    ev.events   = EPOLLIN | EPOLLHUP;
+    ev.data.ptr = this;
+    IOMultiplexer::GetInstance().AddEvent(ev, output_pipe_fd);
+    _cgi_responses.insert(std::pair<int, Response*>(output_pipe_fd, response));
+    std::cout << "IOMultiplexer is listening on CGI pipe fd: " << output_pipe_fd
+              << " for client fd: " << _client_socket_fd << std::endl;
+}
+void ServerClient::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
+{
+    std::vector<uint8_t> buff(READ_CHUNK, 0);
+    ssize_t              bytes = read(ev.data.fd, buff.data(), READ_CHUNK);
+    if (bytes < 0)
+    {
+        std::cerr << "HandleCGIEPOLLIN(): read() failed for file script: "
+                  << response->GetRequestFilePath() << std::endl;
+        return SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
+    }
+    if (bytes == 0)
+    {
+        epoll_event event = ev;
+        event.data.ptr    = this;
+        _cgi_responses.erase(ev.data.fd);
+        try
+        {
+            IOMultiplexer::GetInstance().RemoveEvent(event, ev.data.fd);
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        close(ev.data.fd);
+        response->FinishResponse();
+        _responses_queue.push(response);
+        return;
+    }
+    if ((size_t)bytes < READ_CHUNK)
+        buff.erase(buff.begin() + bytes, buff.end());
+    response->AppendToResponseBuff(buff);
+}
 void ServerClient::Terminate()
 {
     if (_is_started == false)
@@ -146,7 +196,7 @@ void ServerClient::Terminate()
     }
     close(_client_socket_fd);
     _is_started = false;
-    std::cout << "Client fd: " << _client_socket_fd << " disconnected." << std::endl;
+    std::cout << ">>>> Client fd: " << _client_socket_fd << " disconnected." << std::endl;
 }
 
 void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
@@ -164,7 +214,8 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
             _request.clear();
             return SendErrorResponse(status, response);
         }
-        std::cerr << "<<< Request uri: " << _request.getUri()
+        std::cerr << "<<<< Client fd: " << _client_socket_fd
+                  << " Requested uri: " << _request.getUri()
                   << " | Request status after parsing: " << status.message << std::endl;
         Response* response = new Response(_request, _server);
         // response->SetClientSocketFd(_client_socket_fd);
@@ -192,7 +243,7 @@ void ServerClient::ProcessRequest(Response* response)
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
-        return auto_index(response);
+        return;
     if (check.code != STATUS_OK)
         return SendErrorResponse(check, response);
     const std::string& method = response->GetRequest().getMethod();
@@ -207,9 +258,7 @@ void ServerClient::ProcessRequest(Response* response)
         if (it != response->GetRequestFileLocation()->cgi_extensions.end())
         {
             if (method != "POST" && method != "GET" && method != "HEAD")
-                return SendErrorResponse(
-                    HttpStatus(STATUS_METHOD_NOT_ALLOWED), response
-                );
+                return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED), response);
             Response* CGIresponse = new ResponseCGI(*response);
             delete response;
             return ProcessCGI(CGIresponse);
@@ -237,7 +286,7 @@ void ServerClient::ProcessRequest(Response* response)
 void ServerClient::SendErrorResponse(const HttpStatus& status, Response* response)
 {
     Response* error_response = new Response(response->GetServer());
-    //error_response->SetClientSocketFd(_client_socket_fd);
+    // error_response->SetClientSocketFd(_client_socket_fd);
     error_response->SetVirtualServer(response->GetVirtualServer());
     delete response;
     error_response->SetStatusHeaders(status.message);

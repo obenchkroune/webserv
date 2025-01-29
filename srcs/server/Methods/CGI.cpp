@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/28 01:56:20 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 00:28:31 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ void ServerClient::ProcessCGI(Response* response)
     {
         std::cerr << "pipe() failed for the [output] of cgi script file: "
                   << response->GetRequestFilePath() << std::endl;
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
+        return ServerClient::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     if (!response->GetRequest().isChunked() && response->GetRequest().getBody().size())
     {
@@ -32,7 +32,7 @@ void ServerClient::ProcessCGI(Response* response)
         if (cgi_input_fd == -1)
         {
             close(pipe_fd[0]), close(pipe_fd[1]);
-            return ServerUtils::SendErrorResponse(
+            return ServerClient::SendErrorResponse(
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
             );
         }
@@ -44,7 +44,7 @@ void ServerClient::ProcessCGI(Response* response)
             lseek(cgi_input_fd, 0, SEEK_SET) == -1)
         {
             close(pipe_fd[0]), close(pipe_fd[1]), close(cgi_input_fd);
-            return ServerUtils::SendErrorResponse(
+            return ServerClient::SendErrorResponse(
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
             );
         }
@@ -56,7 +56,7 @@ void ServerClient::ProcessCGI(Response* response)
             -1) // TODO: remove this replace it with dupping fd before writing ..
         {
             close(pipe_fd[0]), close(pipe_fd[1]), close(cgi_input_fd);
-            return ServerUtils::SendErrorResponse(
+            return ServerClient::SendErrorResponse(
                 HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
             );
         }
@@ -67,13 +67,13 @@ void ServerClient::ProcessCGI(Response* response)
         std::cerr << "fork() failed for cgi script file: " << response->GetRequestFilePath()
                   << std::endl;
         close(pipe_fd[0]), close(pipe_fd[1]), close(cgi_input_fd);
-        return ServerUtils::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
+        return ServerClient::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
     if (pid)
     {
         /*TODO: set response timeout*/
         close(pipe_fd[1]), close(cgi_input_fd);
-        _server->QueueCGIResponse(pipe_fd[0], response);
+        QueueCGIResponse(pipe_fd[0], response);
     }
     else
     {

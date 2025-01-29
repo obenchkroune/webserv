@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 16:01:38 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 00:44:06 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,7 +94,7 @@ public:
     size_t                  GetContentLength() const;
     const ServerConfig*     GetVirtualServer() const;
     void                    SetVirtualServer(const ServerConfig* virtual_server);
-    const uint8_t*          GetResponseBuff() const;
+    const uint8_t*          GetResponseBuff();
     size_t                  GetResponseBuffCount() const;
 
 public:

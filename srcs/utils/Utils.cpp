@@ -41,7 +41,7 @@ int match_occurrence(const char* big, const char* little, size_t i, size_t len)
     size_t j;
 
     j = 0;
-    while (big[i] && little[j] && i < len && big[i] == little[j])
+    while (i < len && big[i] && little[j] && big[i] == little[j])
     {
         i++;
         j++;

@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   ResponseCGI.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 01:37:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/28 15:27:32 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 00:46:33 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ResponseCGI.hpp"
+#include <cstdlib>
 
 ResponseCGI::~ResponseCGI() {}
 ResponseCGI::ResponseCGI(const Response& response) : Response(response)
@@ -62,7 +63,7 @@ void ResponseCGI::FinishResponse()
         size_t status_found = _headers.find("Status:");
         if (status_found != std::string::npos)
         {
-            int status_code = std::atoi(_headers.c_str() + status_found);
+            int status_code = (int)std::strtol(_headers.c_str() + status_found, NULL, 10);
             _cgi_status     = HttpStatus((HttpStatusCode)status_code);
         }
         {

@@ -10,14 +10,15 @@
 class RequestException : public std::exception
 {
 public:
-    RequestException(const HttpStatus& error_code);
+    RequestException(const HttpStatus& error_code, std::string);
     ~RequestException() throw();
     const char* what() const throw();
 
     HttpStatus getErrorCode() const;
 
 private:
-    HttpStatus _error_code;
+    HttpStatus  _error_code;
+    std::string _line;
 };
 
 class Request
@@ -64,7 +65,7 @@ private:
     size_t                             _chunk_size;
     size_t                             _remaining_chunk_size;
     std::vector<uint8_t>               _raw_buffer;
-    std::stringstream                  _stream_buf;
+    std::stringstream                  _headers_raw_buf;
     std::map<std::string, std::string> _query_params;
     std::string                        _query_params_string;
     std::string                        _method;
