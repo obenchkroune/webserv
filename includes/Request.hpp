@@ -7,6 +7,9 @@
 #include <sstream>
 #include <unistd.h>
 
+typedef std::vector<LocationConfig>::const_iterator LocationIterator;
+typedef std::vector<ServerConfig>::const_iterator   VirtualServerIterator;
+class Server;
 class RequestException : public std::exception
 {
 public:
@@ -17,17 +20,19 @@ public:
     HttpStatus getErrorCode() const;
 
 private:
-    HttpStatus  _error_code;
+    HttpStatus _error_code;
 };
 
 class Request
 {
 public:
-    Request();
+    Request(const int& client_address_socket_fd);
     Request(const Request& other);
+    Request& operator=(const Request& other);
     ~Request();
 
-    Request& operator=(const Request& other);
+
+public:
     Request& operator+=(const std::vector<uint8_t>& bytes);
     void     parse();
 
@@ -46,6 +51,8 @@ public:
     const HttpStatus&                         getStatus() const;
     bool                                      isCompleted() const;
     bool                                      isChunked() const;
+    VirtualServerIterator                     getRequestVirtualServer() const;
+    LocationIterator                          getRequestFileLocation() const;
 
     void clear();
 
@@ -57,6 +64,7 @@ private:
     void setHeader(const HttpHeader& header);
 
 private:
+    int                                _client_address_socket_fd;
     bool                               _is_headers_completed;
     bool                               _is_body_completed;
     bool                               _is_chunked;
@@ -76,6 +84,8 @@ private:
     size_t                             _body_length;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
+    VirtualServerIterator              _request_virtual_server;
+    LocationIterator                   _request_file_location;
 
     void                               parseRequestLine();
     std::map<std::string, std::string> parseQueryParams(const std::string query);

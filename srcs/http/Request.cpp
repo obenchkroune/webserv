@@ -1,5 +1,6 @@
 #include "Request.hpp"
 #include "Http.hpp"
+#include "Server.hpp"
 #include "Utils.hpp"
 #include <algorithm>
 #include <cassert>
@@ -7,12 +8,13 @@
 #include <iostream>
 #include <sstream>
 
-Request::Request()
+Request::Request(const int& client_address_socket_fd)
+    : _client_address_socket_fd(client_address_socket_fd)
 {
     clear();
 }
 
-Request::Request(const Request& other)
+Request::Request(const Request& other) : _client_address_socket_fd(other._client_address_socket_fd)
 {
     *this = other;
 }
@@ -21,6 +23,7 @@ Request& Request::operator=(const Request& other)
 {
     if (this == &other)
         return *this;
+    _client_address_socket_fd        = other._client_address_socket_fd;
     _is_headers_completed            = other._is_headers_completed;
     _is_body_completed               = other._is_body_completed;
     _is_chunked                      = other._is_chunked;
@@ -39,6 +42,8 @@ Request& Request::operator=(const Request& other)
     _body_length                     = other._body_length;
     _headers                         = other._headers;
     _status                          = other._status;
+    _request_virtual_server          = other._request_virtual_server;
+    _request_file_location           = other._request_file_location;
 
     _headers_raw_buf.str(std::string());
     _headers_raw_buf.clear();
@@ -48,6 +53,7 @@ Request& Request::operator=(const Request& other)
 
 void Request::clear()
 {
+    _request_virtual_server          = Server::GetInstance().GetConfig().begin();
     _status                          = HttpStatus(STATUS_OK);
     _is_headers_completed            = false;
     _is_body_completed               = false;
@@ -217,40 +223,50 @@ void Request::parse()
     _is_headers_completed = true;
     try
     {
-
         parseRequestLine();
         parseHeaders();
-        const HttpHeader* transfer_encoding_header = getHeader("Transfer-Encoding");
-        if (transfer_encoding_header != NULL &&
-            transfer_encoding_header->values.front().value ==
-                "chunked") // TODO: this should be case insensitive and check through all header
-                           // values
+        // Getting Requested File Location depending on the Server Config:
         {
-            _is_chunked = true;
-            _body_fd    = open("/tmp/", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
-            if (_body_fd < 0)
-                _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
-            if (_body.size())
-                writeChunked();
+            _request_virtual_server =
+                ServerUtils::GetRequestVirtualServer(_client_address_socket_fd, *this);
+            _request_file_location = ServerUtils::GetFileLocation(_request_virtual_server, _uri);
         }
-        else
+        // Buffering Request Body Content To A temp file:
         {
-            const HttpHeader* lenght_header = getHeader("Content-Length");
-            if (lenght_header == NULL)
+            const HttpHeader* transfer_encoding_header = getHeader("Transfer-Encoding");
+            if (transfer_encoding_header != NULL &&
+                transfer_encoding_header->values.front().value ==
+                    "chunked") // TODO: this should be case insensitive and check through all header
+                               // values
             {
-                _body_length       = 0;
-                _is_body_completed = true;
+                _is_chunked = true;
+                _body_fd    = open("/tmp/", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
+                if (_body_fd < 0)
+                    _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+                if (_body.size())
+                    writeChunked();
             }
             else
             {
-                _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
-                if (_body.size() == _body_length)
+                const HttpHeader* lenght_header = getHeader("Content-Length");
+                if (lenght_header == NULL)
                 {
+                    _body_length       = 0;
                     _is_body_completed = true;
-                    _status            = ValidateMultipart();
                 }
-                else if (_body.size() > _body_length)
-                    assert(!"There is some overflow that need to be carried on to next request..");
+                else
+                {
+                    _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
+                    if (_body.size() == _body_length)
+                    {
+                        _is_body_completed = true;
+                        _status            = ValidateMultipart();
+                    }
+                    else if (_body.size() > _body_length)
+                        assert(
+                            !"There is some overflow that need to be carried on to next request.."
+                        );
+                }
             }
         }
     }
@@ -278,6 +294,16 @@ bool Request::isCompleted() const
 bool Request::isChunked() const
 {
     return _is_chunked;
+}
+
+VirtualServerIterator Request::getRequestVirtualServer() const
+{
+    return _request_virtual_server;
+}
+
+LocationIterator Request::getRequestFileLocation() const
+{
+    return _request_file_location;
 }
 
 std::string Request::getUri() const

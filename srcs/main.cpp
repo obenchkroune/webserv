@@ -33,7 +33,7 @@ int main(const int ac, const char** av)
     {
         handle_signals();
         Config::getInstance().loadConfig(ac == 2 ? av[1] : DEFAULT_CONFIG_PATH);
-        Server server(Config::getInstance().getServers());
+        Server& server = Server::GetInstance();
         server.Start();
         IOMultiplexer::GetInstance().StartEventLoop();
         std::cout << PROGNAME "/" PROGVERSION " exited." << std::endl;

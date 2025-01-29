@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 08:43:26 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 16:12:11 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,16 +77,41 @@ bool validateFileLocation(const std::string& location_root, const std::string& f
     }
     return false;
 }
-std::vector<LocationConfig>::const_iterator GetFileLocation(
-    const ServerConfig& config, const std::string& fname
-)
+VirtualServerIterator GetRequestVirtualServer(const int& address_fd, const Request& request)
 {
-    std::vector<LocationConfig>::const_iterator matched_location = config.locations.end();
-    std::vector<LocationConfig>::const_iterator loc_it           = config.locations.begin();
-    int                                         matching_record  = 0;
-    for (; loc_it != config.locations.end(); loc_it++)
+    std::vector<VirtualServerIterator>        matched_servers;
+    std::vector<ServerConfig>::const_iterator vservers_it =
+        Server::GetInstance().GetConfig().begin();
+    for (; vservers_it != Server::GetInstance().GetConfig().end(); vservers_it++)
     {
-        const std::string& loc_path = loc_it->path;
+        if (vservers_it->listen_address_fd == address_fd)
+            matched_servers.insert(matched_servers.end(), vservers_it);
+    }
+    assert(matched_servers.size() > 0 && "IMPOSSIBLE");
+    if (matched_servers.size() == 1)
+        return matched_servers.front();
+    const HttpHeader* host_header = request.getHeader("Host");
+    if (host_header == NULL)
+        return matched_servers.front();
+    std::vector<VirtualServerIterator>::const_iterator matched_servers_it = matched_servers.begin();
+    for (; matched_servers_it != matched_servers.end(); matched_servers_it++)
+    {
+        std::vector<std::string>::const_iterator names_it =
+            (*matched_servers_it)->server_names.begin();
+        for (; names_it != (*matched_servers_it)->server_names.end(); names_it++)
+            if (*names_it == host_header->values.front().value)
+                return *matched_servers_it;
+    }
+    return matched_servers.front();
+}
+LocationIterator GetFileLocation(VirtualServerIterator config, const std::string& fname)
+{
+    LocationIterator matched_location = config->locations.end();
+    LocationIterator location_it      = config->locations.begin();
+    int              matching_record  = 0;
+    for (; location_it != config->locations.end(); location_it++)
+    {
+        const std::string& loc_path = location_it->path;
         assert(fname[0] == '/' && loc_path[0] == '/');
         int matching_score = 0;
         for (size_t i = 1; i < loc_path.length() && i < fname.length(); i++)
@@ -102,39 +127,10 @@ std::vector<LocationConfig>::const_iterator GetFileLocation(
         }
         if ((matching_record == 0 && loc_path == "/") || (matching_record < matching_score))
         {
-            matched_location = loc_it;
+            matched_location = location_it;
             matching_record  = matching_score;
         }
     }
     return matched_location;
 }
-const ServerConfig* GetRequestVirtualServer(
-    const int& address_fd, const Request& request, const std::vector<ServerConfig>& config
-)
-{
-    std::vector<const ServerConfig*>          matched_servers;
-    std::vector<ServerConfig>::const_iterator vservers_it = config.begin();
-    for (; vservers_it != config.end(); vservers_it++)
-    {
-        if (vservers_it->listen_address_fd == address_fd)
-            matched_servers.insert(matched_servers.end(), &(*vservers_it));
-    }
-    assert(matched_servers.size() > 0 && "IMPOSSIBLE");
-    if (matched_servers.size() == 1)
-        return matched_servers.front();
-    const HttpHeader* host_header = request.getHeader("Host");
-    if (host_header == NULL)
-        return matched_servers.front();
-    std::vector<const ServerConfig*>::const_iterator matched_servers_it = matched_servers.begin();
-    for (; matched_servers_it != matched_servers.end(); matched_servers_it++)
-    {
-        std::vector<std::string>::const_iterator names_it =
-            (*matched_servers_it)->server_names.begin();
-        for (; names_it != (*matched_servers_it)->server_names.end(); names_it++)
-            if (*names_it == host_header->values.front().value)
-                return &(**matched_servers_it);
-    }
-    return matched_servers.front();
-}
-
 } // namespace ServerUtils

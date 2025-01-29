@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/29 06:08:02 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 17:05:37 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ void ServerClient::ProcessCGI(Response* response)
         close(cgi_input_fd);
         /*setting up argv*/
         std::vector<char*> argv(3, NULL);
-        argv[0] = (char*)response->GetRequestFileLocation()->cgi_path.c_str();
+        argv[0] = (char*)response->GetRequest().getRequestFileLocation()->cgi_path.c_str();
         argv[1] = (char*)response->GetRequestFilePath().c_str();
         /*setting up environment*/
         std::vector<char*> envp;
@@ -132,7 +132,7 @@ void ServerClient::ProcessCGI(Response* response)
         for (char** env = envp.data(); env && *env; env++)
             std::cerr << *env << std::endl;
         std::cerr << ">>>> [END CGI variables] " << std::endl;
-        execve(response->GetRequestFileLocation()->cgi_path.c_str(), argv.data(), envp.data());
+        execve(response->GetRequest().getRequestFileLocation()->cgi_path.c_str(), argv.data(), envp.data());
         std::cerr << "execve() failed for cgi script file: " << response->GetRequestFilePath()
                   << std::endl;
         exit(10);
