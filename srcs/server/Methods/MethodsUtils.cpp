@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 01:27:53 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 05:13:31 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ HttpStatus ServerClient::CheckRequest(Response* response)
             response->GetRequestFileLocation()->index.begin();
         for (; index_it != response->GetRequestFileLocation()->index.end(); index_it++)
         {
-            std::string index_page_fname = file_path + '/' + *index_it;
+            std::string index_page_fname = file_path + *index_it;
             if (access(index_page_fname.c_str(), F_OK) == 0)
             {
                 file_path = index_page_fname;

@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/29 00:28:31 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 06:08:02 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,13 @@ void ServerClient::ProcessCGI(Response* response)
                   << response->GetRequestFilePath() << std::endl;
         return ServerClient::SendErrorResponse(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response);
     }
-    if (!response->GetRequest().isChunked() && response->GetRequest().getBody().size())
+    if (response->GetRequest().isChunked())
     {
+        cgi_input_fd = response->GetRequest().getBodyFd();
+    }
+    else if (response->GetRequest().getBody().size())
+    {
+        // TODO: this should be buffered directly to a tmp file while parsing request..
         std::stringstream fname;
         fname << "/tmp/cgi_input_" << time(0);
         cgi_input_fd =
@@ -49,18 +54,7 @@ void ServerClient::ProcessCGI(Response* response)
             );
         }
     }
-    if (response->GetRequest().isChunked())
-    {
-        cgi_input_fd = response->GetRequest().getBodyFd();
-        if (lseek(cgi_input_fd, 0, SEEK_SET) ==
-            -1) // TODO: remove this replace it with dupping fd before writing ..
-        {
-            close(pipe_fd[0]), close(pipe_fd[1]), close(cgi_input_fd);
-            return ServerClient::SendErrorResponse(
-                HttpStatus(STATUS_INTERNAL_SERVER_ERROR), response
-            );
-        }
-    }
+
     int pid = fork();
     if (pid == -1)
     {
@@ -112,7 +106,7 @@ void ServerClient::ProcessCGI(Response* response)
             env_cookies = "HTTP_COOKIE=" + cookies->raw_value;
             envp.insert(envp.end(), (char*)env_cookies.c_str());
         }
-        const HttpHeader* content_type = response->GetRequest().getContentTypeHeader();
+        const HttpHeader* content_type = response->GetRequest().getHeader("Content-Type");
         std::string       env_content_type;
         if (content_type != NULL)
         {
@@ -134,6 +128,10 @@ void ServerClient::ProcessCGI(Response* response)
         envp.insert(envp.end(), (char*)env_content_lenght.c_str());
         envp.insert(envp.end(), NULL);
 
+        std::cerr << ">>>> [CGI variables] " << std::endl;
+        for (char** env = envp.data(); env && *env; env++)
+            std::cerr << *env << std::endl;
+        std::cerr << ">>>> [END CGI variables] " << std::endl;
         execve(response->GetRequestFileLocation()->cgi_path.c_str(), argv.data(), envp.data());
         std::cerr << "execve() failed for cgi script file: " << response->GetRequestFilePath()
                   << std::endl;

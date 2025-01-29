@@ -32,8 +32,6 @@ Request& Request::operator=(const Request& other)
     _body_length                     = other._body_length;
     _body_size                       = other._body_size;
     _body_fd                         = other._body_fd;
-    _content_type_header             = other._content_type_header;
-    _transfer_encoding_header        = other._transfer_encoding_header;
     _headers                         = other._headers;
     _http_version                    = other._http_version;
     _method                          = other._method;
@@ -56,8 +54,6 @@ void Request::clear()
     _remove_chunk_data_trailing_crlf = false;
     _chunk_size                      = 0;
     _remaining_chunk_size            = 0;
-    _content_type_header             = NULL;
-    _transfer_encoding_header        = NULL;
     _body_fd                         = -1;
     _body_size                       = 0;
     _body.clear();
@@ -95,7 +91,7 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
             _headers_raw_buf.clear();
             _headers_raw_buf.str((char*)_raw_buffer.data());
             _raw_buffer.clear();
-            _status = parse();
+            parse();
         }
     }
     else if (_is_body_completed == false)
@@ -131,7 +127,7 @@ void Request::writeChunkToFile(size_t& offset)
         {
             std::cerr << "Error writing received request body." << std::endl;
             close(_body_fd);
-            throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR), "10");
+            throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR));
         }
         offset += bytes_written;
         _body_size += bytes_written;
@@ -205,10 +201,15 @@ void Request::writeChunked()
     if (_chunk_size == 0)
     {
         _is_body_completed = true;
+        if (lseek(_body_fd, 0, SEEK_SET) == -1)
+        {
+            close(_body_fd);
+            _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+        }
     }
 }
 
-HttpStatus Request::parse()
+void Request::parse()
 {
     _is_headers_completed = true;
     try
@@ -216,15 +217,16 @@ HttpStatus Request::parse()
 
         parseRequestLine();
         parseHeaders();
-        _content_type_header      = getHeader("Content-Type");
-        _transfer_encoding_header = getHeader("Transfer-Encoding");
-        if (_transfer_encoding_header != NULL && _transfer_encoding_header->values.front().value ==
-                                                     "chunked") // this should be case insensitive
+        const HttpHeader* transfer_encoding_header = getHeader("Transfer-Encoding");
+        if (transfer_encoding_header != NULL &&
+            transfer_encoding_header->values.front().value ==
+                "chunked") // TODO: this should be case insensitive and check through all header
+                           // values
         {
             _is_chunked = true;
             _body_fd    = open("/tmp/", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
             if (_body_fd < 0)
-                return HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+                _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
             if (_body.size())
                 writeChunked();
         }
@@ -242,18 +244,17 @@ HttpStatus Request::parse()
                 if (_body.size() == _body_length)
                 {
                     _is_body_completed = true;
-                    return ValidateMultipart();
+                    _status            = ValidateMultipart();
                 }
                 else if (_body.size() > _body_length)
                     assert(!"There is some overflow that need to be carried on to next request..");
             }
         }
-        return HttpStatus(STATUS_OK);
     }
     catch (const RequestException& e)
     {
         std::cerr << "finished parsing request status: " << e.what() << std::endl;
-        return e.getErrorCode();
+        _status = e.getErrorCode();
     }
 }
 
@@ -302,11 +303,6 @@ const std::vector<HttpHeader>& Request::getHeaders() const
     return _headers;
 }
 
-const HttpHeader* Request::getContentTypeHeader() const
-{
-    return _content_type_header;
-}
-
 const std::vector<uint8_t>& Request::getBody() const
 {
     return _body;
@@ -341,20 +337,20 @@ void Request::setMethod(const std::string& method)
 void Request::setUri(const std::string& uri)
 {
     if (uri.empty() || uri[0] != '/')
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "7");
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     _uri = uri;
 }
 
 void Request::setVersion(const std::string& version)
 {
     if (version.substr(0, 5) != "HTTP/")
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "1");
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
 
     int major, minor;
     if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2)
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "2");
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     if (major != 1 || minor != 1)
-        throw RequestException(HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED), "3");
+        throw RequestException(HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED));
     _http_version = version;
 }
 
@@ -369,7 +365,7 @@ std::string Request::getHeaderLine()
 
     std::getline(_headers_raw_buf, line, '\n');
     if (line.empty() || line[line.size() - 1] != '\r')
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "4");
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     line.erase(line.size() - 1);
 
     if (std::string(" \t").find(_headers_raw_buf.peek()) != std::string::npos)
@@ -389,7 +385,7 @@ void Request::parseRequestLine()
 
     if (!std::getline(_headers_raw_buf, method, ' ') || !std::getline(_headers_raw_buf, uri, ' '))
     {
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "5");
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     }
 
     if (uri.find('?') != std::string::npos)
@@ -401,7 +397,7 @@ void Request::parseRequestLine()
 
     if (!std::getline(_headers_raw_buf, version, '\n') || version[version.size() - 1] != '\r')
     {
-        throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "6");
+        throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
     }
 
     version.erase(version.size() - 1);
@@ -444,7 +440,7 @@ void Request::parseHeaders()
     _headers_raw_buf.seekg(0, std::ios::end);
     if ((size_t)_headers_raw_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
     {
-        throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE), "8");
+        throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE));
     }
     _headers_raw_buf.seekg(current_pos);
 
@@ -453,7 +449,7 @@ void Request::parseHeaders()
     {
         size_t pos = line.find(':');
         if (pos == std::string::npos)
-            throw RequestException(HttpStatus(STATUS_BAD_REQUEST), "9");
+            throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
         std::string name  = utils::strtrim(line.substr(0, pos)),
                     value = utils::strtrim(line.substr(pos + 1));
         HttpHeader header(name, value);
@@ -464,10 +460,11 @@ void Request::parseHeaders()
 
 HttpStatus Request::ValidateMultipart()
 {
-    if (_content_type_header != NULL && _content_type_header->values.size() &&
-        _content_type_header->values.front().value == "multipart/form-data")
+    const HttpHeader* content_type_header = getHeader("Content-Type");
+    if (content_type_header != NULL && content_type_header->values.size() &&
+        content_type_header->values.front().value == "multipart/form-data")
     {
-        if (_content_type_header->values.size() < 2)
+        if (content_type_header->values.size() < 2)
             return HttpStatus(STATUS_BAD_REQUEST);
     }
     return HttpStatus(STATUS_OK);

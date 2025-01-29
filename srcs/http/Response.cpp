@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 01:22:52 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 06:12:51 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -206,11 +206,14 @@ void Response::FinishResponse()
     header.value = "keep-alive";
     AppendHeader(header);
     _headers += CRLF;
-    std::cerr << "[Response headers]     ============" << std::endl;
+    std::cerr << "============================" << std::endl;
+    std::cerr << ">>>> [Response headers]" << std::endl;
     std::cerr << _headers << std::endl;
-    std::cerr << "[End Response headers] ============" << std::endl;
-    std::cerr << "[Response body]     ============" << std::endl;
+    std::cerr << ">>>> [End Response headers]" << std::endl;
+    std::cerr << "==========      ============" << std::endl;
+    std::cerr << ">>>> [Response body]" << std::endl;
     std::cerr << "Requested file name: " << _request_file_path << std::endl;
     std::cerr << _content_lenght << " Bytes of content will be sent to client." << std::endl;
-    std::cerr << "[End Response body] ============" << std::endl;
+    std::cerr << ">>>> [End Response body]" << std::endl;
+    std::cerr << "============================" << std::endl;
 }

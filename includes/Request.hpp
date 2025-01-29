@@ -10,7 +10,7 @@
 class RequestException : public std::exception
 {
 public:
-    RequestException(const HttpStatus& error_code, std::string);
+    RequestException(const HttpStatus& error_code);
     ~RequestException() throw();
     const char* what() const throw();
 
@@ -18,7 +18,6 @@ public:
 
 private:
     HttpStatus  _error_code;
-    std::string _line;
 };
 
 class Request
@@ -28,9 +27,9 @@ public:
     Request(const Request& other);
     ~Request();
 
-    Request&   operator=(const Request& other);
-    Request&   operator+=(const std::vector<uint8_t>& bytes);
-    HttpStatus parse();
+    Request& operator=(const Request& other);
+    Request& operator+=(const std::vector<uint8_t>& bytes);
+    void     parse();
 
     // getters
     const std::string                         getMethod() const;
@@ -38,7 +37,6 @@ public:
     std::string                               getVersion() const;
     const HttpHeader*                         getHeader(const std::string& key) const;
     const std::vector<HttpHeader>&            getHeaders() const;
-    const HttpHeader*                         getContentTypeHeader() const;
     const std::vector<uint8_t>&               getBody() const;
     int                                       getBodyFd() const;
     size_t                                    getBodySize() const;
@@ -49,13 +47,14 @@ public:
     bool                                      isCompleted() const;
     bool                                      isChunked() const;
 
+    void clear();
+
+private:
     // setters
     void setMethod(const std::string& method);
     void setUri(const std::string& uri);
     void setVersion(const std::string& version);
     void setHeader(const HttpHeader& header);
-
-    void clear();
 
 private:
     bool                               _is_headers_completed;
@@ -75,8 +74,6 @@ private:
     size_t                             _body_size;
     std::vector<uint8_t>               _body;
     size_t                             _body_length;
-    const HttpHeader*                  _content_type_header;
-    const HttpHeader*                  _transfer_encoding_header;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
 
