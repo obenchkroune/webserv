@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 02:16:34 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 08:43:26 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "Server.hpp"
 #include "ServerClient.hpp"
 #include <cassert>
+#include <climits>
 #include <iostream>
 #include <libgen.h>
 
@@ -63,32 +64,18 @@ void PrintSocketIP(std::ostream& os, const sockaddr_in& address)
     os << +IP[0] << '.' << +IP[1] << '.' << +IP[2] << '.' << +IP[3] << ':'
        << ntohs(address.sin_port) << std::endl;
 }
-bool validateFileLocation(const std::string& location_root, const std::string& fname)
+bool validateFileLocation(const std::string& location_root, const std::string& file_path)
 {
-    if (fname.find("/..") == std::string::npos)
-        return true;
-    int curr_directory_relative_to_root = 0;
-    int directory_name_len              = 0;
-    int dots_count                      = 0;
-    for (size_t i = location_root.length() + 1; i < fname.length(); i++)
+    char buff[PATH_MAX];
+    realpath(file_path.c_str(), buff);
+    std::cerr << "location_root: " << location_root << " file_path: " << file_path
+              << "realpath: " << buff << std::endl;
+    if (std::strncmp(location_root.c_str(), buff, std::strlen(location_root.c_str())) == 0)
     {
-        if (i + 1 >= fname.length() || fname[i] == '/')
-        {
-            if (dots_count == 2 && directory_name_len == 0)
-                curr_directory_relative_to_root--;
-            else if (directory_name_len > 0)
-                curr_directory_relative_to_root++;
-            dots_count         = 0;
-            directory_name_len = 0;
-        }
-        else if (fname[i] == '.')
-            dots_count++;
-        else
-            directory_name_len++;
-        if (curr_directory_relative_to_root < 0)
-            return false;
+        const char last_char = buff[std::strlen(location_root.c_str())];
+        return last_char == '\0' || last_char == '/';
     }
-    return true;
+    return false;
 }
 std::vector<LocationConfig>::const_iterator GetFileLocation(
     const ServerConfig& config, const std::string& fname

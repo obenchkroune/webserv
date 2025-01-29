@@ -2,6 +2,8 @@
 #include "Http.hpp"
 #include "Utils.hpp"
 #include <arpa/inet.h>
+#include <climits>
+#include <cstdlib>
 #include <netdb.h>
 #include <sstream>
 #include <stdexcept>
@@ -103,7 +105,10 @@ std::string rootDirective(const Directive& directive)
     struct stat buffer;
     if (stat(directive.values[0].c_str(), &buffer) != 0)
         throw InvalidConfigException(directive.values[0]);
-    return directive.values[0];
+    char buff[PATH_MAX];
+    if (realpath(directive.values[0].c_str(), buff) == NULL)
+        throw InvalidConfigException("realpath(): failed in line" + directive.values[0]);
+    return buff;
 }
 
 std::vector<std::string> indexDirective(const Directive& directive)

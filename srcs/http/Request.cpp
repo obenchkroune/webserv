@@ -195,8 +195,10 @@ void Request::writeChunked()
     {
         if (offset == _body.size())
             _body.clear();
-        else
+        else if (offset < _body.size())
             _body.erase(_body.begin(), _body.begin() + offset);
+        else
+            assert(!"IMPOSSIBLE");
     }
     if (_chunk_size == 0)
     {
