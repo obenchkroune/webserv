@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 02:21:03 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 09:35:56 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -184,6 +184,25 @@ void ServerClient::Terminate()
         throw ServerClientException("ServerClient::Terminate(): client not started.");
     for (; _responses_queue.size(); _responses_queue.pop())
         delete _responses_queue.front();
+    std::map<int, Response*>::iterator cgi_it = _cgi_responses.begin();
+    for (; cgi_it != _cgi_responses.end(); cgi_it++)
+    {
+        try
+        {
+            epoll_event ev;
+            ev.events   = EPOLLIN | EPOLLHUP;
+            ev.data.ptr = this;
+            IOMultiplexer::GetInstance().RemoveEvent(ev, cgi_it->first);
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Exception caught while terminating client fd: " << _client_socket_fd
+                      << std::endl;
+            std::cerr << "Reason: " << e.what() << std::endl;
+        }
+        close(cgi_it->first);
+    }
+    _cgi_responses.clear();
     try
     {
         IOMultiplexer::GetInstance().RemoveEvent(_epoll_ev, _client_socket_fd);

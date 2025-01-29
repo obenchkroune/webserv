@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IOMultiplexer.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 17:30:28 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 02:19:50 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 09:28:37 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,7 @@ void IOMultiplexer::Terminate()
     if (_is_started == false)
         return;
     _is_started                                   = false;
-    std::map<int, AIOEventListener*>::iterator it = _listeners.begin();
-    for (; it != _listeners.end(); it = _listeners.begin())
+    std::map<int, AIOEventListener*>::reverse_iterator it = _listeners.rbegin();
+    for (; it != _listeners.rend(); it = _listeners.rbegin())
         it->second->Terminate();
 }

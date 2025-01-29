@@ -5,7 +5,7 @@ INCLUDES		= 	includes
 
 
 CXX             =   c++
-CXXFLAGS        =   -Wall -Wextra -Werror -std=c++98 -MMD -MP -I$(INCLUDES) -g3 #-fsanitize=address
+CXXFLAGS        =   -Wall -Wextra -Werror -std=c++98 -MMD -MP -I$(INCLUDES) -g3 -fsanitize=address
 
 ifeq ($(shell uname -s),Darwin)
 	CXXFLAGS += -DMAC_BUILD

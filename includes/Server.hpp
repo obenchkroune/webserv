@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/28 23:57:23 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 09:27:19 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,13 +38,12 @@ class Server : public AIOEventListener
 {
 
 private:
-    std::vector<ServerClient>      _clients_pool;
-    std::map<int, Response*>       _cgi_responses;
-    std::vector<ServerConfig>      _config;
-    bool                           _is_started;
-    std::vector<sockaddr_in>       _listen_addrs;
-    std::vector<int>               _listen_socket_fds;
-    epoll_event                    _listen_socket_ev;
+    std::vector<ServerClient*> _clients_pool;
+    std::vector<ServerConfig>  _config;
+    bool                       _is_started;
+    std::vector<sockaddr_in>   _listen_addrs;
+    std::vector<int>           _listen_socket_fds;
+    epoll_event                _listen_socket_ev;
 
 public:
     Server(const std::vector<ServerConfig>& config);
@@ -59,9 +58,9 @@ public:
 
     /* Getters & Setters */
 public:
-    bool                               is_started() const;
-    const std::vector<ServerConfig>&   GetConfig() const;
-    const std::vector<int>&            GetListenSockets() const;
+    bool                             is_started() const;
+    const std::vector<ServerConfig>& GetConfig() const;
+    const std::vector<int>&          GetListenSockets() const;
 
     /* Interface */
 public:

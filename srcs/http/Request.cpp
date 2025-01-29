@@ -28,16 +28,17 @@ Request& Request::operator=(const Request& other)
     _chunk_size                      = other._chunk_size;
     _remaining_chunk_size            = other._remaining_chunk_size;
     _raw_buffer                      = other._raw_buffer;
-    _body                            = other._body;
-    _body_length                     = other._body_length;
-    _body_size                       = other._body_size;
-    _body_fd                         = other._body_fd;
-    _headers                         = other._headers;
-    _http_version                    = other._http_version;
+    _query_params                    = other._query_params;
+    _query_params_string             = other._query_params_string;
     _method                          = other._method;
     _uri                             = other._uri;
-    _query_params_string             = other._query_params_string;
-    _query_params                    = other._query_params;
+    _http_version                    = other._http_version;
+    _body_fd                         = other._body_fd;
+    _body_size                       = other._body_size;
+    _body                            = other._body;
+    _body_length                     = other._body_length;
+    _headers                         = other._headers;
+    _status                          = other._status;
 
     _headers_raw_buf.str(std::string());
     _headers_raw_buf.clear();

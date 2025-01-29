@@ -3,17 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 02:20:04 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 09:29:23 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-Server::Server(const std::vector<ServerConfig>& config)
-    : _config(config), _is_started(false)
+Server::Server(const std::vector<ServerConfig>& config) : _config(config), _is_started(false)
 {
     _listen_socket_ev.events   = EPOLLIN;
     _listen_socket_ev.data.ptr = this;
@@ -119,14 +118,17 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
         std::cerr << "accept(): failed to accept new peer connection." << std::endl;
         return;
     }
-    std::vector<ServerClient>::iterator client = _clients_pool.begin();
-    for (; client != _clients_pool.end() && client->isStarted(); client++)
+    std::vector<ServerClient*>::iterator client = _clients_pool.begin();
+    for (; client != _clients_pool.end() && (*client)->isStarted(); client++)
         ;
     if (client == _clients_pool.end())
-        client = _clients_pool.insert(client, ServerClient(peer_fd, socket_fd, this));
+    {
+        ServerClient* new_client = new ServerClient(peer_fd, socket_fd, this);
+        client                   = _clients_pool.insert(client, new_client);
+    }
     else
-        client->SetClientSocketfd(peer_fd), client->SetAddressSocketfd(socket_fd);
-    client->BindToClientSocket();
+        (*client)->SetClientSocketfd(peer_fd), (*client)->SetAddressSocketfd(socket_fd);
+    (*client)->BindToClientSocket();
 }
 void Server::Terminate()
 {
@@ -142,16 +144,11 @@ void Server::Terminate()
             close(*it);
         }
     }
-    // closing clients socket fd
+    // freeing clients
     {
-        std::map<int, Response*>::iterator it = _cgi_responses.begin();
-        for (; it != _cgi_responses.end(); it++)
-        {
-            epoll_event ev;
-            ev.events   = EPOLLIN;
-            ev.data.ptr = this;
-            IOMultiplexer::GetInstance().RemoveEvent(ev, it->first);
-            close(it->first);
-        }
+        std::vector<ServerClient*>::iterator it = _clients_pool.begin();
+        for (; it != _clients_pool.end(); it++)
+            delete *it;
+        _clients_pool.clear();
     }
 }
