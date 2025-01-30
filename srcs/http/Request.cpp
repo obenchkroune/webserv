@@ -260,15 +260,24 @@ void Request::writeChunked()
         else
             assert(!"IMPOSSIBLE");
     }
-    if (_chunk_size == 0)
+    if (_chunk_size == 0 && _body_buff.size())
     {
-        _is_body_completed = true;
-        if (_body_fd >= 0 && lseek(_body_fd, 0, SEEK_SET) == -1)
+        const char* trailing_line =
+            utils::strnstr((const char*)_body_buff.data(), CRLF, _body_buff.size());
+        if (trailing_line)
         {
-            std::cerr << "lseek(): failed to write received request body." << std::endl;
-            close(_body_fd);
-            _body_fd = -1;
-            _status  = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+            _body_buff.erase(
+                _body_buff.begin(),
+                _body_buff.begin() + (trailing_line + 2 - (const char*)_body_buff.data())
+            );
+            _is_body_completed = true;
+            if (_body_fd >= 0 && lseek(_body_fd, 0, SEEK_SET) == -1)
+            {
+                std::cerr << "lseek(): failed to write received request body." << std::endl;
+                close(_body_fd);
+                _body_fd = -1;
+                _status  = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+            }
         }
     }
 }
@@ -340,7 +349,7 @@ const HttpStatus& Request::getStatus() const
 
 bool Request::isCompleted() const
 {
-    return _status.code != STATUS_OK || (_is_headers_completed && _is_body_completed);
+    return _is_headers_completed && _is_body_completed;
 }
 bool Request::isChunked() const
 {
