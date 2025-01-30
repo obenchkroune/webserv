@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 23:52:28 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/30 17:09:22 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,7 @@ void ServerClient::BindToClientSocket()
         std::cerr << "_IOmltplx->AddEvent() failed to add new peer fd: " << _client_socket_fd
                   << "Connection will terminate.\nReason: " << e.what() << std::endl;
     }
+    _request = Request(_address_socket_fd);
 }
 void ServerClient::ConsumeEvent(const epoll_event ev)
 {
@@ -181,7 +182,11 @@ void ServerClient::Terminate()
     if (_is_started == false)
         throw ServerClientException("ServerClient::Terminate(): client not started.");
     for (; _responses_queue.size(); _responses_queue.pop())
+    {
+        close(_responses_queue.front()->GetRequestFileFd());
+        close(_responses_queue.front()->GetRequest().getBodyFd());
         delete _responses_queue.front();
+    }
     std::map<int, Response*>::iterator cgi_it = _cgi_responses.begin();
     for (; cgi_it != _cgi_responses.end(); cgi_it++)
     {
