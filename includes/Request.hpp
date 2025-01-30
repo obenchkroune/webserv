@@ -31,7 +31,6 @@ public:
     Request& operator=(const Request& other);
     ~Request();
 
-
 public:
     Request& operator+=(const std::vector<uint8_t>& bytes);
     void     parse();
@@ -42,7 +41,6 @@ public:
     std::string                               getVersion() const;
     const HttpHeader*                         getHeader(const std::string& key) const;
     const std::vector<HttpHeader>&            getHeaders() const;
-    const std::vector<uint8_t>&               getBody() const;
     int                                       getBodyFd() const;
     size_t                                    getBodySize() const;
     const std::map<std::string, std::string>& getQueryParams() const;
@@ -80,8 +78,8 @@ private:
     std::string                        _http_version;
     int                                _body_fd;
     size_t                             _body_size;
-    std::vector<uint8_t>               _body;
-    size_t                             _body_length;
+    std::vector<uint8_t>               _body_buff;
+    size_t                             _body_received;
     std::vector<HttpHeader>            _headers;
     HttpStatus                         _status;
     VirtualServerIterator              _request_virtual_server;
@@ -91,9 +89,9 @@ private:
     std::map<std::string, std::string> parseQueryParams(const std::string query);
     std::string                        getHeaderLine();
     void                               parseHeaders();
+    void                               writeBodyToFile();
     void                               writeChunkToFile(size_t& offset);
     void                               writeChunked();
-    HttpStatus                         ValidateMultipart();
 };
 
 std::ostream& operator<<(std::ostream& os, const Request& request);

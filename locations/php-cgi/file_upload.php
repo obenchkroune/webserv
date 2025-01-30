@@ -92,7 +92,7 @@
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (isset($_FILES["file"]) && $_FILES["file"]['error'] === 0)
             {
-                move_uploaded_file($_FILES["file"]['tmp_name'], "./uploaded-files/".$_FILES["file"]['name']);
+                // move_uploaded_file($_FILES["file"]['tmp_name'], "./uploaded-files/".$_FILES["file"]['name']);
                 echo "<div class='status'>Your file was uploaded correctly.</div>";
                 echo "<div class='status'>File name: ".$_FILES["file"]['name']."</div>";
                 echo "<div class='status'>File full path: ".$_FILES["file"]['full_path']."</div>";
@@ -102,7 +102,14 @@
             }
             else
             {
-                echo "<div class='status'>Error something went wrong.</div>";
+              if (isset($_FILES["file"]))
+              {
+                echo "<div class='status'>Error: file uploaded but php error=".$_FILES["file"]['error'].".</div>";
+              }
+              else
+              {
+                echo "<div class='status'>Error: No file uploaded.</div>";
+              }
             }
         }
     ?>

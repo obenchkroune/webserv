@@ -38,8 +38,8 @@ Request& Request::operator=(const Request& other)
     _http_version                    = other._http_version;
     _body_fd                         = other._body_fd;
     _body_size                       = other._body_size;
-    _body                            = other._body;
-    _body_length                     = other._body_length;
+    _body_buff                       = other._body_buff;
+    _body_received                   = other._body_received;
     _headers                         = other._headers;
     _status                          = other._status;
     _request_virtual_server          = other._request_virtual_server;
@@ -63,7 +63,14 @@ void Request::clear()
     _remaining_chunk_size            = 0;
     _body_fd                         = -1;
     _body_size                       = 0;
-    _body.clear();
+    _body_received                   = 0;
+
+    _raw_buffer.clear();
+    if (_body_buff.size())
+    {
+        _raw_buffer.insert(_raw_buffer.end(), _body_buff.begin(), _body_buff.end());
+        _body_buff.clear();
+    }
     _headers.clear();
     _http_version.clear();
     _method.clear();
@@ -91,7 +98,9 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
                 (found - (const char*)_raw_buffer.data()) + strlen(headers_end);
             if (headers_end_pos < _raw_buffer.size())
             {
-                _body.insert(_body.end(), _raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
+                _body_buff.insert(
+                    _body_buff.end(), _raw_buffer.begin() + headers_end_pos, _raw_buffer.end()
+                );
                 _raw_buffer.erase(_raw_buffer.begin() + headers_end_pos, _raw_buffer.end());
             }
             _raw_buffer.insert(_raw_buffer.end(), 0);
@@ -103,18 +112,16 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
     }
     else if (_is_body_completed == false)
     {
-        _body.insert(_body.end(), bytes.begin(), bytes.end());
+        _body_buff.insert(_body_buff.end(), bytes.begin(), bytes.end());
         if (_is_chunked)
         {
             writeChunked();
         }
-        else if (_body.size() == _body_length)
+        else
         {
-            _is_body_completed = true;
-            _status            = ValidateMultipart();
+            if (_body_buff.size())
+                writeBodyToFile();
         }
-        else if (_body.size() > _body_length)
-            assert(!"There is some overflow that need to be carried on to next request..");
     }
     else
     {
@@ -123,22 +130,67 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 
     return *this;
 }
-
+void Request::writeBodyToFile()
+{
+    size_t  to_write = std::min(_body_buff.size(), (_body_size - _body_received));
+    ssize_t bytes_written;
+    if (_body_fd >= 0)
+        bytes_written = write(_body_fd, _body_buff.data(), to_write);
+    else
+        bytes_written = to_write;
+    if (bytes_written < 0 || (size_t)bytes_written != to_write)
+    {
+        std::cerr << "write(): failed to write received request body." << std::endl;
+        _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+        close(_body_fd);
+        _body_fd = -1;
+    }
+    _body_received += to_write;
+    _body_buff.erase(_body_buff.begin(), _body_buff.begin() + to_write);
+    if (_body_size > _request_file_location->max_body_size)
+    {
+        close(_body_fd);
+        _body_fd = -1;
+        _status  = HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE);
+    }
+    if (_body_received == _body_size)
+    {
+        _is_body_completed = true;
+        if (_body_fd >= 0 && lseek(_body_fd, 0, SEEK_SET) == -1)
+        {
+            std::cerr << "lseek(): failed to write received request body." << std::endl;
+            close(_body_fd);
+            _body_fd = -1;
+            _status  = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+        }
+    }
+}
 void Request::writeChunkToFile(size_t& offset)
 {
-    size_t to_write = std::min(_remaining_chunk_size, _body.size() - offset);
+    size_t to_write = std::min(_remaining_chunk_size, _body_buff.size() - offset);
     if (to_write)
     {
-        ssize_t bytes_written = write(_body_fd, _body.data() + offset, to_write);
+        ssize_t bytes_written;
+        if (_body_fd >= 0)
+            bytes_written = write(_body_fd, _body_buff.data() + offset, to_write);
+        else
+            bytes_written = to_write;
         if (bytes_written < 0 || to_write != (size_t)bytes_written)
         {
-            std::cerr << "Error writing received request body." << std::endl;
+            std::cerr << "write(): failed to write received request body." << std::endl;
             close(_body_fd);
-            throw RequestException(HttpStatus(STATUS_INTERNAL_SERVER_ERROR));
+            _body_fd = -1;
+            _status  = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
         }
-        offset += bytes_written;
-        _body_size += bytes_written;
-        _remaining_chunk_size -= bytes_written;
+        offset += to_write;
+        _body_size += to_write;
+        _remaining_chunk_size -= to_write;
+    }
+    if (_body_size > _request_file_location->max_body_size)
+    {
+        close(_body_fd);
+        _body_fd = -1;
+        _status  = HttpStatus(STATUS_REQUEST_ENTITY_TOO_LARGE);
     }
 }
 void Request::writeChunked()
@@ -150,7 +202,7 @@ void Request::writeChunked()
         if (!_remaining_chunk_size)
         {
             _remove_chunk_data_trailing_crlf = true;
-            if (offset + 2 <= _body.size())
+            if (offset + 2 <= _body_buff.size())
             {
                 offset += 2;
                 _remove_chunk_data_trailing_crlf = false;
@@ -159,26 +211,27 @@ void Request::writeChunked()
     }
     if (!_remaining_chunk_size && _remove_chunk_data_trailing_crlf)
     {
-        if (_body.size() < 2)
+        if (_body_buff.size() < 2)
             return;
         offset += 2;
         _remove_chunk_data_trailing_crlf = false;
     }
-    if (offset < _body.size())
+    if (offset < _body_buff.size())
     {
-        const char* chunk_size_ln =
-            utils::strnstr((const char*)(_body.data() + offset), CRLF, _body.size() - offset);
+        const char* chunk_size_ln = utils::strnstr(
+            (const char*)(_body_buff.data() + offset), CRLF, _body_buff.size() - offset
+        );
         if (chunk_size_ln)
         {
-            _chunk_size           = std::strtoul((const char*)(_body.data() + offset), NULL, 16);
+            _chunk_size = std::strtoul((const char*)(_body_buff.data() + offset), NULL, 16);
             _remaining_chunk_size = _chunk_size;
-            offset                = (chunk_size_ln + 2) - ((const char*)_body.data());
-            for (; offset < _body.size() && chunk_size_ln && _chunk_size;)
+            offset                = (chunk_size_ln + 2) - ((const char*)_body_buff.data());
+            for (; offset < _body_buff.size() && chunk_size_ln && _chunk_size;)
             {
                 writeChunkToFile(offset);
                 if (!_remaining_chunk_size)
                 {
-                    if (offset + 2 <= _body.size())
+                    if (offset + 2 <= _body_buff.size())
                         offset += 2;
                     else
                     {
@@ -187,33 +240,35 @@ void Request::writeChunked()
                     }
                 }
                 chunk_size_ln = utils::strnstr(
-                    (const char*)(_body.data() + offset), CRLF, _body.size() - offset
+                    (const char*)(_body_buff.data() + offset), CRLF, _body_buff.size() - offset
                 );
                 if (chunk_size_ln)
                 {
-                    _chunk_size = std::strtoul((const char*)(_body.data() + offset), NULL, 16);
+                    _chunk_size = std::strtoul((const char*)(_body_buff.data() + offset), NULL, 16);
                     _remaining_chunk_size = _chunk_size;
-                    offset                = (chunk_size_ln + 2) - ((const char*)_body.data());
+                    offset                = (chunk_size_ln + 2) - ((const char*)_body_buff.data());
                 }
             }
         }
     }
     if (offset)
     {
-        if (offset == _body.size())
-            _body.clear();
-        else if (offset < _body.size())
-            _body.erase(_body.begin(), _body.begin() + offset);
+        if (offset == _body_buff.size())
+            _body_buff.clear();
+        else if (offset < _body_buff.size())
+            _body_buff.erase(_body_buff.begin(), _body_buff.begin() + offset);
         else
             assert(!"IMPOSSIBLE");
     }
     if (_chunk_size == 0)
     {
         _is_body_completed = true;
-        if (lseek(_body_fd, 0, SEEK_SET) == -1)
+        if (_body_fd >= 0 && lseek(_body_fd, 0, SEEK_SET) == -1)
         {
+            std::cerr << "lseek(): failed to write received request body." << std::endl;
             close(_body_fd);
-            _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+            _body_fd = -1;
+            _status  = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
         }
     }
 }
@@ -243,7 +298,7 @@ void Request::parse()
                 _body_fd    = open("/tmp/", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
                 if (_body_fd < 0)
                     _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
-                if (_body.size())
+                if (_body_buff.size())
                     writeChunked();
             }
             else
@@ -251,21 +306,17 @@ void Request::parse()
                 const HttpHeader* lenght_header = getHeader("Content-Length");
                 if (lenght_header == NULL)
                 {
-                    _body_length       = 0;
+                    _body_size         = 0;
                     _is_body_completed = true;
                 }
                 else
                 {
-                    _body_length = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
-                    if (_body.size() == _body_length)
-                    {
-                        _is_body_completed = true;
-                        _status            = ValidateMultipart();
-                    }
-                    else if (_body.size() > _body_length)
-                        assert(
-                            !"There is some overflow that need to be carried on to next request.."
-                        );
+                    _body_size = strtoul(lenght_header->raw_value.c_str(), NULL, 10);
+                    _body_fd   = open("/tmp/", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
+                    if (_body_fd < 0)
+                        _status = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
+                    if (_body_buff.size())
+                        writeBodyToFile();
                 }
             }
         }
@@ -332,10 +383,6 @@ const std::vector<HttpHeader>& Request::getHeaders() const
     return _headers;
 }
 
-const std::vector<uint8_t>& Request::getBody() const
-{
-    return _body;
-}
 int Request::getBodyFd() const
 {
     return _body_fd;
@@ -487,18 +534,6 @@ void Request::parseHeaders()
     // TODO: check for the required host headers (the server instance is needed)
 }
 
-HttpStatus Request::ValidateMultipart()
-{
-    const HttpHeader* content_type_header = getHeader("Content-Type");
-    if (content_type_header != NULL && content_type_header->values.size() &&
-        content_type_header->values.front().value == "multipart/form-data")
-    {
-        if (content_type_header->values.size() < 2)
-            return HttpStatus(STATUS_BAD_REQUEST);
-    }
-    return HttpStatus(STATUS_OK);
-}
-
 std::ostream& operator<<(std::ostream& os, const Request& request)
 {
     os << "===========================================================\n";
@@ -526,11 +561,6 @@ std::ostream& operator<<(std::ostream& os, const Request& request)
     {
         os << *it << '\n';
     }
-    os << "Body: ";
-    if (request.getBody().empty())
-        os << "<empty>\n";
-    else
-        os << request.getBody().data() << '\n';
     os << "===========================================================" << std::endl;
     return os;
 }

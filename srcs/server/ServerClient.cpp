@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 17:15:17 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 23:52:28 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,7 +141,7 @@ void ServerClient::QueueCGIResponse(int output_pipe_fd, Response* response)
     ev.data.ptr = this;
     IOMultiplexer::GetInstance().AddEvent(ev, output_pipe_fd);
     _cgi_responses.insert(std::pair<int, Response*>(output_pipe_fd, response));
-    std::cout << "IOMultiplexer is listening on CGI pipe fd: " << output_pipe_fd
+    std::cout << ">>>> IOMultiplexer is listening on CGI pipe fd: " << output_pipe_fd
               << " for client fd: " << _client_socket_fd << std::endl;
 }
 void ServerClient::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
@@ -232,8 +232,9 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
             return SendErrorResponse(status, response);
         }
         std::cerr << "<<<< Client fd: " << _client_socket_fd
-                  << " Requested uri: " << _request.getUri()
-                  << " | Request status after parsing: " << status.message << std::endl;
+                  << " Requested uri: " << _request.getMethod() << " " << _request.getUri()
+                  << " | Request status after parsing: " << status.message
+                  << " is chunked: " << _request.isChunked() << std::endl;
         Response* response = new Response(_request);
         // response->SetClientSocketFd(_client_socket_fd);
         _request.clear();
@@ -275,6 +276,8 @@ void ServerClient::ProcessRequest(Response* response)
             return ProcessCGI(CGIresponse);
         }
     }
+    if (response->GetRequest().getBodyFd() >= 0)
+        close(response->GetRequest().getBodyFd());
     // HTTP simple response:
     if (method == "GET")
     {
@@ -298,6 +301,8 @@ void ServerClient::SendErrorResponse(const HttpStatus& status, Response* respons
 {
     VirtualServerIterator virtual_server = response->GetRequest().getRequestVirtualServer();
     Response*             error_response = new Response();
+    if (response->GetRequest().getBodyFd() >= 0)
+        close(response->GetRequest().getBodyFd());
     // error_response->SetClientSocketFd(_client_socket_fd);
     // error_response->SetVirtualServer(response->reqGetVirtualServer());
     delete response;

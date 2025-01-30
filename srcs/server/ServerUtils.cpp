@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerUtils.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
+/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/03 00:15:54 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 16:12:11 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 23:07:08 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,8 +68,6 @@ bool validateFileLocation(const std::string& location_root, const std::string& f
 {
     char buff[PATH_MAX];
     realpath(file_path.c_str(), buff);
-    std::cerr << "location_root: " << location_root << " file_path: " << file_path
-              << "realpath: " << buff << std::endl;
     if (std::strncmp(location_root.c_str(), buff, std::strlen(location_root.c_str())) == 0)
     {
         const char last_char = buff[std::strlen(location_root.c_str())];
