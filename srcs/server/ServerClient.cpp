@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/30 17:09:22 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/30 18:24:36 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,6 +223,7 @@ void ServerClient::Terminate()
 
 void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
 {
+    std::cerr << "fd: " << _client_socket_fd << " Got: " << buff.size() << std::endl;
     _request += buff;
 
     if (_request.isCompleted())
