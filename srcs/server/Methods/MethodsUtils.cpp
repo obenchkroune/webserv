@@ -6,7 +6,7 @@
 /*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 05:13:31 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 23:01:15 by simo             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,17 +33,17 @@ void ServerClient::auto_index(Response* response)
 
 HttpStatus ServerClient::CheckRequest(Response* response)
 {
+    const Request&   request               = response->GetRequest();
+    LocationIterator request_file_location = request.getRequestFileLocation();
     if (std::find(
-            response->GetRequestFileLocation()->allow_methods.begin(),
-            response->GetRequestFileLocation()->allow_methods.end(),
-            response->GetRequest().getMethod()
-        ) == response->GetRequestFileLocation()->allow_methods.end())
+            request_file_location->allow_methods.begin(),
+            request_file_location->allow_methods.end(), request.getMethod()
+        ) == request_file_location->allow_methods.end())
         return HttpStatus(STATUS_METHOD_NOT_ALLOWED);
     std::string file_path =
-        response->GetRequestFileLocation()->root + "/" +
-        response->GetRequest().getUri().substr(response->GetRequestFileLocation()->path.length());
-    if (ServerUtils::validateFileLocation(response->GetRequestFileLocation()->root, file_path) ==
-        false)
+        request_file_location->root + "/" +
+        response->GetRequest().getUri().substr(request_file_location->path.length());
+    if (ServerUtils::validateFileLocation(request_file_location->root, file_path) == false)
     {
         std::cerr << "Client fd: " << _client_socket_fd << " thinks himself a hacker." << std::endl;
         std::cerr << "Access for file: " << file_path
@@ -60,9 +60,8 @@ HttpStatus ServerClient::CheckRequest(Response* response)
     }
     if (S_ISDIR(file_stat.st_mode))
     {
-        std::vector<std::string>::const_iterator index_it =
-            response->GetRequestFileLocation()->index.begin();
-        for (; index_it != response->GetRequestFileLocation()->index.end(); index_it++)
+        std::vector<std::string>::const_iterator index_it = request_file_location->index.begin();
+        for (; index_it != request_file_location->index.end(); index_it++)
         {
             std::string index_page_fname = file_path + *index_it;
             if (access(index_page_fname.c_str(), F_OK) == 0)
@@ -71,9 +70,9 @@ HttpStatus ServerClient::CheckRequest(Response* response)
                 break;
             }
         }
-        if (index_it == response->GetRequestFileLocation()->index.end())
+        if (index_it == request_file_location->index.end())
         {
-            if (response->GetRequestFileLocation()->autoindex)
+            if (request_file_location->autoindex)
             {
                 response->SetRequestFilePath(file_path);
                 auto_index(response);

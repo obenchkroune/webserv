@@ -3,24 +3,24 @@
 /*                                                        :::      ::::::::   */
 /*   Response.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 22:17:23 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 06:12:51 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 16:47:24 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Response.hpp"
 #include <cassert>
 
-Response::Response(Server* server)
-    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _server(server)
+Response::Response()
+    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _request(-1)
 {
 } // Temporary Response
 
-Response::Response(const Request& request, Server* server)
-    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _request(request),
-      _server(server)
+Response::Response(const Request& request)
+    : _bytes_sent_to_client(0), _content_lenght(0), _request_file_fd(-1), _request(request)
+
 {
 }
 Response::Response(const Response& response) : _request(response._request)
@@ -37,12 +37,9 @@ Response& Response::operator=(const Response& response)
     _content_lenght         = response._content_lenght;
     _request_file_path      = response._request_file_path;
     _request_file_extension = response._request_file_extension;
-    _request_file_location  = response._request_file_location;
     _request_file_fd        = response._request_file_fd;
     _request_file_stats     = response._request_file_stats;
     _response_buff          = response._response_buff;
-    _virtual_server         = response._virtual_server;
-    _server                 = response._server;
     return *this;
 }
 Response::~Response() {}
@@ -77,14 +74,6 @@ void Response::SetRequestFileExtension(const std::string& ext)
 {
     _request_file_extension = ext;
 }
-const LocationIterator& Response::GetRequestFileLocation() const
-{
-    return _request_file_location;
-}
-void Response::SetRequestFileLocation(const LocationIterator& location)
-{
-    _request_file_location = location;
-}
 int Response::GetRequestFileFd() const
 {
     return _request_file_fd;
@@ -102,18 +91,6 @@ void Response::SetRequestFileStat(struct stat& stat)
     _request_file_stats = stat;
     _content_lenght     = stat.st_size;
 }
-const ServerConfig* Response::GetVirtualServer() const
-{
-    return _virtual_server;
-}
-void Response::SetVirtualServer(const ServerConfig* virtual_server)
-{
-    _virtual_server = virtual_server;
-}
-Server* Response::GetServer() const
-{
-    return _server;
-}
 const uint8_t* Response::GetResponseBuff()
 {
     if (_bytes_sent_to_client < _headers.size())
@@ -128,8 +105,8 @@ const uint8_t* Response::GetResponseBuff()
                 size_t read_size = std::min(remaining_bytes, SEND_CHUNK);
                 _response_buff.insert(_response_buff.end(), read_size, 0);
                 ssize_t bytes_read = read(
-                    _request_file_fd, (uint8_t*)(_response_buff.data() + _response_buff.size() - read_size),
-                    read_size
+                    _request_file_fd,
+                    (uint8_t*)(_response_buff.data() + _response_buff.size() - read_size), read_size
                 );
                 if (bytes_read < 0 || (size_t)bytes_read != read_size)
                 {

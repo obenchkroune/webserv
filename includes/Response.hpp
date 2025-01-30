@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Response.hpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/26 21:56:34 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 00:44:06 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 16:47:17 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ public:
     ~ResponseException() throw();
 };
 
-typedef std::vector<LocationConfig>::const_iterator LocationIterator;
 
 class Response
 {
@@ -56,17 +55,14 @@ protected:
     size_t               _content_lenght;
     std::string          _request_file_path;
     std::string          _request_file_extension;
-    LocationIterator     _request_file_location;
     int                  _request_file_fd;
     struct stat          _request_file_stats;
     const Request        _request;
     std::vector<uint8_t> _response_buff;
-    const ServerConfig*  _virtual_server;
-    Server*              _server; // TODO: check if we can remove this?
 
 public:
-    Response(Server* server); // Tmp error response
-    Response(const Request& request, Server* server);
+    Response(); // Error response constructor
+    Response(const Request& request);
     virtual ~Response();
     Response(const Response& response);
 
@@ -79,21 +75,15 @@ public:
     //int                     GetClientSocketFd() const;
     //void                    SetClientSocketFd(const int& fd);
     const Request&          GetRequest() const;
-    void                    SetRequest(const Request&);
     const std::string&      GetRequestFilePath() const;
     void                    SetRequestFilePath(const std::string& path);
     const std::string&      GetRequestFileExtension() const;
     void                    SetRequestFileExtension(const std::string& ext);
-    const LocationIterator& GetRequestFileLocation() const;
-    void                    SetRequestFileLocation(const LocationIterator& location);
     int                     GetRequestFileFd() const;
     void                    SetRequestFileFd(const int& file_fd);
     struct stat             GetRequestFileStat() const;
     void                    SetRequestFileStat(struct stat& stat);
-    Server*                 GetServer() const;
     size_t                  GetContentLength() const;
-    const ServerConfig*     GetVirtualServer() const;
-    void                    SetVirtualServer(const ServerConfig* virtual_server);
     const uint8_t*          GetResponseBuff();
     size_t                  GetResponseBuffCount() const;
 

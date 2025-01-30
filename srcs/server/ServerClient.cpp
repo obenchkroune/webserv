@@ -6,22 +6,21 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 09:35:56 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/30 17:09:22 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerClient.hpp"
 #include "Server.hpp"
 
-ServerClient::ServerClient(
-    const int& client_socket_fd, const int& address_socket_fd, Server* server
-)
+ServerClient::ServerClient(const int& client_socket_fd, const int& address_socket_fd)
     : _is_started(false), _client_socket_fd(client_socket_fd),
-      _address_socket_fd(address_socket_fd), _server(server)
+      _address_socket_fd(address_socket_fd), _request(address_socket_fd)
 {
 }
 
-ServerClient::ServerClient(const ServerClient& client) : AIOEventListener(client)
+ServerClient::ServerClient(const ServerClient& client)
+    : AIOEventListener(client), _request(client._address_socket_fd)
 {
     *this = client;
 }
@@ -34,7 +33,6 @@ ServerClient& ServerClient::operator=(const ServerClient& client)
     _client_socket_fd  = client._client_socket_fd;
     _address_socket_fd = client._address_socket_fd;
     _epoll_ev          = client._epoll_ev;
-    _server            = client._server;
     _request           = client._request;
     _responses_queue   = client._responses_queue;
     _cgi_responses     = client._cgi_responses;
@@ -60,6 +58,7 @@ void ServerClient::BindToClientSocket()
         std::cerr << "_IOmltplx->AddEvent() failed to add new peer fd: " << _client_socket_fd
                   << "Connection will terminate.\nReason: " << e.what() << std::endl;
     }
+    _request = Request(_address_socket_fd);
 }
 void ServerClient::ConsumeEvent(const epoll_event ev)
 {
@@ -143,7 +142,7 @@ void ServerClient::QueueCGIResponse(int output_pipe_fd, Response* response)
     ev.data.ptr = this;
     IOMultiplexer::GetInstance().AddEvent(ev, output_pipe_fd);
     _cgi_responses.insert(std::pair<int, Response*>(output_pipe_fd, response));
-    std::cout << "IOMultiplexer is listening on CGI pipe fd: " << output_pipe_fd
+    std::cout << ">>>> IOMultiplexer is listening on CGI pipe fd: " << output_pipe_fd
               << " for client fd: " << _client_socket_fd << std::endl;
 }
 void ServerClient::HandleCGIEPOLLIN(const epoll_event& ev, Response* response)
@@ -183,7 +182,11 @@ void ServerClient::Terminate()
     if (_is_started == false)
         throw ServerClientException("ServerClient::Terminate(): client not started.");
     for (; _responses_queue.size(); _responses_queue.pop())
+    {
+        close(_responses_queue.front()->GetRequestFileFd());
+        close(_responses_queue.front()->GetRequest().getBodyFd());
         delete _responses_queue.front();
+    }
     std::map<int, Response*>::iterator cgi_it = _cgi_responses.begin();
     for (; cgi_it != _cgi_responses.end(); cgi_it++)
     {
@@ -227,20 +230,18 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
         HttpStatus status = _request.getStatus();
         if (status.code != STATUS_OK)
         {
-            Response* response = new Response(_server);
+            Response* response = new Response();
             // response->SetClientSocketFd(_client_socket_fd);
-            response->SetVirtualServer(&_server->GetConfig().front());
+            // response->SetVirtualServer(&_server->GetConfig().front());
             _request.clear();
             return SendErrorResponse(status, response);
         }
         std::cerr << "<<<< Client fd: " << _client_socket_fd
-                  << " Requested uri: " << _request.getUri()
-                  << " | Request status after parsing: " << status.message << std::endl;
-        Response* response = new Response(_request, _server);
+                  << " Requested uri: " << _request.getMethod() << " " << _request.getUri()
+                  << " | Request status after parsing: " << status.message
+                  << " is chunked: " << _request.isChunked() << std::endl;
+        Response* response = new Response(_request);
         // response->SetClientSocketFd(_client_socket_fd);
-        response->SetVirtualServer(ServerUtils::GetRequestVirtualServer(
-            _address_socket_fd, response->GetRequest(), _server->GetConfig()
-        ));
         _request.clear();
         try
         {
@@ -255,10 +256,8 @@ void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
 
 void ServerClient::ProcessRequest(Response* response)
 {
-    response->SetRequestFileLocation(
-        ServerUtils::GetFileLocation(*response->GetVirtualServer(), response->GetRequest().getUri())
-    );
-    if (response->GetRequestFileLocation() == response->GetVirtualServer()->locations.end())
+    LocationIterator file_location = response->GetRequest().getRequestFileLocation();
+    if (file_location == response->GetRequest().getRequestVirtualServer()->locations.end())
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
@@ -267,14 +266,13 @@ void ServerClient::ProcessRequest(Response* response)
         return SendErrorResponse(check, response);
     const std::string& method = response->GetRequest().getMethod();
     // HTTP CGI response:
-    if (response->GetRequestFileLocation()->cgi_path != "")
+    if (file_location->cgi_path != "")
     {
         std::vector<std::string>::const_iterator it = std::find(
-            response->GetRequestFileLocation()->cgi_extensions.begin(),
-            response->GetRequestFileLocation()->cgi_extensions.end(),
+            file_location->cgi_extensions.begin(), file_location->cgi_extensions.end(),
             response->GetRequestFileExtension()
         );
-        if (it != response->GetRequestFileLocation()->cgi_extensions.end())
+        if (it != file_location->cgi_extensions.end())
         {
             if (method != "POST" && method != "GET" && method != "HEAD")
                 return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED), response);
@@ -283,6 +281,8 @@ void ServerClient::ProcessRequest(Response* response)
             return ProcessCGI(CGIresponse);
         }
     }
+    if (response->GetRequest().getBodyFd() >= 0)
+        close(response->GetRequest().getBodyFd());
     // HTTP simple response:
     if (method == "GET")
     {
@@ -304,14 +304,16 @@ void ServerClient::ProcessRequest(Response* response)
 
 void ServerClient::SendErrorResponse(const HttpStatus& status, Response* response)
 {
-    Response* error_response = new Response(response->GetServer());
+    VirtualServerIterator virtual_server = response->GetRequest().getRequestVirtualServer();
+    Response*             error_response = new Response();
+    if (response->GetRequest().getBodyFd() >= 0)
+        close(response->GetRequest().getBodyFd());
     // error_response->SetClientSocketFd(_client_socket_fd);
-    error_response->SetVirtualServer(response->GetVirtualServer());
+    // error_response->SetVirtualServer(response->reqGetVirtualServer());
     delete response;
     error_response->SetStatusHeaders(status.message);
-    const std::map<uint16_t, std::string>& error_pages =
-        error_response->GetVirtualServer()->error_pages;
-    std::map<uint16_t, std::string>::const_iterator it = error_pages.find(status.code);
+    const std::map<uint16_t, std::string>&          error_pages = virtual_server->error_pages;
+    std::map<uint16_t, std::string>::const_iterator it          = error_pages.find(status.code);
     struct stat                                     error_file_stat;
 
     if (it == error_pages.end() || stat(it->second.c_str(), &error_file_stat) != 0)

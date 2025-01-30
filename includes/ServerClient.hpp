@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerClient.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 00:32:24 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/29 17:15:09 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,13 +30,12 @@ private:
     int                      _client_socket_fd;
     int                      _address_socket_fd;
     epoll_event              _epoll_ev;
-    Server*                  _server;
     Request                  _request;
     std::queue<Response*>    _responses_queue;
     std::map<int, Response*> _cgi_responses;
 
 public:
-    ServerClient(const int& client_socket_fd, const int& address_socket_fd, Server* server);
+    ServerClient(const int& client_socket_fd, const int& address_socket_fd);
     ServerClient(const ServerClient& client);
     ServerClient& operator=(const ServerClient& client);
     ~ServerClient();

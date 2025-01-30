@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:27:14 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 09:27:19 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 15:41:57 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,10 +46,10 @@ private:
     epoll_event                _listen_socket_ev;
 
 public:
-    Server(const std::vector<ServerConfig>& config);
     ~Server();
 
 private:
+    Server(const std::vector<ServerConfig>& config);
     Server(const Server& server);
     Server& operator=(const Server& server);
 
@@ -72,4 +72,7 @@ private:
     void listen_on_addr(const sockaddr_in& _listen_addr);
     void AcceptNewPeerOnSocket(int socket_fd);
     void HandlePeerEPOLLOUT(const epoll_event& ev, ServerClient& client);
+
+public:
+    static Server& GetInstance();
 };

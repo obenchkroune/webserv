@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/20 23:26:41 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 09:29:23 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/29 18:33:20 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,11 @@ Server::~Server()
 {
     Terminate();
 }
+Server& Server::GetInstance() {
+    static Server server(Config::getInstance().getServers());
+    return server;
+}
+
 bool Server::is_started() const
 {
     return _is_started;
@@ -123,7 +128,7 @@ void Server::AcceptNewPeerOnSocket(int socket_fd)
         ;
     if (client == _clients_pool.end())
     {
-        ServerClient* new_client = new ServerClient(peer_fd, socket_fd, this);
+        ServerClient* new_client = new ServerClient(peer_fd, socket_fd);
         client                   = _clients_pool.insert(client, new_client);
     }
     else
