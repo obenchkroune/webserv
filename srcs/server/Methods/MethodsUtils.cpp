@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   MethodsUtils.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/07 12:27:55 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 23:01:15 by simo             ###   ########.fr       */
+/*   Updated: 2025/01/31 18:50:33 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,7 @@ HttpStatus ServerClient::CheckRequest(Response* response)
         std::vector<std::string>::const_iterator index_it = request_file_location->index.begin();
         for (; index_it != request_file_location->index.end(); index_it++)
         {
-            std::string index_page_fname = file_path + *index_it;
+            std::string index_page_fname = file_path + "/" + *index_it;
             if (access(index_page_fname.c_str(), F_OK) == 0)
             {
                 file_path = index_page_fname;
