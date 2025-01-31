@@ -90,7 +90,7 @@ private:
     std::string                        getHeaderLine();
     void                               parseHeaders();
     void                               writeBodyToFile();
-    void                               writeChunkToFile(size_t& offset);
+    void                               writeChunkToFile();
     void                               writeChunked();
 };
 

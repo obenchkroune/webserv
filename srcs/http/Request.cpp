@@ -155,6 +155,7 @@ void Request::writeBodyToFile()
     }
     if (_body_received == _body_size)
     {
+        std::cerr << ">>>> Received: " << _body_size << " Bytes of request body." << std::endl;
         _is_body_completed = true;
         if (_body_fd >= 0 && lseek(_body_fd, 0, SEEK_SET) == -1)
         {
@@ -165,14 +166,14 @@ void Request::writeBodyToFile()
         }
     }
 }
-void Request::writeChunkToFile(size_t& offset)
+void Request::writeChunkToFile()
 {
-    size_t to_write = std::min(_remaining_chunk_size, _body_buff.size() - offset);
+    size_t to_write = std::min(_remaining_chunk_size, _body_buff.size());
     if (to_write)
     {
         ssize_t bytes_written;
         if (_body_fd >= 0)
-            bytes_written = write(_body_fd, _body_buff.data() + offset, to_write);
+            bytes_written = write(_body_fd, _body_buff.data(), to_write);
         else
             bytes_written = to_write;
         if (bytes_written < 0 || to_write != (size_t)bytes_written)
@@ -182,9 +183,9 @@ void Request::writeChunkToFile(size_t& offset)
             _body_fd = -1;
             _status  = HttpStatus(STATUS_INTERNAL_SERVER_ERROR);
         }
-        offset += to_write;
         _body_size += to_write;
         _remaining_chunk_size -= to_write;
+        _body_buff.erase(_body_buff.begin(), _body_buff.begin() + to_write);
     }
     if (_body_size > _request_file_location->max_body_size)
     {
@@ -195,17 +196,20 @@ void Request::writeChunkToFile(size_t& offset)
 }
 void Request::writeChunked()
 {
-    size_t offset = 0;
     if (_remaining_chunk_size)
     {
-        writeChunkToFile(offset);
+        writeChunkToFile();
         if (!_remaining_chunk_size)
         {
-            _remove_chunk_data_trailing_crlf = true;
-            if (offset + 2 <= _body_buff.size())
+            if (_body_buff.size() >= 2)
             {
-                offset += 2;
+                _body_buff.erase(_body_buff.begin(), _body_buff.begin() + 2);
                 _remove_chunk_data_trailing_crlf = false;
+            }
+            else
+            {
+                _remove_chunk_data_trailing_crlf = true;
+                return;
             }
         }
     }
@@ -213,52 +217,47 @@ void Request::writeChunked()
     {
         if (_body_buff.size() < 2)
             return;
-        offset += 2;
+        _body_buff.erase(_body_buff.begin(), _body_buff.begin() + 2);
         _remove_chunk_data_trailing_crlf = false;
     }
-    if (offset < _body_buff.size())
+    if (_body_buff.size())
     {
-        const char* chunk_size_ln = utils::strnstr(
-            (const char*)(_body_buff.data() + offset), CRLF, _body_buff.size() - offset
-        );
+        const char* chunk_size_ln =
+            utils::strnstr((const char*)_body_buff.data(), CRLF, _body_buff.size());
         if (chunk_size_ln)
         {
-            _chunk_size = std::strtoul((const char*)(_body_buff.data() + offset), NULL, 16);
+            _chunk_size           = std::strtoul((const char*)_body_buff.data(), NULL, 16);
             _remaining_chunk_size = _chunk_size;
-            offset                = (chunk_size_ln + 2) - ((const char*)_body_buff.data());
-            for (; offset < _body_buff.size() && chunk_size_ln && _chunk_size;)
+            _body_buff.erase(
+                _body_buff.begin(),
+                _body_buff.begin() + (chunk_size_ln + 2 - (const char*)_body_buff.data())
+            );
+            for (; _body_buff.size() && chunk_size_ln && _chunk_size;)
             {
-                writeChunkToFile(offset);
+                writeChunkToFile();
                 if (!_remaining_chunk_size)
                 {
-                    if (offset + 2 <= _body_buff.size())
-                        offset += 2;
+                    if (_body_buff.size() > 2)
+                        _body_buff.erase(_body_buff.begin(), _body_buff.begin() + 2);
                     else
                     {
                         _remove_chunk_data_trailing_crlf = true;
                         break;
                     }
                 }
-                chunk_size_ln = utils::strnstr(
-                    (const char*)(_body_buff.data() + offset), CRLF, _body_buff.size() - offset
-                );
+                chunk_size_ln =
+                    utils::strnstr((const char*)_body_buff.data(), CRLF, _body_buff.size());
                 if (chunk_size_ln)
                 {
-                    _chunk_size = std::strtoul((const char*)(_body_buff.data() + offset), NULL, 16);
+                    _chunk_size           = std::strtoul((const char*)_body_buff.data(), NULL, 16);
                     _remaining_chunk_size = _chunk_size;
-                    offset                = (chunk_size_ln + 2) - ((const char*)_body_buff.data());
+                    _body_buff.erase(
+                        _body_buff.begin(),
+                        _body_buff.begin() + (chunk_size_ln + 2 - (const char*)_body_buff.data())
+                    );
                 }
             }
         }
-    }
-    if (offset)
-    {
-        if (offset == _body_buff.size())
-            _body_buff.clear();
-        else if (offset < _body_buff.size())
-            _body_buff.erase(_body_buff.begin(), _body_buff.begin() + offset);
-        else
-            assert(!"IMPOSSIBLE");
     }
     if (_chunk_size == 0 && _body_buff.size())
     {
@@ -266,6 +265,7 @@ void Request::writeChunked()
             utils::strnstr((const char*)_body_buff.data(), CRLF, _body_buff.size());
         if (trailing_line)
         {
+            std::cerr << ">>>> Received: " << _body_size << " Bytes of chunked request body." << std::endl;
             _body_buff.erase(
                 _body_buff.begin(),
                 _body_buff.begin() + (trailing_line + 2 - (const char*)_body_buff.data())

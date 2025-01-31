@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/30 18:24:36 by msitni           ###   ########.fr       */
+/*   Updated: 2025/01/31 17:41:28 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,7 +223,6 @@ void ServerClient::Terminate()
 
 void ServerClient::ReceiveRequest(const std::vector<uint8_t>& buff)
 {
-    std::cerr << "fd: " << _client_socket_fd << " Got: " << buff.size() << std::endl;
     _request += buff;
 
     if (_request.isCompleted())
@@ -319,7 +318,10 @@ void ServerClient::SendErrorResponse(const HttpStatus& status, Response* respons
 
     if (it == error_pages.end() || stat(it->second.c_str(), &error_file_stat) != 0)
     {
-        std::cerr << "Error page not found for status: " << status.message << std::endl;
+        std::cerr
+            << ">>>> Corresponding page template for error status: \"" << status.message
+            << "\" is not provided.\n>>>> sending only headers with the error message as content."
+            << std::endl;
         error_response->AppendToResponseBuff(
             std::vector<uint8_t>(status.message, status.message + strlen(status.message))
         );
