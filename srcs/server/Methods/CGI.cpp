@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/29 23:37:56 by simo             ###   ########.fr       */
+/*   Updated: 2025/02/01 18:49:22 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,14 @@ void ServerClient::ProcessCGI(Response* response)
         std::vector<char*> argv(3, NULL);
         argv[0] = (char*)response->GetRequest().getRequestFileLocation()->cgi_path.c_str();
         argv[1] = (char*)response->GetRequestFilePath().c_str();
+        if (response->GetRequest().getRequestFileLocation()->cgi_conf != "")
+        {
+            argv[2] = (char*)"-c";
+            argv.insert(
+                argv.end(), (char*)response->GetRequest().getRequestFileLocation()->cgi_conf.c_str()
+            );
+            argv.insert(argv.end(), NULL);
+        }
         /*setting up environment*/
         std::vector<char*> envp;
         std::string        env_redirect = "REDIRECT_STATUS=CGI";

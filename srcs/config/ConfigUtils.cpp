@@ -32,6 +32,12 @@ std::vector<std::string> cgiExtensionsDirective(const Directive& directive)
         throw InvalidConfigException(directive.name);
     return directive.values;
 }
+std::string cgiConfDirective(const Directive& directive)
+{
+    if (directive.values.size() == 0)
+        throw InvalidConfigException(directive.name);
+    return directive.values.front();
+}
 std::size_t maxSizeDirective(const Directive& directive)
 {
     std::size_t        res;
