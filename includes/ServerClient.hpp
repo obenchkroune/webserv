@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:54:28 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/29 17:15:09 by msitni           ###   ########.fr       */
+/*   Updated: 2025/02/03 13:01:23 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,9 @@
 #include "ResponseCGI.hpp"
 #include <algorithm>
 #include <iostream>
+#include <queue>
 #include <string>
 #include <utility>
-#include <queue>
 
 typedef std::vector<LocationConfig>::const_iterator LocationsIterator;
 
@@ -26,21 +26,19 @@ class ServerClient : AIOEventListener
 {
 
 private:
-    bool                     _is_started;
-    int                      _client_socket_fd;
-    int                      _address_socket_fd;
-    epoll_event              _epoll_ev;
-    Request                  _request;
-    std::queue<Response*>    _responses_queue;
-    std::map<int, Response*> _cgi_responses;
+    bool                        _is_started;
+    int                         _client_socket_fd;
+    int                         _address_socket_fd;
+    epoll_event                 _epoll_ev;
+    Request                     _request;
+    std::queue<Response*>       _responses_queue;
+    std::map<int, ResponseCGI*> _cgi_responses;
 
 public:
     ServerClient(const int& client_socket_fd, const int& address_socket_fd);
     ServerClient(const ServerClient& client);
     ServerClient& operator=(const ServerClient& client);
     ~ServerClient();
-
-private:
 
 public:
     void BindToClientSocket();
@@ -63,7 +61,7 @@ private:
     void       SendErrorResponse(const HttpStatus& status, Response* response);
 
 private:
-    void ProcessCGI(Response* response);
+    void ProcessCGI(ResponseCGI* response);
     void ProcessGET(Response* response, bool send_data = true);
     void ProcessHEAD(Response* response);
     void ProcessDELETE(Response* response);
@@ -76,5 +74,5 @@ private:
     void HandleEPOLLOUT();
     void HandleEPOLLIN();
     void HandleCGIEPOLLIN(const epoll_event& ev, Response* response);
-    void QueueCGIResponse(int output_pipe_fd, Response* response);
+    void QueueCGIResponse(int output_pipe_fd, ResponseCGI* response);
 };

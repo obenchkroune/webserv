@@ -40,6 +40,7 @@ struct LocationConfig
     std::map<uint16_t, std::string> error_pages;
     std::string                     cgi_path;
     std::vector<std::string>        cgi_extensions;
+    std::string                     cgi_conf;
 };
 
 struct ServerConfig

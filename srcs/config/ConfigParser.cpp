@@ -152,6 +152,8 @@ void ConfigParser::parseLocationDirective(LocationConfig& location)
         location.cgi_path = ConfigUtils::cgiPathDirective(directive);
     else if (directive.name == "cgi_extensions")
         location.cgi_extensions = ConfigUtils::cgiExtensionsDirective(directive);
+    else if (directive.name == "cgi_conf")
+        location.cgi_conf = ConfigUtils::cgiConfDirective(directive);
     else if (directive.name == "root")
         location.root = ConfigUtils::rootDirective(directive);
     else if (directive.name == "error_page")

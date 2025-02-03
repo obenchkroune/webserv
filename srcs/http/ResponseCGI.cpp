@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ResponseCGI.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/08 01:37:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/29 00:46:33 by simo             ###   ########.fr       */
+/*   Updated: 2025/02/03 13:52:50 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@ ResponseCGI::ResponseCGI(const Response& response) : Response(response)
     _content_lenght      = 0; // resetting from previous call to Response::SetRequestFilestat()
     _cgi_line_delimiter  = CRLF;
     _cgi_is_reading_body = false;
+    _start_time          = time(0);
 }
 void ResponseCGI::AppendToResponseBuff(const std::vector<uint8_t>& content)
 {
@@ -89,4 +90,16 @@ void ResponseCGI::FinishResponse()
             );
         }
     }
+}
+time_t ResponseCGI::GetStartTime() const
+{
+    return _start_time;
+}
+void ResponseCGI::SetCGIPID(const int pid)
+{
+    _cgi_pid = pid;
+}
+int ResponseCGI::GetCGIPID() const
+{
+    return _cgi_pid;
 }

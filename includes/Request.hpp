@@ -51,7 +51,10 @@ public:
     bool                                      isChunked() const;
     VirtualServerIterator                     getRequestVirtualServer() const;
     LocationIterator                          getRequestFileLocation() const;
+    bool                                      getIsReceiving() const;
+    time_t                                    getStartTime() const;
 
+public:
     void clear();
 
 private:
@@ -84,7 +87,10 @@ private:
     HttpStatus                         _status;
     VirtualServerIterator              _request_virtual_server;
     LocationIterator                   _request_file_location;
+    time_t                             _start_time;
+    bool                               _is_receiving;
 
+private:
     void                               parseRequestLine();
     std::map<std::string, std::string> parseQueryParams(const std::string query);
     std::string                        getHeaderLine();

@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   CGI.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/01 21:26:24 by simo              #+#    #+#             */
-/*   Updated: 2025/01/29 23:37:56 by simo             ###   ########.fr       */
+/*   Updated: 2025/02/03 13:54:50 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "ServerClient.hpp"
 #include <fcntl.h>
-void ServerClient::ProcessCGI(Response* response)
+void ServerClient::ProcessCGI(ResponseCGI* response)
 {
     int pipe_fd[2];
     int cgi_input_fd = response->GetRequest().getBodyFd();
@@ -33,7 +33,7 @@ void ServerClient::ProcessCGI(Response* response)
     }
     if (pid)
     {
-        /*TODO: set response timeout*/
+        response->SetCGIPID(pid);
         close(pipe_fd[1]), close(cgi_input_fd);
         QueueCGIResponse(pipe_fd[0], response);
     }
@@ -59,6 +59,14 @@ void ServerClient::ProcessCGI(Response* response)
         std::vector<char*> argv(3, NULL);
         argv[0] = (char*)response->GetRequest().getRequestFileLocation()->cgi_path.c_str();
         argv[1] = (char*)response->GetRequestFilePath().c_str();
+        if (response->GetRequest().getRequestFileLocation()->cgi_conf != "")
+        {
+            argv[2] = (char*)"-c";
+            argv.insert(
+                argv.end(), (char*)response->GetRequest().getRequestFileLocation()->cgi_conf.c_str()
+            );
+            argv.insert(argv.end(), NULL);
+        }
         /*setting up environment*/
         std::vector<char*> envp;
         std::string        env_redirect = "REDIRECT_STATUS=CGI";
