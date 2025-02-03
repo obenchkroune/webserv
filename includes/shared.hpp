@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   shared.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: simo <simo@student.42.fr>                  +#+  +:+       +#+        */
+/*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/01 21:09:07 by msitni1337        #+#    #+#             */
-/*   Updated: 2025/01/29 02:22:23 by simo             ###   ########.fr       */
+/*   Updated: 2025/02/03 14:02:23 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,4 +17,6 @@
 #define READ_CHUNK           1024 * 4UL
 #define RECV_CHUNK           1024UL
 #define SEND_CHUNK           1024UL
-#define REQUEST_HEADER_LIMIT RECV_CHUNK * 100UL
+#define REQUEST_HEADER_LIMIT RECV_CHUNK * 10UL
+#define CGI_TIMEOUT          5
+#define REQ_TIMEOUT          10

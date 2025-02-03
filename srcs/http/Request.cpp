@@ -44,6 +44,8 @@ Request& Request::operator=(const Request& other)
     _status                          = other._status;
     _request_virtual_server          = other._request_virtual_server;
     _request_file_location           = other._request_file_location;
+    _start_time                      = other._start_time;
+    _is_receiving                    = other._is_receiving;
 
     _headers_raw_buf.str(std::string());
     _headers_raw_buf.clear();
@@ -64,6 +66,7 @@ void Request::clear()
     _body_fd                         = -1;
     _body_size                       = 0;
     _body_received                   = 0;
+    _is_receiving                    = false;
 
     _raw_buffer.clear();
     if (_body_buff.size())
@@ -85,6 +88,8 @@ Request::~Request() {}
 
 Request& Request::operator+=(const std::vector<uint8_t>& bytes)
 {
+    _is_receiving = true;
+    _start_time   = time(0);
     if (_is_headers_completed == false)
     {
         _raw_buffer.insert(_raw_buffer.end(), bytes.begin(), bytes.end());
@@ -108,6 +113,12 @@ Request& Request::operator+=(const std::vector<uint8_t>& bytes)
             _headers_raw_buf.str((char*)_raw_buffer.data());
             _raw_buffer.clear();
             parse();
+        }
+        else if (_raw_buffer.size() > REQUEST_HEADER_LIMIT)
+        {
+            _status               = HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE);
+            _is_headers_completed = true;
+            _is_body_completed    = true;
         }
     }
     else if (_is_body_completed == false)
@@ -265,7 +276,8 @@ void Request::writeChunked()
             utils::strnstr((const char*)_body_buff.data(), CRLF, _body_buff.size());
         if (trailing_line)
         {
-            std::cerr << ">>>> Received: " << _body_size << " Bytes of chunked request body." << std::endl;
+            std::cerr << ">>>> Received: " << _body_size << " Bytes of chunked request body."
+                      << std::endl;
             _body_buff.erase(
                 _body_buff.begin(),
                 _body_buff.begin() + (trailing_line + 2 - (const char*)_body_buff.data())
@@ -332,8 +344,8 @@ void Request::parse()
     }
     catch (const RequestException& e)
     {
-        std::cerr << "finished parsing request status: " << e.what() << std::endl;
-        _status = e.getErrorCode();
+        _status            = e.getErrorCode();
+        _is_body_completed = true;
     }
 }
 
@@ -364,6 +376,16 @@ VirtualServerIterator Request::getRequestVirtualServer() const
 LocationIterator Request::getRequestFileLocation() const
 {
     return _request_file_location;
+}
+
+bool Request::getIsReceiving() const
+{
+    return _is_receiving;
+}
+
+time_t Request::getStartTime() const
+{
+    return _start_time;
 }
 
 std::string Request::getUri() const
@@ -431,10 +453,10 @@ void Request::setVersion(const std::string& version)
     if (version.substr(0, 5) != "HTTP/")
         throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
 
-    int major, minor;
-    if (std::sscanf(version.c_str() + 5, "%d.%d", &major, &minor) != 2)
+    float http_version;
+    if (std::sscanf(version.c_str() + 5, "%f", &http_version) != 1)
         throw RequestException(HttpStatus(STATUS_BAD_REQUEST));
-    if (major != 1 || minor != 1)
+    if (http_version != 1.1)
         throw RequestException(HttpStatus(STATUS_HTTP_VERSION_NOT_SUPPORTED));
     _http_version = version;
 }
@@ -520,15 +542,6 @@ std::map<std::string, std::string> Request::parseQueryParams(const std::string q
 
 void Request::parseHeaders()
 {
-    // check the size of the header fields
-    size_t current_pos = _headers_raw_buf.tellg();
-    _headers_raw_buf.seekg(0, std::ios::end);
-    if ((size_t)_headers_raw_buf.tellg() - current_pos > REQUEST_HEADER_LIMIT)
-    {
-        throw RequestException(HttpStatus(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE));
-    }
-    _headers_raw_buf.seekg(current_pos);
-
     std::string line;
     while (!(line = Request::getHeaderLine()).empty())
     {
@@ -540,7 +553,6 @@ void Request::parseHeaders()
         HttpHeader header(name, value);
         setHeader(header);
     }
-    // TODO: check for the required host headers (the server instance is needed)
 }
 
 std::ostream& operator<<(std::ostream& os, const Request& request)

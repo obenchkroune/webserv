@@ -6,7 +6,7 @@
 /*   By: msitni <msitni@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 11:55:35 by msitni            #+#    #+#             */
-/*   Updated: 2025/01/31 17:41:28 by msitni           ###   ########.fr       */
+/*   Updated: 2025/02/03 14:14:05 by msitni           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,17 +63,50 @@ void ServerClient::BindToClientSocket()
 void ServerClient::ConsumeEvent(const epoll_event ev)
 {
     // CGI pipe I/O:
-    std::map<int, Response*>::iterator cgi_it = _cgi_responses.find(ev.data.fd);
+    std::map<int, ResponseCGI*>::iterator cgi_it = _cgi_responses.find(ev.data.fd);
     if (cgi_it != _cgi_responses.end())
     {
         HandleCGIEPOLLIN(ev, cgi_it->second);
-        return;
     }
-    // Client Requests:
-    if (ev.events & EPOLLIN)
-        HandleEPOLLIN();
-    if (_responses_queue.size() && ev.events & EPOLLOUT)
-        HandleEPOLLOUT();
+    else
+    {
+        // Client Requests:
+        if (ev.events & EPOLLIN)
+            HandleEPOLLIN();
+        if (_responses_queue.size() && ev.events & EPOLLOUT)
+            HandleEPOLLOUT();
+    }
+    // Checking CGI timeout.
+    time_t now = time(0);
+    cgi_it     = _cgi_responses.begin();
+    for (; cgi_it != _cgi_responses.end();)
+    {
+        if (now - cgi_it->second->GetStartTime() > CGI_TIMEOUT)
+        {
+            kill(cgi_it->second->GetCGIPID(), SIGKILL);
+            epoll_event ev;
+            ev.data.ptr = this;
+            ev.events   = EPOLLIN | EPOLLHUP;
+            IOMultiplexer::GetInstance().RemoveEvent(ev, cgi_it->first);
+            close(cgi_it->first);
+            SendErrorResponse(HttpStatus(STATUS_GATEWAY_TIMEOUT), cgi_it->second);
+            _cgi_responses.erase(cgi_it);
+            cgi_it = _cgi_responses.begin();
+        }
+        else
+        {
+            cgi_it++;
+        }
+    }
+    if (_request.getIsReceiving())
+    {
+        if (now - _request.getStartTime() > REQ_TIMEOUT)
+        {
+            _request.clear();
+            Response* response = new Response();
+            SendErrorResponse(HttpStatus(STATUS_REQUEST_TIMEOUT), response);
+        }
+    }
 }
 void ServerClient::HandleEPOLLIN()
 {
@@ -135,13 +168,13 @@ fetch_next_response:
         _responses_queue.pop();
     }
 }
-void ServerClient::QueueCGIResponse(int output_pipe_fd, Response* response)
+void ServerClient::QueueCGIResponse(int output_pipe_fd, ResponseCGI* response)
 {
     epoll_event ev;
     ev.events   = EPOLLIN | EPOLLHUP;
     ev.data.ptr = this;
     IOMultiplexer::GetInstance().AddEvent(ev, output_pipe_fd);
-    _cgi_responses.insert(std::pair<int, Response*>(output_pipe_fd, response));
+    _cgi_responses.insert(std::pair<int, ResponseCGI*>(output_pipe_fd, response));
     std::cout << ">>>> IOMultiplexer is listening on CGI pipe fd: " << output_pipe_fd
               << " for client fd: " << _client_socket_fd << std::endl;
 }
@@ -187,7 +220,7 @@ void ServerClient::Terminate()
         close(_responses_queue.front()->GetRequest().getBodyFd());
         delete _responses_queue.front();
     }
-    std::map<int, Response*>::iterator cgi_it = _cgi_responses.begin();
+    std::map<int, ResponseCGI*>::iterator cgi_it = _cgi_responses.begin();
     for (; cgi_it != _cgi_responses.end(); cgi_it++)
     {
         try
@@ -204,6 +237,8 @@ void ServerClient::Terminate()
             std::cerr << "Reason: " << e.what() << std::endl;
         }
         close(cgi_it->first);
+        kill(cgi_it->second->GetCGIPID(), SIGKILL);
+        delete cgi_it->second;
     }
     _cgi_responses.clear();
     try
@@ -259,6 +294,18 @@ void ServerClient::ProcessRequest(Response* response)
     LocationIterator file_location = response->GetRequest().getRequestFileLocation();
     if (file_location == response->GetRequest().getRequestVirtualServer()->locations.end())
         return SendErrorResponse(HttpStatus(STATUS_NOT_FOUND), response);
+    if (file_location->redirect)
+    {
+        std::string code_message = utils::to_string(file_location->redirect_code);
+        response->SetStatusHeaders(code_message.c_str());
+        ResponseHeader location_header;
+        location_header.name  = "Location";
+        location_header.value = file_location->redirect_path;
+        response->AppendHeader(location_header);
+        response->FinishResponse();
+        _responses_queue.push(response);
+        return;
+    }
     HttpStatus check = CheckRequest(response);
     if (check.code == STATUS_HTTP_INTERNAL_IMPLEM_AUTO_INDEX)
         return;
@@ -276,7 +323,7 @@ void ServerClient::ProcessRequest(Response* response)
         {
             if (method != "POST" && method != "GET" && method != "HEAD")
                 return SendErrorResponse(HttpStatus(STATUS_METHOD_NOT_ALLOWED), response);
-            Response* CGIresponse = new ResponseCGI(*response);
+            ResponseCGI* CGIresponse = new ResponseCGI(*response);
             delete response;
             return ProcessCGI(CGIresponse);
         }
